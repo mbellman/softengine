@@ -45,10 +45,14 @@ struct Triangle {
 	}
 };
 
+struct Optimizations {
+};
+
 class Rasterizer {
 	public:
 		Rasterizer(SDL_Renderer* renderer, int width, int height);
 		~Rasterizer();
+		Optimizations optimizations;
 		void line(int x1, int y1, int x2, int y2);
 		void render(SDL_Renderer* renderer);
 		void setColor(int R, int G, int B, int A = 255);
@@ -58,8 +62,10 @@ class Rasterizer {
 	private:
 		SDL_Texture* screenTexture;
 		Uint32* pixelBuffer;
+		int* depthBuffer;
 		long int color;
 		int width;
 		int height;
-		void setPixel(int x, int y);
+		void clear();
+		void setPixel(int x, int y, int depth = 1);
 };

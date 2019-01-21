@@ -38,18 +38,24 @@ int main(int argc, char* argv[]) {
 	bool quit = false;
 	int lastStartTime;
 
-	const int totalTriangles = 5000;
+	const int totalTriangles = 10000;
 
 	srand(time(NULL));
 
 	Triangle* triangles[totalTriangles];
 
 	for (int t = 0; t < totalTriangles; t++) {
+		float ratio = (float)t / totalTriangles;
+		float r2 = (1 - ratio) * (1 - ratio) * (1 - ratio);
+
+		int size = 1 + (int)400 * r2;
+		int halfSize = 1 + (int)200 * r2;
+
 		Triangle* triangle = new Triangle;
 
 		int x1 = rand() % width, y1 = rand() % height;
-		int x2 = x1 + rand() % 100, y2 = y1 + rand() % 100;
-		int x3 = x1 + rand() % 200, y3 = y2 + rand() % 100;
+		int x2 = x1 + rand() % halfSize, y2 = y1 + rand() % halfSize;
+		int x3 = x1 + rand() % size, y3 = y2 + rand() % halfSize;
 
 		triangle->setVertex(0, x1, y1, rand() % 255, rand() % 255, rand() % 255);
 		triangle->setVertex(1, x2, y2, rand() % 255, rand() % 255, rand() % 255);
@@ -62,6 +68,11 @@ int main(int argc, char* argv[]) {
 		lastStartTime = SDL_GetTicks();
 
 		for (int t = 0; t < totalTriangles; t++) {
+			Triangle* tri = triangles[t];
+			Color* color = tri->vertices[0]->color;
+
+			// rasterizer.setColor(color);
+			// rasterizer.triangle(tri->vertices[0]->x, tri->vertices[0]->y, tri->vertices[1]->x, tri->vertices[1]->y, tri->vertices[2]->x, tri->vertices[2]->y);
 			rasterizer.triangle(triangles[t]);
 		}
 
@@ -76,7 +87,7 @@ int main(int argc, char* argv[]) {
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 		char title[50];
 
-		sprintf(title, "FPS: %dfps, Unlocked delta: %d", (int)round(60 * 16.67 / fullDelta), delta);
+		sprintf(title, "Triangles: %d, FPS: %dfps, Unlocked delta: %dms", totalTriangles, (int)round(60 * 16.67 / fullDelta), delta);
 
 		SDL_SetWindowTitle(window, title);
 
