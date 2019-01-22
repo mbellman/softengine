@@ -87,12 +87,12 @@ void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 /**
  * Rasterize a filled triangle with per-vertex coloration.
  */
-void Rasterizer::triangle(Triangle* triangle) {
+void Rasterizer::triangle(Polygon2D* triangle) {
 	// Determine the Y-ordering of vertices so we
 	// can draw the triangle from top to bottom
-	Vertex* top = triangle->vertices[0];
-	Vertex* middle = triangle->vertices[1];
-	Vertex* bottom = triangle->vertices[2];
+	Vertex2D* top = &triangle->vertices[0];
+	Vertex2D* middle = &triangle->vertices[1];
+	Vertex2D* bottom = &triangle->vertices[2];
 
 	if (top->y > middle->y) {
 		std::swap(top, middle);
@@ -144,18 +144,18 @@ void Rasterizer::triangle(Triangle* triangle) {
 		// 4. Consider not having per-vertex coloration, but color intensity, and using a fixed step delta
 		//    across each triangle scan line (avoiding the need for any repeat lerp() calls in the x loop)
 
-		int ttbR = lerp(top->color->R, bottom->color->R, heightProgress);
-		int halfR = isPastMiddle ? lerp(middle->color->R, bottom->color->R, halfProgress) : lerp(top->color->R, middle->color->R, halfProgress);
+		int ttbR = lerp(top->color.R, bottom->color.R, heightProgress);
+		int halfR = isPastMiddle ? lerp(middle->color.R, bottom->color.R, halfProgress) : lerp(top->color.R, middle->color.R, halfProgress);
 		int startR = hasLeftHypotenuse ? ttbR : halfR;
 		int endR = hasLeftHypotenuse ? halfR : ttbR;
 
-		int ttbG = lerp(top->color->G, bottom->color->G, heightProgress);
-		int halfG = isPastMiddle ? lerp(middle->color->G, bottom->color->G, halfProgress) : lerp(top->color->G, middle->color->G, halfProgress);
+		int ttbG = lerp(top->color.G, bottom->color.G, heightProgress);
+		int halfG = isPastMiddle ? lerp(middle->color.G, bottom->color.G, halfProgress) : lerp(top->color.G, middle->color.G, halfProgress);
 		int startG = hasLeftHypotenuse ? ttbG : halfG;
 		int endG = hasLeftHypotenuse ? halfG : ttbG;
 
-		int ttbB = lerp(top->color->B, bottom->color->B, heightProgress);
-		int halfB = isPastMiddle ? lerp(middle->color->B, bottom->color->B, halfProgress) : lerp(top->color->B, middle->color->B, halfProgress);
+		int ttbB = lerp(top->color.B, bottom->color.B, heightProgress);
+		int halfB = isPastMiddle ? lerp(middle->color.B, bottom->color.B, halfProgress) : lerp(top->color.B, middle->color.B, halfProgress);
 		int startB = hasLeftHypotenuse ? ttbB : halfB;
 		int endB = hasLeftHypotenuse ? halfB : ttbB;
 
