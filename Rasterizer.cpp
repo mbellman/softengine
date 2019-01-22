@@ -87,37 +87,35 @@ void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 /**
  * Rasterize a filled triangle with per-vertex coloration.
  */
-void Rasterizer::triangle(Polygon2D* triangle) {
+void Rasterizer::triangle(Polygon2d* triangle) {
 	// Determine the Y-ordering of vertices so we
 	// can draw the triangle from top to bottom
-	Vertex2D* top = &triangle->vertices[0];
-	Vertex2D* middle = &triangle->vertices[1];
-	Vertex2D* bottom = &triangle->vertices[2];
+	Vertex2d* top = &triangle->vertices[0];
+	Vertex2d* middle = &triangle->vertices[1];
+	Vertex2d* bottom = &triangle->vertices[2];
 
-	if (top->y > middle->y) {
+	if (top->coordinate.y > middle->coordinate.y) {
 		std::swap(top, middle);
 	}
 
-	if (middle->y > bottom->y) {
+	if (middle->coordinate.y > bottom->coordinate.y) {
 		std::swap(middle, bottom);
 	}
 
-	if (top->y > middle->y) {
+	if (top->coordinate.y > middle->coordinate.y) {
 		std::swap(top, middle);
 	}
 
 	// Top-to-bottom rasterization
-	float topToBottomSlope = (float)(bottom->y - top->y) / (bottom->x - top->x);
-	float topToMiddleSlope = (float)(middle->y - top->y) / (middle->x - top->x);
-	float middleToBottomSlope = (float)(bottom->y - middle->y) / (bottom->x - middle->x);
-	int triangleHeight = bottom->y - top->y;
-	int triangleWidth = std::max(top->x, std::max(middle->x, bottom->x)) - std::min(top->x, std::min(middle->x, bottom->x));
-	int isSmallTriangle = triangleHeight < 100 && triangleWidth < 100;
-	bool hasLeftHypotenuse = topToBottomSlope > 0 ? middle->y < (topToBottomSlope * (middle->x - top->x)) : middle->y > (topToBottomSlope * (middle->x - top->x));
+	float topToBottomSlope = (float)(bottom->coordinate.y - top->coordinate.y) / (bottom->coordinate.x - top->coordinate.x);
+	float topToMiddleSlope = (float)(middle->coordinate.y - top->coordinate.y) / (middle->coordinate.x - top->coordinate.x);
+	float middleToBottomSlope = (float)(bottom->coordinate.y - middle->coordinate.y) / (bottom->coordinate.x - middle->coordinate.x);
+	int triangleHeight = bottom->coordinate.y - top->coordinate.y;
+	bool hasLeftHypotenuse = topToBottomSlope > 0 ? middle->coordinate.y < (topToBottomSlope * (middle->coordinate.x - top->coordinate.x)) : middle->coordinate.y > (topToBottomSlope * (middle->coordinate.x - top->coordinate.x));
 
-	for (int line = 1; line < triangleHeight; line++) {
+	for (int line = 0; line < triangleHeight; line++) {
 		float heightProgress = (float)line / triangleHeight;
-		int y = line + top->y;
+		int y = line + top->coordinate.y;
 
 		if (y < 0) {
 			continue;
@@ -125,13 +123,17 @@ void Rasterizer::triangle(Polygon2D* triangle) {
 			break;
 		}
 
-		bool isPastMiddle = y > middle->y;
-		float halfProgress = isPastMiddle ? (float)(y - middle->y) / (bottom->y - middle->y) : (float)(y - top->y) / (middle->y - top->y);
-		int startOrigin = isPastMiddle ? middle->x : top->x;
-		int startInput = isPastMiddle ? y - middle->y : line;
+		// TODO:
+		// -Get rid of 0 TTM slope hax
+		// -Clean much of this up, abstract the start -> end color value routine
+
+		bool isPastMiddle = y > middle->coordinate.y;
+		float halfProgress = isPastMiddle ? (float)(y - middle->coordinate.y) / (bottom->coordinate.y - middle->coordinate.y) : (float)(y - top->coordinate.y) / (middle->coordinate.y - top->coordinate.y);
+		int startOrigin = isPastMiddle ? middle->coordinate.x : top->coordinate.x;
+		int startInput = isPastMiddle ? y - middle->coordinate.y : line;
 		float startSlope = isPastMiddle ? middleToBottomSlope : topToMiddleSlope;
-		int start = startOrigin + (int)(startInput / startSlope);
-		int end = top->x + (int)(line / topToBottomSlope);
+		int start = (startSlope != 0 ? startOrigin + (int)(startInput / startSlope) : middle->coordinate.x);
+		int end = top->coordinate.x + (int)(line / topToBottomSlope);
 
 		if (start > end) {
 			std::swap(start, end);
@@ -139,10 +141,9 @@ void Rasterizer::triangle(Polygon2D* triangle) {
 
 		int lineLength = end - start;
 
-		// TODO:
-		// 1. Clean a bunch of this garbage up
-		// 4. Consider not having per-vertex coloration, but color intensity, and using a fixed step delta
-		//    across each triangle scan line (avoiding the need for any repeat lerp() calls in the x loop)
+		if (startSlope == 0) {
+			halfProgress = 1.0f;
+		}
 
 		int ttbR = lerp(top->color.R, bottom->color.R, heightProgress);
 		int halfR = isPastMiddle ? lerp(middle->color.R, bottom->color.R, halfProgress) : lerp(top->color.R, middle->color.R, halfProgress);

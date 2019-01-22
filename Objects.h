@@ -3,43 +3,13 @@
 #include <functional>
 #include <vector>
 #include <algorithm>
+#include <Types.h>
 #include <Rasterizer.h>
-
-struct Vertex3D {
-	float x = 0.0f;
-	float y = 0.0f;
-	float z = 0.0f;
-
-	Vertex3D() {}
-
-	Vertex3D(float x, float y, float z) {
-		this->x = x;
-		this->y = y;
-		this->z = z;
-	}
-
-	Vertex3D operator +(const Vertex3D& v) {
-		Vertex3D vt;
-
-		vt.x = x + v.x;
-		vt.y = y + v.y;
-		vt.z = z + v.z;
-
-		return vt;
-	}
-};
-
-struct Polygon3D {
-	Vertex3D* vertices[3];
-	Polygon2D projection;
-
-	void setVertex(int index, Vertex3D* v) {
-		vertices[index] = v;
-	}
-};
 
 struct Object {
 	public:
+		Vec3 position;
+
 		Object() {}
 
 		~Object() {
@@ -53,11 +23,9 @@ struct Object {
 			position.z = z;
 		}
 
-		void forEachPolygon(std::function<void(const Vertex3D&, const Vertex3D&, const Vertex3D&)> handle) {
+		void forEachPolygon(std::function<void(const Polygon3d&)> handle) {
 			for (int i = 0; i < polygons.size(); i++) {
-				Polygon3D* p = &polygons.at(i);
-
-				handle(*p->vertices[0] + position, *p->vertices[1] + position, *p->vertices[2] + position);
+				handle(polygons.at(i));
 			}
 		}
 
@@ -66,27 +34,30 @@ struct Object {
 		}
 
 	protected:
-		std::vector<Vertex3D> vertices;
+		std::vector<Vertex3d> vertices;
 
-		void addPolygon(Vertex3D* v1, Vertex3D* v2, Vertex3D* v3) {
-			Polygon3D p;
+		void addPolygon(Vertex3d* v1, Vertex3d* v2, Vertex3d* v3) {
+			Polygon3d polygon;
 
-			p.setVertex(0, v1);
-			p.setVertex(1, v2);
-			p.setVertex(2, v3);
+			polygon.setVertex(0, v1);
+			polygon.setVertex(1, v2);
+			polygon.setVertex(2, v3);
 
-			polygons.push_back(p);
+			polygons.push_back(polygon);
 		}
 
 		void addVertex(float x, float y, float z) {
-			Vertex3D* v = new Vertex3D(x, y, z);
+			Vertex3d vertex;
 
-			vertices.push_back(*v);
+			vertex.vector.x = x;
+			vertex.vector.y = y;
+			vertex.vector.z = z;
+
+			vertices.push_back(vertex);
 		}
 
 	private:
-		std::vector<Polygon3D> polygons;
-		Vertex3D position;
+		std::vector<Polygon3d> polygons;
 };
 
 struct Mesh : Object {
@@ -129,6 +100,23 @@ struct Mesh : Object {
 					);
 				}
 			}
+		}
+
+		void setColor(int R, int G, int B, int A = 255) {
+			for (int i = 0; i < vertices.size(); i++) {
+				Color c;
+
+				c.R = rand() % 255;
+				c.G = rand() % 255;
+				c.B = rand() % 255;
+				c.A = A;
+
+				vertices.at(i).color = c;
+			}
+		}
+
+		void setColor(const Color& color) {
+			setColor(color.R, color.G, color.B, color.A);
 		}
 };
 

@@ -5,6 +5,12 @@
 #include <vector>
 #include <Rasterizer.h>
 
+struct Camera {
+	Vec3 position;
+	float pitch = 0;
+	float yaw = 0;
+};
+
 class Engine {
 	public:
 		Engine();
@@ -17,6 +23,7 @@ class Engine {
 		SDL_Renderer* renderer;
 		std::vector<Object*> objects;
 		Rasterizer* rasterizer;
+		Camera camera;
 		int getPolygonCount();
 		void delay(int ms);
 };

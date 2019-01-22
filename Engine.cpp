@@ -35,8 +35,18 @@ void Engine::draw() {
 	rasterizer->setColor(255, 0, 0);
 
 	for (int o = 0; o < objects.size(); o++) {
-		objects.at(0)->forEachPolygon([=](const Vertex3D& v1, const Vertex3D& v2, const Vertex3D& v3) {
-			rasterizer->triangle(v1.x, v1.z, v2.x, v2.z, v3.x, v3.z);
+		Object* object = objects.at(0);
+
+		object->forEachPolygon([=](const Polygon3d& polygon) {
+			Polygon2d triangle;
+
+			for (int i = 0; i < 3; i++) {
+				Vec3 vertex = polygon.vertices[i]->vector + object->position;
+
+				triangle.setVertex(i, { (int)vertex.x, (int)vertex.z }, polygon.vertices[i]->color);
+			}
+
+			rasterizer->triangle(&triangle);
 		});
 	}
 
