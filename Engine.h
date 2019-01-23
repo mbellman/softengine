@@ -7,8 +7,8 @@
 
 struct Camera {
 	Vec3 position;
-	float pitch = 0;
-	float yaw = 0;
+	float pitch = 0.0f;
+	float yaw = 0.0f;
 };
 
 class Engine {

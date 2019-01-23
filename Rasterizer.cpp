@@ -1,11 +1,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <algorithm>
+#include <Helpers.h>
 #include <Rasterizer.h>
-
-static inline int lerp(int v1, int v2, float ratio) {
-	return v1 + (int)(v2 - v1) * ratio;
-}
 
 Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height) {
 	this->width = width;
@@ -31,6 +28,56 @@ void Rasterizer::clear() {
 
 	std::fill(pixelBuffer, pixelBuffer + bufferLength, 0);
 	std::fill(depthBuffer, depthBuffer + bufferLength, 0);
+}
+
+void Rasterizer::flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight) {
+	int triangleHeight = bottomLeft.coordinate.y - top.coordinate.y;
+	float leftSlope = (float)triangleHeight / (bottomLeft.coordinate.x - top.coordinate.x);
+	float rightSlope = (float)triangleHeight / (bottomRight.coordinate.x - top.coordinate.x);
+
+	for (int i = 0; i < triangleHeight; i++) {
+		int y = top.coordinate.y + i;
+
+		if (y < 0) {
+			continue;
+		}
+		else if (y > height) {
+			break;
+		}
+
+		float progress = (float)i / triangleHeight;
+		int start = top.coordinate.x + (int)i / leftSlope;
+		int end = top.coordinate.x + (int)i / rightSlope;
+		Color startColor = lerp(top.color, bottomLeft.color, progress);
+		Color endColor = lerp(top.color, bottomRight.color, progress);
+
+		triangleScanLine(start, y, end - start, startColor, endColor);
+	}
+}
+
+void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom) {
+	int triangleHeight = bottom.coordinate.y - topLeft.coordinate.y;
+	float leftSlope = (float)triangleHeight / (bottom.coordinate.x - topLeft.coordinate.x);
+	float rightSlope = (float)triangleHeight / (bottom.coordinate.x - topRight.coordinate.x);
+
+	for (int i = 0; i < triangleHeight; i++) {
+		int y = topLeft.coordinate.y + i;
+
+		if (y < 0) {
+			continue;
+		}
+		else if (y > height) {
+			break;
+		}
+
+		float progress = (float)i / triangleHeight;
+		int start = topLeft.coordinate.x + (int)i / leftSlope;
+		int end = topRight.coordinate.x + (int)i / rightSlope;
+		Color startColor = lerp(topLeft.color, bottom.color, progress);
+		Color endColor = lerp(topRight.color, bottom.color, progress);
+
+		triangleScanLine(start, y, end - start, startColor, endColor);
+	}
 }
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
@@ -70,12 +117,19 @@ void Rasterizer::render(SDL_Renderer* renderer) {
 	clear();
 }
 
-void Rasterizer::setColor(int R, int G, int B, int A) {
-	color = (A << 24) | (R << 16) | (G << 8) | B;
+void Rasterizer::setColor(int R, int G, int B) {
+	color = (255 << 24) | (R << 16) | (G << 8) | B;
 }
 
 void Rasterizer::setColor(Color* color) {
-	setColor(color->R, color->G, color->B, color->A);
+	setColor(color->R, color->G, color->B);
+}
+
+void Rasterizer::setPixel(int x, int y, int depth) {
+	int index = y * width + x;
+
+	pixelBuffer[index] = color;
+	depthBuffer[index] = depth;
 }
 
 void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
@@ -87,12 +141,10 @@ void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 /**
  * Rasterize a filled triangle with per-vertex coloration.
  */
-void Rasterizer::triangle(Polygon2d* triangle) {
-	// Determine the Y-ordering of vertices so we
-	// can draw the triangle from top to bottom
-	Vertex2d* top = &triangle->vertices[0];
-	Vertex2d* middle = &triangle->vertices[1];
-	Vertex2d* bottom = &triangle->vertices[2];
+void Rasterizer::triangle(Triangle& triangle) {
+	Vertex2d* top = &triangle.vertices[0];
+	Vertex2d* middle = &triangle.vertices[1];
+	Vertex2d* bottom = &triangle.vertices[2];
 
 	if (top->coordinate.y > middle->coordinate.y) {
 		std::swap(top, middle);
@@ -106,79 +158,54 @@ void Rasterizer::triangle(Polygon2d* triangle) {
 		std::swap(top, middle);
 	}
 
-	// Top-to-bottom rasterization
-	float topToBottomSlope = (float)(bottom->coordinate.y - top->coordinate.y) / (bottom->coordinate.x - top->coordinate.x);
-	float topToMiddleSlope = (float)(middle->coordinate.y - top->coordinate.y) / (middle->coordinate.x - top->coordinate.x);
-	float middleToBottomSlope = (float)(bottom->coordinate.y - middle->coordinate.y) / (bottom->coordinate.x - middle->coordinate.x);
-	int triangleHeight = bottom->coordinate.y - top->coordinate.y;
-	bool hasLeftHypotenuse = topToBottomSlope > 0 ? middle->coordinate.y < (topToBottomSlope * (middle->coordinate.x - top->coordinate.x)) : middle->coordinate.y > (topToBottomSlope * (middle->coordinate.x - top->coordinate.x));
-
-	for (int line = 0; line < triangleHeight; line++) {
-		float heightProgress = (float)line / triangleHeight;
-		int y = line + top->coordinate.y;
-
-		if (y < 0) {
-			continue;
-		} else if (y >= height) {
-			break;
+	if (top->coordinate.y == middle->coordinate.y) {
+		if (top->coordinate.x > middle->coordinate.x) {
+			std::swap(top, middle);
 		}
 
-		// TODO:
-		// -Get rid of 0 TTM slope hax
-		// -Clean much of this up, abstract the start -> end color value routine
-
-		bool isPastMiddle = y > middle->coordinate.y;
-		float halfProgress = isPastMiddle ? (float)(y - middle->coordinate.y) / (bottom->coordinate.y - middle->coordinate.y) : (float)(y - top->coordinate.y) / (middle->coordinate.y - top->coordinate.y);
-		int startOrigin = isPastMiddle ? middle->coordinate.x : top->coordinate.x;
-		int startInput = isPastMiddle ? y - middle->coordinate.y : line;
-		float startSlope = isPastMiddle ? middleToBottomSlope : topToMiddleSlope;
-		int start = (startSlope != 0 ? startOrigin + (int)(startInput / startSlope) : middle->coordinate.x);
-		int end = top->coordinate.x + (int)(line / topToBottomSlope);
-
-		if (start > end) {
-			std::swap(start, end);
+		flatTopTriangle(*top, *middle, *bottom);
+	} else if (bottom->coordinate.y == middle->coordinate.y) {
+		if (bottom->coordinate.x < middle->coordinate.x) {
+			std::swap(bottom, middle);
 		}
 
-		int lineLength = end - start;
+		flatBottomTriangle(*top, *middle, *bottom);
+	} else {
+		float ttbSlope = (float)(bottom->coordinate.y - top->coordinate.y) / (bottom->coordinate.x - top->coordinate.x);
+		float middleYRatio = (float)(middle->coordinate.y - top->coordinate.y) / (bottom->coordinate.y - top->coordinate.y);
 
-		if (startSlope == 0) {
-			halfProgress = 1.0f;
+		Vertex2d middleOpposite;
+
+		middleOpposite.color = lerp(top->color, bottom->color, middleYRatio);
+		middleOpposite.coordinate = { top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / ttbSlope), middle->coordinate.y };
+
+		Vertex2d* middleLeft = middle;
+		Vertex2d* middleRight = &middleOpposite;
+
+		if (middleLeft->coordinate.x > middleRight->coordinate.x) {
+			std::swap(middleLeft, middleRight);
 		}
 
-		int ttbR = lerp(top->color.R, bottom->color.R, heightProgress);
-		int halfR = isPastMiddle ? lerp(middle->color.R, bottom->color.R, halfProgress) : lerp(top->color.R, middle->color.R, halfProgress);
-		int startR = hasLeftHypotenuse ? ttbR : halfR;
-		int endR = hasLeftHypotenuse ? halfR : ttbR;
-
-		int ttbG = lerp(top->color.G, bottom->color.G, heightProgress);
-		int halfG = isPastMiddle ? lerp(middle->color.G, bottom->color.G, halfProgress) : lerp(top->color.G, middle->color.G, halfProgress);
-		int startG = hasLeftHypotenuse ? ttbG : halfG;
-		int endG = hasLeftHypotenuse ? halfG : ttbG;
-
-		int ttbB = lerp(top->color.B, bottom->color.B, heightProgress);
-		int halfB = isPastMiddle ? lerp(middle->color.B, bottom->color.B, halfProgress) : lerp(top->color.B, middle->color.B, halfProgress);
-		int startB = hasLeftHypotenuse ? ttbB : halfB;
-		int endB = hasLeftHypotenuse ? halfB : ttbB;
-
-		for (int x = start; x < end && x < width; x++) {
-			if (x < 0 || depthBuffer[y * width + x] > 0) {
-				continue;
-			}
-
-			float lineProgress = (float)(x - start) / lineLength;
-			int R = lerp(startR, endR, lineProgress);
-			int G = lerp(startG, endG, lineProgress);
-			int B = lerp(startB, endB, lineProgress);
-
-			setColor(R, G, B);
-			setPixel(x, y);
-		}
+		flatBottomTriangle(*top, *middleLeft, *middleRight);
+		flatTopTriangle(*middleLeft, *middleRight, *bottom);
 	}
 }
 
-void Rasterizer::setPixel(int x, int y, int depth) {
-	int index = y * width + x;
+void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& leftColor, const Color& rightColor) {
+	for (int x = x1; x <= x1 + lineLength; x++) {
+		if (x < 0 || depthBuffer[y1 * this->width + x] > 0) {
+			continue;
+		}
+		else if (x > width) {
+			break;
+		}
 
-	pixelBuffer[index] = color;
-	depthBuffer[index] = depth;
+		float progress = (float)(x - x1) / lineLength;
+		int R = lerp(leftColor.R, rightColor.R, progress);
+		int G = lerp(leftColor.G, rightColor.G, progress);
+		int B = lerp(leftColor.B, rightColor.B, progress);
+
+		setColor(R, G, B);
+		setPixel(x, y1);
+	}
 }

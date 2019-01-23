@@ -17,13 +17,7 @@ struct Object {
 			vertices.clear();
 		}
 
-		void setPosition(float x, float y, float z) {
-			position.x = x;
-			position.y = y;
-			position.z = z;
-		}
-
-		void forEachPolygon(std::function<void(const Polygon3d&)> handle) {
+		void forEachPolygon(std::function<void(const Polygon&)> handle) {
 			for (int i = 0; i < polygons.size(); i++) {
 				handle(polygons.at(i));
 			}
@@ -37,27 +31,26 @@ struct Object {
 		std::vector<Vertex3d> vertices;
 
 		void addPolygon(Vertex3d* v1, Vertex3d* v2, Vertex3d* v3) {
-			Polygon3d polygon;
+			Polygon polygon;
 
-			polygon.setVertex(0, v1);
-			polygon.setVertex(1, v2);
-			polygon.setVertex(2, v3);
+			polygon.followVertex(0, v1);
+			polygon.followVertex(1, v2);
+			polygon.followVertex(2, v3);
 
 			polygons.push_back(polygon);
 		}
 
-		void addVertex(float x, float y, float z) {
+		void addVertex(const Vec3& vector, const Color& color) {
 			Vertex3d vertex;
 
-			vertex.vector.x = x;
-			vertex.vector.y = y;
-			vertex.vector.z = z;
+			vertex.vector = vector;
+			vertex.color = color;
 
 			vertices.push_back(vertex);
 		}
 
 	private:
-		std::vector<Polygon3d> polygons;
+		std::vector<Polygon> polygons;
 };
 
 struct Mesh : Object {
@@ -69,7 +62,7 @@ struct Mesh : Object {
 
 			for (int z = 0; z < verticesPerColumn; z++) {
 				for (int x = 0; x < verticesPerRow; x++) {
-					addVertex(x * tileSize, 0, z * tileSize);
+					addVertex({ x * tileSize, 0, z * tileSize }, { 255, 255, 255 });
 				}
 			}
 
@@ -102,21 +95,14 @@ struct Mesh : Object {
 			}
 		}
 
-		void setColor(int R, int G, int B, int A = 255) {
+		void setColor(int R, int G, int B) {
 			for (int i = 0; i < vertices.size(); i++) {
-				Color c;
-
-				c.R = rand() % 255;
-				c.G = rand() % 255;
-				c.B = rand() % 255;
-				c.A = A;
-
-				vertices.at(i).color = c;
+				vertices.at(i).color = { R, G, B };
 			}
 		}
 
 		void setColor(const Color& color) {
-			setColor(color.R, color.G, color.B, color.A);
+			setColor(color.R, color.G, color.B);
 		}
 };
 

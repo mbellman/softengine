@@ -6,7 +6,6 @@ struct Color {
 	int R = 255;
 	int G = 255;
 	int B = 255;
-	int A = 255;
 };
 
 struct Colorable {
@@ -50,7 +49,7 @@ struct Vertex3d : Colorable {
 	Vec3 vector;
 };
 
-struct Polygon2d {
+struct Triangle {
 	Vertex2d vertices[3];
 
 	void setVertex(int index, const Coordinate& coordinate, const Color& color) {
@@ -63,11 +62,11 @@ struct Polygon2d {
 	}
 };
 
-struct Polygon3d {
+struct Polygon {
 	Vertex3d* vertices[3];
 
-	void setVertex(int index, Vertex3d* v) {
-		vertices[index] = v;
+	void followVertex(int index, Vertex3d* vertex) {
+		vertices[index] = vertex;
 	}
 };
 

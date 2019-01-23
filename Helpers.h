@@ -1,0 +1,15 @@
+#pragma once
+
+#include <Types.h>
+
+inline int lerp(int v1, int v2, float ratio) {
+	return v1 + (int)(v2 - v1) * ratio;
+}
+
+inline Color lerp(const Color& c1, const Color& c2, float ratio) {
+	return {
+		lerp(c1.R, c2.R, ratio),
+		lerp(c1.G, c2.G, ratio),
+		lerp(c1.B, c2.B, ratio)
+	};
+}

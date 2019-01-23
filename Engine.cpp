@@ -37,8 +37,8 @@ void Engine::draw() {
 	for (int o = 0; o < objects.size(); o++) {
 		Object* object = objects.at(0);
 
-		object->forEachPolygon([=](const Polygon3d& polygon) {
-			Polygon2d triangle;
+		object->forEachPolygon([=](const Polygon& polygon) {
+			Triangle triangle;
 
 			for (int i = 0; i < 3; i++) {
 				Vec3 vertex = polygon.vertices[i]->vector + object->position;
@@ -46,7 +46,7 @@ void Engine::draw() {
 				triangle.setVertex(i, { (int)vertex.x, (int)vertex.z }, polygon.vertices[i]->color);
 			}
 
-			rasterizer->triangle(&triangle);
+			rasterizer->triangle(triangle);
 		});
 	}
 
@@ -91,7 +91,7 @@ void Engine::run(int width, int height) {
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 		char title[100];
 
-		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 16.67 / fullDelta), delta);
+		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
 
 		SDL_SetWindowTitle(window, title);
 
