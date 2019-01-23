@@ -4,6 +4,7 @@
 #include <math.h>
 #include <vector>
 #include <Rasterizer.h>
+#include <Objects.h>
 
 struct Camera {
 	Vec3 position;
