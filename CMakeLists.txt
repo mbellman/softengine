@@ -14,6 +14,7 @@ set(SOURCE_FILES
     main.cpp 
     Helpers.h
     Types.h
+    Objects.h
     Rasterizer.cpp Rasterizer.h
     Engine.cpp Engine.h
 )
