@@ -9,6 +9,11 @@ include_directories(./)
 
 # Find SDL2
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-modules)
+
+if (WIN32)
+    set(SDL2_PATH "C:/mingw-dev/SDL2/")
+ENDIF(WIN32)
+
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
