@@ -1,5 +1,6 @@
 configure:
-	cmake -DCMAKE_INSTALL_PREFIX=./cmake-build-debug ./
+	mkdir -p ./cmake-build-debug
+	cd ./cmake-build-debug; cmake ../
 
 develop:
 	cmake --build ./cmake-build-debug --target softengine -- -j 4
