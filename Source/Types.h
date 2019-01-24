@@ -30,6 +30,20 @@ struct Vec3 {
 		this->z = z;
 	}
 
+	float magnitude() {
+		return std::sqrt(x * x + y * y + z * z);
+	}
+
+	Vec3 unit() {
+		float m = magnitude();
+
+		return {
+			x / m,
+			y / m,
+			z / m
+		};
+	}
+
 	Vec3 operator +(const Vec3& v) const {
 		Vec3 vt;
 
@@ -52,7 +66,7 @@ struct Vertex3d : Colorable {
 struct Triangle {
 	Vertex2d vertices[3];
 
-	void setVertex(int index, const Coordinate& coordinate, const Color& color) {
+	void createVertex(int index, const Coordinate& coordinate, const Color& color) {
 		Vertex2d vertex;
 
 		vertex.coordinate = coordinate;
@@ -65,7 +79,7 @@ struct Triangle {
 struct Polygon {
 	Vertex3d* vertices[3];
 
-	void followVertex(int index, Vertex3d* vertex) {
+	void bindVertex(int index, Vertex3d* vertex) {
 		vertices[index] = vertex;
 	}
 };

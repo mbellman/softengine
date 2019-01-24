@@ -33,9 +33,9 @@ struct Object {
 		void addPolygon(Vertex3d* v1, Vertex3d* v2, Vertex3d* v3) {
 			Polygon polygon;
 
-			polygon.followVertex(0, v1);
-			polygon.followVertex(1, v2);
-			polygon.followVertex(2, v3);
+			polygon.bindVertex(0, v1);
+			polygon.bindVertex(1, v2);
+			polygon.bindVertex(2, v3);
 
 			polygons.push_back(polygon);
 		}
@@ -84,12 +84,12 @@ struct Mesh : Object {
 			for (int row = 0; row < rows; row++) {
 				for (int p = 1; p <= polygonsPerRow; p++) {
 					bool isLowerPolygon = p % 2 == 0;
-					int first = row * verticesPerRow + (int)p / 2;
+					int firstVertexIndex = row * verticesPerRow + (int)p / 2;
 
 					addPolygon(
-						&vertices.at(first),
-						&vertices.at(isLowerPolygon ? first + verticesPerRow - 1 : first + 1),
-						&vertices.at(first + verticesPerRow)
+						&vertices.at(firstVertexIndex),
+						&vertices.at(isLowerPolygon ? firstVertexIndex + verticesPerRow - 1 : firstVertexIndex + 1),
+						&vertices.at(firstVertexIndex + verticesPerRow)
 					);
 				}
 			}

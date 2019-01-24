@@ -8,8 +8,21 @@
 #include <Objects.h>
 #include <Engine.h>
 
-Engine::Engine() {
+Engine::Engine(int width, int height) {
 	SDL_Init(SDL_INIT_EVERYTHING);
+
+	window = SDL_CreateWindow(
+		"HEY ZACK",
+		SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED,
+		width, height,
+		SDL_WINDOW_SHOWN
+	);
+
+	renderer = SDL_CreateRenderer(window, -1, 0);
+	rasterizer = new Rasterizer(renderer, width, height);
+	this->width = width;
+	this->height = height;
 }
 
 Engine::~Engine() {
@@ -39,11 +52,14 @@ void Engine::draw() {
 
 		object->forEachPolygon([=](const Polygon& polygon) {
 			Triangle triangle;
+			Vec3 localObjectPosition = object->position + camera.position;
 
 			for (int i = 0; i < 3; i++) {
-				Vec3 vertex = polygon.vertices[i]->vector + object->position;
+				Vec3 vertexPosition = (localObjectPosition + polygon.vertices[i]->vector).unit();
+				int x = (int)(500 * vertexPosition.x / (1 + vertexPosition.z) + width / 2);
+				int y = (int)(500 * vertexPosition.y / (1 + vertexPosition.z) + height / 2);
 
-				triangle.setVertex(i, { (int)vertex.x, (int)vertex.z }, polygon.vertices[i]->color);
+				triangle.createVertex(i, { x, y }, polygon.vertices[i]->color);
 			}
 
 			rasterizer->triangle(triangle);
@@ -63,18 +79,7 @@ int Engine::getPolygonCount() {
 	return total;
 }
 
-void Engine::run(int width, int height) {
-	window = SDL_CreateWindow(
-		"HEY ZACK",
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
-		width, height,
-		SDL_WINDOW_SHOWN
-	);
-
-	renderer = SDL_CreateRenderer(window, -1, 0);
-	rasterizer = new Rasterizer(renderer, width, height);
-
+void Engine::run() {
 	int lastStartTime;
 
 	while (true) {

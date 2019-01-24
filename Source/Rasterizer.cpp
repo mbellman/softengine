@@ -143,6 +143,10 @@ void Rasterizer::triangle(Triangle& triangle) {
 		std::swap(top, middle);
 	}
 
+	if (top->coordinate.y >= height || bottom->coordinate.y < 0) {
+		return;
+	}
+
 	if (top->coordinate.y == middle->coordinate.y) {
 		if (top->coordinate.x > middle->coordinate.x) {
 			std::swap(top, middle);
@@ -178,18 +182,16 @@ void Rasterizer::triangle(Triangle& triangle) {
 
 void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& leftColor, const Color& rightColor) {
 	for (int x = x1; x <= x1 + lineLength; x++) {
-		if (x < 0 || depthBuffer[y1 * this->width + x] > 0) {
+		if (x < 0) {
 			continue;
 		} else if (x >= width) {
 			break;
 		}
 
 		float progress = (float)(x - x1) / lineLength;
-		int R = lerp(leftColor.R, rightColor.R, progress);
-		int G = lerp(leftColor.G, rightColor.G, progress);
-		int B = lerp(leftColor.B, rightColor.B, progress);
+		Color* color = &lerp(leftColor, rightColor, progress);
 
-		setColor(R, G, B);
+		setColor(color);
 		setPixel(x, y1);
 	}
 }
