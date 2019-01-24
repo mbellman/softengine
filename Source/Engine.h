@@ -25,8 +25,10 @@ class Engine {
 		std::vector<Object*> objects;
 		Rasterizer* rasterizer;
 		Camera camera;
+		Vec3 velocity;
 		int width;
 		int height;
 		int getPolygonCount();
 		void delay(int ms);
+		void move(float x, float y, float z);
 };

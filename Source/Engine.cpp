@@ -19,7 +19,7 @@ Engine::Engine(int width, int height) {
 		SDL_WINDOW_SHOWN
 	);
 
-	renderer = SDL_CreateRenderer(window, -1, 0);
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, width, height);
 	this->width = width;
 	this->height = height;
@@ -41,7 +41,9 @@ void Engine::addObject(Object* object) {
 void Engine::delay(int ms) {
 	int startTime = SDL_GetTicks();
 
-	while ((SDL_GetTicks() - startTime) < ms) {}
+	while ((SDL_GetTicks() - startTime) < ms) {
+		SDL_Delay(1);
+	}
 }
 
 void Engine::draw() {
@@ -51,13 +53,16 @@ void Engine::draw() {
 		Object* object = objects.at(0);
 
 		object->forEachPolygon([=](const Polygon& polygon) {
+			using namespace std;
+
 			Triangle triangle;
 			Vec3 localObjectPosition = object->position + camera.position;
 
 			for (int i = 0; i < 3; i++) {
 				Vec3 vertexPosition = (localObjectPosition + polygon.vertices[i]->vector).unit();
-				int x = (int)(500 * vertexPosition.x / (1 + vertexPosition.z) + width / 2);
-				int y = (int)(500 * vertexPosition.y / (1 + vertexPosition.z) + height / 2);
+				float correctedZ = vertexPosition.z * abs(cos(vertexPosition.x));
+				int x = (int)round(3000 * vertexPosition.x / (1 + vertexPosition.z) + width / 2);
+				int y = (int)round(3000 * vertexPosition.y / (1 + correctedZ) + height / 2);
 
 				triangle.createVertex(i, { x, y }, polygon.vertices[i]->color);
 			}
@@ -67,6 +72,12 @@ void Engine::draw() {
 	}
 
 	rasterizer->render(renderer);
+}
+
+void Engine::move(float x, float y, float z) {
+	camera.position.x += x;
+	camera.position.y += y;
+	camera.position.z += z;
 }
 
 int Engine::getPolygonCount() {
@@ -81,29 +92,60 @@ int Engine::getPolygonCount() {
 
 void Engine::run() {
 	int lastStartTime;
+	bool hasQuit = false;
 
-	while (true) {
+	while (!hasQuit) {
 		lastStartTime = SDL_GetTicks();
 
+		move(velocity.x, velocity.y, velocity.z);
 		draw();
 
 		int delta = SDL_GetTicks() - lastStartTime;
-
-		if (delta < 16.67) {
-			delay((int)round(16.67 - delta));
-		}
-
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 		char title[100];
 
-		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
+		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 16.67 / fullDelta), delta);
 
 		SDL_SetWindowTitle(window, title);
 
 		SDL_Event event;
+		float speed = 5;
 
-		if (SDL_PollEvent(&event) && event.type == SDL_QUIT) {
-			break;
+		if (SDL_PollEvent(&event)) {
+			switch (event.type) {
+				// Throwaway code, I promise
+				case SDL_KEYDOWN:
+					if (event.key.keysym.sym == SDLK_w) {
+						velocity.z = -speed;
+					}
+					else if (event.key.keysym.sym == SDLK_s) {
+						velocity.z = speed;
+					}
+					else if (event.key.keysym.sym == SDLK_a) {
+						velocity.x = speed;
+					}
+					else if (event.key.keysym.sym == SDLK_d) {
+						velocity.x = -speed;
+					}
+					break;
+				case SDL_KEYUP:
+					if (event.key.keysym.sym == SDLK_w) {
+						velocity.z = 0;
+					}
+					else if (event.key.keysym.sym == SDLK_s) {
+						velocity.z = 0;
+					}
+					else if (event.key.keysym.sym == SDLK_a) {
+						velocity.x = 0;
+					}
+					else if (event.key.keysym.sym == SDLK_d) {
+						velocity.x = 0;
+					}
+					break;
+				case SDL_QUIT:
+					hasQuit = true;
+					break;
+			}
 		}
 	}
 }

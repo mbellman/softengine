@@ -188,6 +188,10 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& l
 			break;
 		}
 
+		if (depthBuffer[y1 * this->width + x] > 0) {
+			continue;
+		}
+
 		float progress = (float)(x - x1) / lineLength;
 		Color* color = &lerp(leftColor, rightColor, progress);
 
