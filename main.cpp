@@ -6,9 +6,9 @@ int height = 720;
 
 int main(int argc, char* argv[]) {
 	Engine engine;
-	Mesh mesh(10, 10, 50);
+	Mesh mesh(14, 28, 50);
 
-	mesh.position = { 100, 0, 100 };
+	mesh.position = { 20, 0, 20 };
 	mesh.setColor(0, 255, 0);
 
 	engine.addObject(&mesh);
