@@ -30,54 +30,39 @@ void Rasterizer::clear() {
 	std::fill(depthBuffer, depthBuffer + bufferLength, 0);
 }
 
-void Rasterizer::flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight) {
-	int triangleHeight = bottomLeft.coordinate.y - top.coordinate.y;
-	float leftSlope = (float)triangleHeight / (bottomLeft.coordinate.x - top.coordinate.x);
-	float rightSlope = (float)triangleHeight / (bottomRight.coordinate.x - top.coordinate.x);
+void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right) {
+	int triangleHeight = std::abs(left.coordinate.y - corner.coordinate.y);
+	int topY = std::min(corner.coordinate.y, left.coordinate.y);
+	float leftSlope = (float)triangleHeight / (left.coordinate.x - corner.coordinate.x);
+	float rightSlope = (float)triangleHeight / (right.coordinate.x - corner.coordinate.x);
+	bool isFlatTop = corner.coordinate.y > left.coordinate.y;
 
 	for (int i = 0; i < triangleHeight; i++) {
-		int y = top.coordinate.y + i;
+		int y = topY + i;
+		int j = isFlatTop ? triangleHeight - i : i;
 
 		if (y < 0) {
 			continue;
-		}
-		else if (y > height) {
+		} else if (y >= height) {
 			break;
 		}
 
-		float progress = (float)i / triangleHeight;
-		int start = top.coordinate.x + (int)i / leftSlope;
-		int end = top.coordinate.x + (int)i / rightSlope;
-		Color startColor = lerp(top.color, bottomLeft.color, progress);
-		Color endColor = lerp(top.color, bottomRight.color, progress);
+		float progress = (float)j / triangleHeight;
+		int startX = corner.coordinate.x + (int)j / leftSlope;
+		int endX = corner.coordinate.x + (int)j / rightSlope;
+		Color startColor = lerp(corner.color, left.color, progress);
+		Color endColor = lerp(corner.color, right.color, progress);
 
-		triangleScanLine(start, y, end - start, startColor, endColor);
+		triangleScanLine(startX, y, endX - startX, startColor, endColor);
 	}
 }
 
+void Rasterizer::flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight) {
+	flatTriangle(top, bottomLeft, bottomRight);
+}
+
 void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom) {
-	int triangleHeight = bottom.coordinate.y - topLeft.coordinate.y;
-	float leftSlope = (float)triangleHeight / (bottom.coordinate.x - topLeft.coordinate.x);
-	float rightSlope = (float)triangleHeight / (bottom.coordinate.x - topRight.coordinate.x);
-
-	for (int i = 0; i < triangleHeight; i++) {
-		int y = topLeft.coordinate.y + i;
-
-		if (y < 0) {
-			continue;
-		}
-		else if (y > height) {
-			break;
-		}
-
-		float progress = (float)i / triangleHeight;
-		int start = topLeft.coordinate.x + (int)i / leftSlope;
-		int end = topRight.coordinate.x + (int)i / rightSlope;
-		Color startColor = lerp(topLeft.color, bottom.color, progress);
-		Color endColor = lerp(topRight.color, bottom.color, progress);
-
-		triangleScanLine(start, y, end - start, startColor, endColor);
-	}
+	flatTriangle(bottom, topLeft, topRight);
 }
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
@@ -95,10 +80,10 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 		}
 
 		bool isGoingOffScreen = (
-			deltaX < 0 && x < 0 ||
-			deltaX > 0 && x > width ||
-			deltaY < 0 && y < 0 ||
-			deltaY > 0 && y > height
+			(deltaX < 0 && x < 0) ||
+			(deltaX > 0 && x > width) ||
+			(deltaY < 0 && y < 0) ||
+			(deltaY > 0 && y > height)
 		);
 
 		if (isGoingOffScreen) {
@@ -195,8 +180,7 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& l
 	for (int x = x1; x <= x1 + lineLength; x++) {
 		if (x < 0 || depthBuffer[y1 * this->width + x] > 0) {
 			continue;
-		}
-		else if (x > width) {
+		} else if (x >= width) {
 			break;
 		}
 

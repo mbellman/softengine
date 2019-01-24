@@ -21,8 +21,9 @@ class Rasterizer {
 		int width;
 		int height;
 		void clear();
+		void flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right);
 		void flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight);
 		void flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom);
-		void triangleScanLine(int x1, int y1, int width, const Color& leftColor, const Color& rightColor);
+		void triangleScanLine(int x1, int y1, int width, const Color& startColor, const Color& endColor);
 		void setPixel(int x, int y, int depth = 1);
 };
