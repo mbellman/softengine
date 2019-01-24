@@ -5,7 +5,7 @@ project(${EXECUTABLE_NAME})
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 
-include_directories(./)
+include_directories(Source)
 
 # Find SDL2
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-modules)
@@ -13,12 +13,12 @@ find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
 set(SOURCE_FILES 
-    main.cpp 
-    Helpers.h
-    Types.h
-    Objects.h
-    Rasterizer.cpp Rasterizer.h
-    Engine.cpp Engine.h
+    Source/main.cpp 
+    Source/Helpers.h
+    Source/Types.h
+    Source/Objects.h
+    Source/Rasterizer.cpp Source/Rasterizer.h
+    Source/Engine.cpp Source/Engine.h
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
