@@ -8,12 +8,12 @@ Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height) {
 	this->width = width;
 	this->height = height;
 
-	color = 0;
 	screenTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
 	pixelBuffer = new Uint32[width * height];
 	depthBuffer = new int[width * height];
 
 	setColor(255, 255, 255);
+	clear();
 }
 
 Rasterizer::~Rasterizer() {
@@ -27,7 +27,7 @@ void Rasterizer::clear() {
 	int bufferLength = width * height;
 
 	std::fill(pixelBuffer, pixelBuffer + bufferLength, 0);
-	std::fill(depthBuffer, depthBuffer + bufferLength, 0);
+	std::fill(depthBuffer, depthBuffer + bufferLength, INT_MAX);
 }
 
 void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right) {
@@ -35,11 +35,10 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 	int topY = std::min(corner.coordinate.y, left.coordinate.y);
 	float leftSlope = (float)triangleHeight / (left.coordinate.x - corner.coordinate.x);
 	float rightSlope = (float)triangleHeight / (right.coordinate.x - corner.coordinate.x);
-	bool isFlatTop = corner.coordinate.y > left.coordinate.y;
+	bool hasFlatTop = corner.coordinate.y > left.coordinate.y;
 
 	for (int i = 0; i < triangleHeight; i++) {
 		int y = topY + i;
-		int j = isFlatTop ? triangleHeight - i : i;
 
 		if (y < 0) {
 			continue;
@@ -47,13 +46,16 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 			break;
 		}
 
+		int j = hasFlatTop ? triangleHeight - i : i;
 		float progress = (float)j / triangleHeight;
 		int startX = corner.coordinate.x + (int)j / leftSlope;
 		int endX = corner.coordinate.x + (int)j / rightSlope;
-		Color startColor = lerp(corner.color, left.color, progress);
-		Color endColor = lerp(corner.color, right.color, progress);
+		Color leftColor = lerp(corner.color, left.color, progress);
+		Color rightColor = lerp(corner.color, right.color, progress);
+		int leftDepth = lerp(corner.depth, left.depth, progress);
+		int rightDepth = lerp(corner.depth, right.depth, progress);
 
-		triangleScanLine(startX, y, endX - startX, startColor, endColor);
+		triangleScanLine(startX, y, endX - startX, leftColor, rightColor, leftDepth, rightDepth);
 	}
 }
 
@@ -98,7 +100,6 @@ void Rasterizer::render(SDL_Renderer* renderer) {
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
 	SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
 	SDL_RenderPresent(renderer);
-
 	clear();
 }
 
@@ -165,8 +166,9 @@ void Rasterizer::triangle(Triangle& triangle) {
 
 		Vertex2d middleOpposite;
 
-		middleOpposite.color = lerp(top->color, bottom->color, middleYRatio);
 		middleOpposite.coordinate = { top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / ttbSlope), middle->coordinate.y };
+		middleOpposite.depth = lerp(top->depth, bottom->depth, middleYRatio);
+		middleOpposite.color = lerp(top->color, bottom->color, middleYRatio);
 
 		Vertex2d* middleLeft = middle;
 		Vertex2d* middleRight = &middleOpposite;
@@ -180,22 +182,24 @@ void Rasterizer::triangle(Triangle& triangle) {
 	}
 }
 
-void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& leftColor, const Color& rightColor) {
-	for (int x = x1; x <= x1 + lineLength; x++) {
-		if (x < 0) {
-			continue;
-		} else if (x >= width) {
-			break;
-		}
+void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& leftColor, const Color& rightColor, int leftDepth, int rightDepth) {
+	if (lineLength == 0) {
+		return;
+	}
 
-		if (depthBuffer[y1 * this->width + x] > 0) {
+	for (int x = x1; x <= x1 + lineLength && x < width; x++) {
+		if (x < 0) {
 			continue;
 		}
 
 		float progress = (float)(x - x1) / lineLength;
-		Color* color = &lerp(leftColor, rightColor, progress);
+		int depth = lerp(leftDepth, rightDepth, progress);
 
-		setColor(color);
-		setPixel(x, y1);
+		if (depthBuffer[y1 * width + x] > depth) {
+			Color* color = &lerp(leftColor, rightColor, progress);
+
+			setColor(color);
+			setPixel(x, y1, depth);
+		}
 	}
 }

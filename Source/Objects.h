@@ -62,7 +62,7 @@ struct Mesh : Object {
 
 			for (int z = 0; z < verticesPerColumn; z++) {
 				for (int x = 0; x < verticesPerRow; x++) {
-					addVertex({ x * tileSize, 0, z * tileSize }, { 255, 255, 255 });
+					addVertex({ x * tileSize, (float)(rand() % 50), z * tileSize }, { 255, 255, 255 });
 				}
 			}
 

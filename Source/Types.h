@@ -21,42 +21,39 @@ struct Vec3 {
 	float x = 0.0f;
 	float y = 0.0f;
 	float z = 0.0f;
+	Vec3();
+	Vec3(float x, float y, float z);
+	float magnitude();
+	Vec3 unit();
+	Vec3 rotate(const Vec3& rotation);
+	Vec3 operator +(const Vec3& vector) const;
+};
 
-	Vec3() {}
+struct RotationMatrix {
+	float m11, m12, m13, m21, m22, m23, m31, m32, m33;
 
-	Vec3(float x, float y, float z) {
-		this->x = x;
-		this->y = y;
-		this->z = z;
+	static RotationMatrix calculate(const Vec3& rotation) {
+		float sx = sin(rotation.x);
+		float sy = sin(rotation.y);
+		float sz = sin(rotation.z);
+		float cx = cos(rotation.x);
+		float cy = cos(rotation.y);
+		float cz = cos(rotation.z);
+
+		RotationMatrix rX = { 1, 0, 0, 0, cx, -sx, 0, sx, cx };
+		RotationMatrix rY = { cy, 0, sy, 0, 1, 0, -sy, 0, cy };
+		RotationMatrix rZ = { cz, -sz, 0, sz, cz, 0, 0, 0, 1 };
+
+		return rZ * rY * rX;
 	}
 
-	float magnitude() {
-		return std::sqrt(x * x + y * y + z * z);
-	}
-
-	Vec3 unit() {
-		float m = magnitude();
-
-		return {
-			x / m,
-			y / m,
-			z / m
-		};
-	}
-
-	Vec3 operator +(const Vec3& v) const {
-		Vec3 vt;
-
-		vt.x = x + v.x;
-		vt.y = y + v.y;
-		vt.z = z + v.z;
-
-		return vt;
-	}
+	RotationMatrix operator *(const RotationMatrix& rm) const;
+	Vec3 operator *(const Vec3& v) const;
 };
 
 struct Vertex2d : Colorable {
 	Coordinate coordinate;
+	int depth;
 };
 
 struct Vertex3d : Colorable {
@@ -65,22 +62,11 @@ struct Vertex3d : Colorable {
 
 struct Triangle {
 	Vertex2d vertices[3];
-
-	void createVertex(int index, const Coordinate& coordinate, const Color& color) {
-		Vertex2d vertex;
-
-		vertex.coordinate = coordinate;
-		vertex.color = color;
-
-		vertices[index] = vertex;
-	}
+	void createVertex(int index, const Coordinate& coordinate, int depth, const Color& color);
 };
 
 struct Polygon {
 	Vertex3d* vertices[3];
-
-	void bindVertex(int index, Vertex3d* vertex) {
-		vertices[index] = vertex;
-	}
+	void bindVertex(int index, Vertex3d* vertex);
 };
 

@@ -6,15 +6,18 @@
 #include <Rasterizer.h>
 #include <Objects.h>
 
+enum Flags: Uint32 {
+	DEBUG_DRAWTIME = 1 << 0,
+};
+
 struct Camera {
 	Vec3 position = { 0, 100, 0 };
-	float pitch = 0.0f;
-	float yaw = 0.0f;
+	Vec3 rotation = { 0, 0, 0 };
 };
 
 class Engine {
 	public:
-		Engine(int width, int height);
+		Engine(int width, int height, Uint32 flags = 0);
 		~Engine();
 		void addObject(Object* object);
 		void draw();
@@ -26,8 +29,10 @@ class Engine {
 		Rasterizer* rasterizer;
 		Camera camera;
 		Vec3 velocity;
+		Uint32 flags = 0;
 		int width;
 		int height;
+		int Z_BUFFER_DEPTH = std::pow(2, 16);
 		int getPolygonCount();
 		void delay(int ms);
 		void move(float x, float y, float z);

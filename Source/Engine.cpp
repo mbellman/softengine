@@ -6,9 +6,10 @@
 #include <math.h>
 #include <time.h>
 #include <Objects.h>
+#include <Rasterizer.h>
 #include <Engine.h>
 
-Engine::Engine(int width, int height) {
+Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	window = SDL_CreateWindow(
@@ -19,10 +20,12 @@ Engine::Engine(int width, int height) {
 		SDL_WINDOW_SHOWN
 	);
 
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, width, height);
+
 	this->width = width;
 	this->height = height;
+	this->flags = flags;
 }
 
 Engine::~Engine() {
@@ -41,14 +44,14 @@ void Engine::addObject(Object* object) {
 void Engine::delay(int ms) {
 	int startTime = SDL_GetTicks();
 
-	while ((SDL_GetTicks() - startTime) < ms) {
-		SDL_Delay(1);
+	if (ms > 0) {
+		while ((SDL_GetTicks() - startTime) < ms) {
+			SDL_Delay(1);
+		}
 	}
 }
 
 void Engine::draw() {
-	rasterizer->setColor(255, 0, 0);
-
 	for (int o = 0; o < objects.size(); o++) {
 		Object* object = objects.at(0);
 
@@ -56,15 +59,16 @@ void Engine::draw() {
 			using namespace std;
 
 			Triangle triangle;
-			Vec3 localObjectPosition = object->position + camera.position;
+			Vec3 relativeObjectPosition = object->position + camera.position;
 
 			for (int i = 0; i < 3; i++) {
-				Vec3 vertexPosition = (localObjectPosition + polygon.vertices[i]->vector).unit();
-				float correctedZ = vertexPosition.z * abs(cos(vertexPosition.x));
-				int x = (int)round(3000 * vertexPosition.x / (1 + vertexPosition.z) + width / 2);
-				int y = (int)round(3000 * vertexPosition.y / (1 + correctedZ) + height / 2);
+				Vec3 vertex = (relativeObjectPosition + polygon.vertices[i]->vector).rotate(camera.rotation);
+				Vec3 unitVertex = vertex.unit();
+				float distortionCorrectedZ = unitVertex.z * abs(cos(unitVertex.x));
+				int x = (int)(3000 * unitVertex.x / (1 + unitVertex.z) + width / 2);
+				int y = (int)(3000 * unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
 
-				triangle.createVertex(i, { x, y }, polygon.vertices[i]->color);
+				triangle.createVertex(i, { x, y }, (int)vertex.z, polygon.vertices[i]->color);
 			}
 
 			rasterizer->triangle(triangle);
@@ -101,10 +105,15 @@ void Engine::run() {
 		draw();
 
 		int delta = SDL_GetTicks() - lastStartTime;
+
+		if (flags & DEBUG_DRAWTIME && delta < 16.67) {
+			delay(17 - delta);
+		}
+
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 		char title[100];
 
-		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 16.67 / fullDelta), delta);
+		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
 
 		SDL_SetWindowTitle(window, title);
 
