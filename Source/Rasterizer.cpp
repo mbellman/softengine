@@ -72,6 +72,15 @@ void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRig
 }
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
+	if (
+		std::max(x1, x1) < 0 ||
+		std::min(x1, x2) >= width ||
+		std::max(y1, y2) < 0 ||
+		std::min(y1, y2) >= height
+	) {
+		return;
+	}
+
 	int deltaX = x2 - x1;
 	int deltaY = y2 - y1;
 	int totalPixels = abs(deltaX) + abs(deltaY);
@@ -81,19 +90,17 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 		int x = x1 + (int)(deltaX * progress);
 		int y = y1 + (int)(deltaY * progress);
 
-		if (x < 0 || x >= width || y < 0 || y >= height) {
-			continue;
-		}
-
 		bool isGoingOffScreen = (
 			(deltaX < 0 && x < 0) ||
-			(deltaX > 0 && x > width) ||
+			(deltaX > 0 && x >= width) ||
 			(deltaY < 0 && y < 0) ||
-			(deltaY > 0 && y > height)
+			(deltaY > 0 && y >= height)
 		);
 
 		if (isGoingOffScreen) {
 			break;
+		} else if (x < 0 || x >= width || y < 0 || y >= height) {
+			continue;
 		}
 
 		setPixel(x, y);

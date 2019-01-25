@@ -8,6 +8,7 @@
 
 enum Flags: Uint32 {
 	DEBUG_DRAWTIME = 1 << 0,
+	SHOW_WIREFRAME = 1 << 1
 };
 
 struct Camera {

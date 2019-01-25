@@ -71,7 +71,17 @@ void Engine::draw() {
 				triangle.createVertex(i, { x, y }, (int)vertex.z, polygon.vertices[i]->color);
 			}
 
-			rasterizer->triangle(triangle);
+			if (flags & SHOW_WIREFRAME) {
+				rasterizer->setColor(255, 255, 255);
+
+				rasterizer->triangle(
+					triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
+					triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
+					triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
+				);
+			} else {
+				rasterizer->triangle(triangle);
+			}
 		});
 	}
 
@@ -106,8 +116,14 @@ void Engine::run() {
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
-		if (flags & DEBUG_DRAWTIME && delta < 16.67) {
-			delay(17 - delta);
+		if (flags & DEBUG_DRAWTIME) {
+			if (delta > 10) {
+				printf("Unlocked delta: %d\n", delta);
+			}
+
+			if (delta < 16.67) {
+				delay(17 - delta);
+			}
 		}
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
