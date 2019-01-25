@@ -31,7 +31,10 @@ void Rasterizer::clear() {
 }
 
 void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right) {
-	if (left.coordinate.x >= width || right.coordinate.x < 0) {
+	if (
+		(corner.coordinate.x >= width && left.coordinate.x >= width) ||
+		(corner.coordinate.x < 0 && right.coordinate.x < 0)
+	) {
 		return;
 	}
 

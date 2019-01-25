@@ -117,12 +117,10 @@ void Engine::run() {
 		int delta = SDL_GetTicks() - lastStartTime;
 
 		if (flags & DEBUG_DRAWTIME) {
-			if (delta > 10) {
-				printf("Unlocked delta: %d\n", delta);
-			}
-
 			if (delta < 16.67) {
 				delay(17 - delta);
+			} else {
+				printf("Unlocked delta: %d\n", delta);
 			}
 		}
 
