@@ -31,6 +31,10 @@ void Rasterizer::clear() {
 }
 
 void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right) {
+	if (left.coordinate.x >= width || right.coordinate.x < 0) {
+		return;
+	}
+
 	int triangleHeight = std::abs(left.coordinate.y - corner.coordinate.y);
 	int topY = std::min(corner.coordinate.y, left.coordinate.y);
 	float leftSlope = (float)triangleHeight / (left.coordinate.x - corner.coordinate.x);

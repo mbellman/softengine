@@ -68,6 +68,8 @@ void Engine::draw() {
 				int x = (int)(3000 * unitVertex.x / (1 + unitVertex.z) + width / 2);
 				int y = (int)(3000 * unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
 
+				// printf("{ %d, %d }\n", x, y);
+
 				triangle.createVertex(i, { x, y }, (int)vertex.z, polygon.vertices[i]->color);
 			}
 

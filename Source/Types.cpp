@@ -11,9 +11,9 @@ RotationMatrix RotationMatrix::operator *(const RotationMatrix& rm) const {
 
 Vec3 RotationMatrix::operator *(const Vec3& v) const {
 	return {
-		m11 * v.x + m12 * v.x + m13 * v.x,
-		m21 * v.y + m22 * v.y + m23 * v.y,
-		m31 * v.z + m32 * v.z + m33 * v.z
+		m11 * v.x + m12 * v.y + m13 * v.z,
+		m21 * v.x + m22 * v.y + m23 * v.z,
+		m31 * v.x + m32 * v.y + m33 * v.z
 	};
 }
 
