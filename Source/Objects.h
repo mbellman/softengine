@@ -4,7 +4,6 @@
 #include <vector>
 #include <algorithm>
 #include <Types.h>
-#include <Rasterizer.h>
 
 struct Object {
 	public:
@@ -25,6 +24,14 @@ struct Object {
 
 		int getPolygonCount() {
 			return polygons.size();
+		}
+
+		void rotate(const Vec3& rotation) {
+			RotationMatrix rotationMatrix = RotationMatrix::calculate(rotation);
+
+			for (int i = 0; i < vertices.size(); i++) {
+				vertices.at(i).vector.rotate(rotationMatrix);
+			}
 		}
 
 	protected:
@@ -119,7 +126,7 @@ struct Cube : Object {
 					vector.y = (i * diameter) - radius;
 					vector.z = (j == 1 || j == 2 ? diameter : 0) - radius;
 
-					addVertex(vector, { 255, 255, 255 });
+					addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
 				}
 			}
 

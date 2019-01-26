@@ -16,9 +16,13 @@ int main(int argc, char* argv[]) {
 	Cube cube2(50);
 	Cube cube3(25);
 
-	cube.position = { -200, 100, 500 };
-	cube2.position = { 50, 100, 500 };
+	cube.position = { -200, 200, 500 };
+	cube2.position = { 50, 150, 500 };
 	cube3.position = { 200, 100, 500 };
+
+	cube.rotate({ 0.5, 0.5, 0.5 });
+	cube2.rotate({ 1, 1.5, 0.7 });
+	cube3.rotate({ -0.5, 0.8, -0.3 });
 
 	engine.addObject(&mesh);
 	engine.addObject(&cube);
