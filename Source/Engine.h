@@ -31,10 +31,13 @@ class Engine {
 		Camera camera;
 		Vec3 velocity;
 		Uint32 flags = 0;
+		int deltas[5];
+		int deltaIndex;
 		int width;
 		int height;
-		int Z_BUFFER_DEPTH = std::pow(2, 16);
-		int getPolygonCount();
 		void delay(int ms);
+		int getAverageDelta();
+		int getPolygonCount();
 		void move(float x, float y, float z);
+		void saveDelta(int delta);
 };

@@ -52,19 +52,19 @@ void Engine::delay(int ms) {
 }
 
 void Engine::draw() {
+	RotationMatrix rotationMatrix = RotationMatrix::calculate(camera.rotation);
+
 	for (int o = 0; o < objects.size(); o++) {
 		Object* object = objects.at(0);
+		Vec3 relativeObjectPosition = object->position + camera.position;
 
 		object->forEachPolygon([=](const Polygon& polygon) {
-			using namespace std;
-
 			Triangle triangle;
-			Vec3 relativeObjectPosition = object->position + camera.position;
 
 			for (int i = 0; i < 3; i++) {
-				Vec3 vertex = (relativeObjectPosition + polygon.vertices[i]->vector).rotate(camera.rotation);
+				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
 				Vec3 unitVertex = vertex.unit();
-				float distortionCorrectedZ = unitVertex.z * abs(cos(unitVertex.x));
+				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
 				int x = (int)(3000 * unitVertex.x / (1 + unitVertex.z) + width / 2);
 				int y = (int)(3000 * unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
 
@@ -88,10 +88,14 @@ void Engine::draw() {
 	rasterizer->render(renderer);
 }
 
-void Engine::move(float x, float y, float z) {
-	camera.position.x += x;
-	camera.position.y += y;
-	camera.position.z += z;
+int Engine::getAverageDelta() {
+	int sum = 0;
+
+	for (int i = 0; i < 5; i++) {
+		sum += deltas[i];
+	}
+
+	return (int)sum / 5;
 }
 
 int Engine::getPolygonCount() {
@@ -102,6 +106,12 @@ int Engine::getPolygonCount() {
 	}
 
 	return total;
+}
+
+void Engine::move(float x, float y, float z) {
+	camera.position.x += x;
+	camera.position.y += y;
+	camera.position.z += z;
 }
 
 void Engine::run() {
@@ -116,6 +126,8 @@ void Engine::run() {
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
+		saveDelta(delta);
+
 		if (flags & DEBUG_DRAWTIME) {
 			if (delta < 16.67) {
 				delay(17 - delta);
@@ -127,7 +139,7 @@ void Engine::run() {
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 		char title[100];
 
-		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
+		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms (Average: %dms)", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta, getAverageDelta());
 
 		SDL_SetWindowTitle(window, title);
 
@@ -171,4 +183,8 @@ void Engine::run() {
 			}
 		}
 	}
+}
+
+void Engine::saveDelta(int delta) {
+	deltas[++deltaIndex % 5] = delta;
 }
