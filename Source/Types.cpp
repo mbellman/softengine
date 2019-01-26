@@ -51,6 +51,14 @@ Vec3 Vec3::operator +(const Vec3& vector) const {
 	};
 }
 
+Vec3 Vec3::operator -(const Vec3& vector) const {
+	return {
+		x - vector.x,
+		y - vector.y,
+		z - vector.z
+	};
+}
+
 void Triangle::createVertex(int index, const Coordinate& coordinate, int depth, const Color& color) {
 	Vertex2d vertex;
 

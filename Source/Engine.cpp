@@ -56,7 +56,7 @@ void Engine::draw() {
 
 	for (int o = 0; o < objects.size(); o++) {
 		Object* object = objects.at(0);
-		Vec3 relativeObjectPosition = object->position + camera.position;
+		Vec3 relativeObjectPosition = object->position - camera.position;
 
 		object->forEachPolygon([=](const Polygon& polygon) {
 			Triangle triangle;
@@ -66,7 +66,7 @@ void Engine::draw() {
 				Vec3 unitVertex = vertex.unit();
 				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
 				int x = (int)(3000 * unitVertex.x / (1 + unitVertex.z) + width / 2);
-				int y = (int)(3000 * unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
+				int y = (int)(3000 * -unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
 
 				triangle.createVertex(i, { x, y }, (int)vertex.z, polygon.vertices[i]->color);
 			}
@@ -151,16 +151,16 @@ void Engine::run() {
 				// Throwaway code, I promise
 				case SDL_KEYDOWN:
 					if (event.key.keysym.sym == SDLK_w) {
-						velocity.z = -speed;
-					}
-					else if (event.key.keysym.sym == SDLK_s) {
 						velocity.z = speed;
 					}
+					else if (event.key.keysym.sym == SDLK_s) {
+						velocity.z = -speed;
+					}
 					else if (event.key.keysym.sym == SDLK_a) {
-						velocity.x = speed;
+						velocity.x = -speed;
 					}
 					else if (event.key.keysym.sym == SDLK_d) {
-						velocity.x = -speed;
+						velocity.x = speed;
 					}
 					break;
 				case SDL_KEYUP:

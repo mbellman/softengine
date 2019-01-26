@@ -27,6 +27,7 @@ struct Vec3 {
 	Vec3 unit();
 	Vec3 rotate(const Vec3& rotation);
 	Vec3 operator +(const Vec3& vector) const;
+	Vec3 operator -(const Vec3& vector) const;
 };
 
 struct RotationMatrix {
