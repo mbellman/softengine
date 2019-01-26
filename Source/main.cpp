@@ -13,11 +13,17 @@ int main(int argc, char* argv[]) {
 	mesh.setColor(0, 255, 0);
 
 	Cube cube(100);
+	Cube cube2(50);
+	Cube cube3(25);
 
-	cube.position = { 0, 100, 1000 };
+	cube.position = { -200, 100, 500 };
+	cube2.position = { 50, 100, 500 };
+	cube3.position = { 200, 100, 500 };
 
-	// engine.addObject(&mesh);
+	engine.addObject(&mesh);
 	engine.addObject(&cube);
+	engine.addObject(&cube2);
+	engine.addObject(&cube3);
 	engine.run();
 
 	return 0;

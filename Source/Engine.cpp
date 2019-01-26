@@ -55,7 +55,7 @@ void Engine::draw() {
 	RotationMatrix rotationMatrix = RotationMatrix::calculate(camera.rotation);
 
 	for (int o = 0; o < objects.size(); o++) {
-		Object* object = objects.at(0);
+		Object* object = objects.at(o);
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
 		object->forEachPolygon([=](const Polygon& polygon) {

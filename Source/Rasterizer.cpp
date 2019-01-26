@@ -76,7 +76,7 @@ void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRig
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
 	if (
-		std::max(x1, x1) < 0 ||
+		std::max(x1, x2) < 0 ||
 		std::min(x1, x2) >= width ||
 		std::max(y1, y2) < 0 ||
 		std::min(y1, y2) >= height
