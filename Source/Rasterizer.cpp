@@ -201,25 +201,48 @@ void Rasterizer::triangle(Triangle& triangle) {
 	}
 }
 
+/**
+ * Rasterizes a single line across a section of a filled triangle.
+ * Since this function controls the loop which operates on the level
+ * of individual pixels, it is the most performance-critical part
+ * of the system, and care must be taken to ensure that it includes
+ * no unnecessary work.
+ */
 void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& leftColor, const Color& rightColor, int leftDepth, int rightDepth) {
-	if (y1 < 0 || y1 >= height || lineLength == 0) {
+	if (y1 >= height || y1 < 0 || lineLength == 0) {
+		// Optimize for vertically offscreen lines or zero-length
+		// lines. Most horizontally offscreen lines are automatically
+		// avoided by preemptively checking the left and right edges
+		// of the triangle in Rasterizer::flatTriangle(), and not
+		// drawing it if its entire boundary is offscreen. Otherwise,
+		// horizontally offscreen but vertically onscreen lines are
+		// unlikely to be a problem for visible triangles.
 		return;
 	}
 
-	for (int x = std::max(x1, 0); x <= x1 + lineLength && x < width; x++) {
+	int start = std::max(x1, 0);
+	int end = std::min(x1 + lineLength, width - 1);
+	int pixelIndexOffset = y1 * width;
+
+	for (int x = start; x <= end; x++) {
 		float progress = (float)(x - x1) / lineLength;
 		int depth = lerp(leftDepth, rightDepth, progress);
+		int index = pixelIndexOffset + x;
 
-		if (depthBuffer[y1 * width + x] > depth) {
+		if (depthBuffer[index] > depth) {
 			// Lerping the color components individually is more
 			// efficient than lerping leftColor -> rightColor and
-			// generating a new Color object for each pixel
+			// generating a new Color object each time
 			int R = lerp(leftColor.R, rightColor.R, progress);
 			int G = lerp(leftColor.G, rightColor.G, progress);
 			int B = lerp(leftColor.B, rightColor.B, progress);
 
 			setColor(R, G, B);
-			setPixel(x, y1, depth);
+
+			// We refrain from calling setPixel() here to avoid
+			// its additional redunant calculation of the index
+			pixelBuffer[index] = color;
+			depthBuffer[index] = depth;
 		}
 	}
 }

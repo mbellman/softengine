@@ -32,8 +32,6 @@ class Engine {
 		Camera camera;
 		Vec3 velocity;
 		Uint32 flags = 0;
-		int deltas[5];
-		int deltaIndex;
 		int width;
 		int height;
 		void delay(int ms);
