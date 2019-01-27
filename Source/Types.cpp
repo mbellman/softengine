@@ -78,10 +78,11 @@ Vec3 Vec3::operator -(const Vec3& vector) const {
 	};
 }
 
-void Triangle::createVertex(int index, const Coordinate& coordinate, int depth, const Color& color) {
+void Triangle::createVertex(int index, int x, int y, int depth, const Color& color) {
 	Vertex2d vertex;
 
-	vertex.coordinate = coordinate;
+	vertex.coordinate.x = x;
+	vertex.coordinate.y = y;
 	vertex.depth = depth;
 	vertex.color = color;
 

@@ -67,7 +67,7 @@ struct Vertex3d : Colorable {
 
 struct Triangle {
 	Vertex2d vertices[3];
-	void createVertex(int index, const Coordinate& coordinate, int depth, const Color& color);
+	void createVertex(int index, int x, int y, int depth, const Color& color);
 };
 
 struct Polygon {

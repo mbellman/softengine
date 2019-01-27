@@ -35,8 +35,6 @@ class Engine {
 		int width;
 		int height;
 		void delay(int ms);
-		int getAverageDelta();
 		int getPolygonCount();
 		void move(float x, float y, float z);
-		void saveDelta(int delta);
 };
