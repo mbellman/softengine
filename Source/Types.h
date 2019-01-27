@@ -2,6 +2,8 @@
 
 #include <memory>
 
+struct RotationMatrix;
+
 struct Color {
 	int R = 255;
 	int G = 255;
@@ -16,8 +18,6 @@ struct Coordinate {
 	int x = 0;
 	int y = 0;
 };
-
-struct RotationMatrix;
 
 struct Vec3 {
 	float x = 0.0f;
@@ -34,10 +34,9 @@ struct Vec3 {
 
 struct RotationMatrix {
 	float m11, m12, m13, m21, m22, m23, m31, m32, m33;
-
 	static RotationMatrix calculate(const Vec3& rotation);
-	RotationMatrix operator *(const RotationMatrix& rm) const;
-	Vec3 operator *(const Vec3& v) const;
+	RotationMatrix operator *(const RotationMatrix& rotationMatrix) const;
+	Vec3 operator *(const Vec3& vector) const;
 };
 
 struct Vertex2d : Colorable {

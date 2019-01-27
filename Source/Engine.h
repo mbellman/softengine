@@ -14,6 +14,7 @@ enum Flags: Uint32 {
 struct Camera {
 	Vec3 position = { 0, 100, 0 };
 	Vec3 rotation = { 0, 0, 0 };
+	int fov = 90;
 };
 
 class Engine {

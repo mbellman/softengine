@@ -5,7 +5,7 @@ int width = 1200;
 int height = 720;
 
 int main(int argc, char* argv[]) {
-	Engine engine(width, height, SHOW_WIREFRAME | DEBUG_DRAWTIME);
+	Engine engine(width, height, DEBUG_DRAWTIME);
 
 	Mesh mesh(40, 40, 50);
 

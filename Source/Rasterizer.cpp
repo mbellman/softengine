@@ -43,13 +43,12 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 	float leftSlope = (float)triangleHeight / (left.coordinate.x - corner.coordinate.x);
 	float rightSlope = (float)triangleHeight / (right.coordinate.x - corner.coordinate.x);
 	bool hasFlatTop = corner.coordinate.y > left.coordinate.y;
+	int i = topY < 0 ? -topY : 0;
 
-	for (int i = 0; i < triangleHeight; i++) {
+	while (i < triangleHeight) {
 		int y = topY + i;
 
-		if (y < 0) {
-			continue;
-		} else if (y >= height) {
+		if (y >= height) {
 			break;
 		}
 
@@ -63,6 +62,8 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 		int rightDepth = lerp(corner.depth, right.depth, progress);
 
 		triangleScanLine(startX, y, endX - startX, leftColor, rightColor, leftDepth, rightDepth);
+
+		i++;
 	}
 }
 
@@ -75,17 +76,21 @@ void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRig
 }
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
-	if (
+	bool isOffScreen = (
 		std::max(x1, x2) < 0 ||
 		std::min(x1, x2) >= width ||
 		std::max(y1, y2) < 0 ||
 		std::min(y1, y2) >= height
-	) {
+	);
+
+	if (isOffScreen) {
 		return;
 	}
 
 	int deltaX = x2 - x1;
 	int deltaY = y2 - y1;
+	bool isGoingLeft = deltaX < 0;
+	bool isGoingUp = deltaY < 0;
 	int totalPixels = abs(deltaX) + abs(deltaY);
 
 	for (int i = 0; i < totalPixels; i++) {
@@ -94,10 +99,10 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 		int y = y1 + (int)(deltaY * progress);
 
 		bool isGoingOffScreen = (
-			(deltaX < 0 && x < 0) ||
-			(deltaX > 0 && x >= width) ||
-			(deltaY < 0 && y < 0) ||
-			(deltaY > 0 && y >= height)
+			(isGoingLeft && x < 0) ||
+			(!isGoingLeft && x >= width) ||
+			(isGoingUp && y < 0) ||
+			(!isGoingUp && y >= height)
 		);
 
 		if (isGoingOffScreen) {
@@ -197,22 +202,23 @@ void Rasterizer::triangle(Triangle& triangle) {
 }
 
 void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& leftColor, const Color& rightColor, int leftDepth, int rightDepth) {
-	if (lineLength == 0) {
+	if (y1 < 0 || y1 >= height || lineLength == 0) {
 		return;
 	}
 
-	for (int x = x1; x <= x1 + lineLength && x < width; x++) {
-		if (x < 0) {
-			continue;
-		}
-
+	for (int x = std::max(x1, 0); x <= x1 + lineLength && x < width; x++) {
 		float progress = (float)(x - x1) / lineLength;
 		int depth = lerp(leftDepth, rightDepth, progress);
 
 		if (depthBuffer[y1 * width + x] > depth) {
-			Color* color = &lerp(leftColor, rightColor, progress);
+			// Lerping the color components individually is more
+			// efficient than lerping leftColor -> rightColor and
+			// generating a new Color object for each pixel
+			int R = lerp(leftColor.R, rightColor.R, progress);
+			int G = lerp(leftColor.G, rightColor.G, progress);
+			int B = lerp(leftColor.B, rightColor.B, progress);
 
-			setColor(color);
+			setColor(R, G, B);
 			setPixel(x, y1, depth);
 		}
 	}

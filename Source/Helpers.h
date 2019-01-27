@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SDL.h>
 #include <Types.h>
 
 inline int lerp(int v1, int v2, float ratio) {
@@ -12,4 +13,8 @@ inline Color lerp(const Color& c1, const Color& c2, float ratio) {
 		lerp(c1.G, c2.G, ratio),
 		lerp(c1.B, c2.B, ratio)
 	};
+}
+
+inline float degreesToRadians(int degrees) {
+	return degrees * M_PI / 180;
 }

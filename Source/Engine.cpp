@@ -7,6 +7,7 @@
 #include <time.h>
 #include <Objects.h>
 #include <Rasterizer.h>
+#include <Helpers.h>
 #include <Engine.h>
 
 Engine::Engine(int width, int height, Uint32 flags) {
@@ -53,6 +54,8 @@ void Engine::delay(int ms) {
 
 void Engine::draw() {
 	RotationMatrix rotationMatrix = RotationMatrix::calculate(camera.rotation);
+	float fovLimit = camera.fov > 180 ? 1 : std::sin(degreesToRadians(camera.fov / 2));
+	int fovScalar = 500 * (360 / camera.fov);
 
 	for (int o = 0; o < objects.size(); o++) {
 		Object* object = objects.at(o);
@@ -60,27 +63,39 @@ void Engine::draw() {
 
 		object->forEachPolygon([=](const Polygon& polygon) {
 			Triangle triangle;
+			bool isInViewingFrustum = false;
 
 			for (int i = 0; i < 3; i++) {
 				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
 				Vec3 unitVertex = vertex.unit();
 				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
-				int x = (int)(3000 * unitVertex.x / (1 + unitVertex.z) + width / 2);
-				int y = (int)(3000 * -unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
+				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + width / 2);
+				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
+
+				if (
+					!isInViewingFrustum &&
+					unitVertex.z > 0 &&
+					(unitVertex.x > -fovLimit && unitVertex.x < fovLimit) &&
+					(unitVertex.y > -fovLimit && unitVertex.y < fovLimit)
+				) {
+					isInViewingFrustum = true;
+				}
 
 				triangle.createVertex(i, { x, y }, (int)vertex.z, polygon.vertices[i]->color);
 			}
 
-			if (flags & SHOW_WIREFRAME) {
-				rasterizer->setColor(255, 255, 255);
+			if (isInViewingFrustum) {
+				if (flags & SHOW_WIREFRAME) {
+					rasterizer->setColor(255, 255, 255);
 
-				rasterizer->triangle(
-					triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
-					triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
-					triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
-				);
-			} else {
-				rasterizer->triangle(triangle);
+					rasterizer->triangle(
+						triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
+						triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
+						triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
+					);
+				} else {
+					rasterizer->triangle(triangle);
+				}
 			}
 		});
 	}
@@ -129,11 +144,13 @@ void Engine::run() {
 		saveDelta(delta);
 
 		if (flags & DEBUG_DRAWTIME) {
-			if (delta < 16.67) {
+			if (delta < 17) {
 				delay(17 - delta);
 			} else {
-				printf("Unlocked delta: %d\n", delta);
+				printf("[DRAW TIME WARNING] ");
 			}
+			
+			printf("Unlocked delta: %d\n", delta);
 		}
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
