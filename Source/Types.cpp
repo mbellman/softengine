@@ -1,4 +1,5 @@
 #include <memory>
+#include <cmath>
 #include <Types.h>
 
 RotationMatrix RotationMatrix::operator *(const RotationMatrix& rm) const {
@@ -41,7 +42,7 @@ Vec3::Vec3(float x, float y, float z) {
 }
 
 float Vec3::magnitude() {
-	return std::sqrt(x * x + y * y + z * z);
+	return sqrt(x * x + y * y + z * z);
 }
 
 Vec3 Vec3::unit() {

@@ -140,11 +140,9 @@ void Engine::handleKeyUp(const SDL_Keycode& code) {
 }
 
 void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
-	int mx = event.x - width / 2;
-	int my = event.y - height / 2;
 	int xDelta = lastMouseCoordinate.x - event.x;
 	int yDelta = lastMouseCoordinate.y - event.y;
-	float deltaFactor = 1.0f / sqrt(mx * mx + my * my);
+	float deltaFactor = 1.0f / 500;
 
 	camera.rotation.y += (float)xDelta * deltaFactor;
 	camera.rotation.x += (float)yDelta * deltaFactor;
