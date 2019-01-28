@@ -17,6 +17,11 @@ struct Camera {
 	int fov = 90;
 };
 
+struct Movement {
+	int x = 0;
+	int z = 0;
+};
+
 class Engine {
 	public:
 		Engine(int width, int height, Uint32 flags = 0);
@@ -30,11 +35,18 @@ class Engine {
 		std::vector<Object*> objects;
 		Rasterizer* rasterizer;
 		Camera camera;
+		Coordinate lastMouseCoordinate;
 		Vec3 velocity;
+		Movement movement;
 		Uint32 flags = 0;
+		constexpr static int MOVEMENT_SPEED = 5;
 		int width;
 		int height;
 		void delay(int ms);
 		int getPolygonCount();
-		void move(float x, float y, float z);
+		void handleEvent(const SDL_Event& event);
+		void handleKeyDown(const SDL_Keycode& code);
+		void handleKeyUp(const SDL_Keycode& code);
+		void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
+		void updateMovement();
 };

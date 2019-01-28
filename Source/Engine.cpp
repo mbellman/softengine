@@ -107,20 +107,60 @@ int Engine::getPolygonCount() {
 	return total;
 }
 
-void Engine::move(float x, float y, float z) {
-	camera.position.x += x;
-	camera.position.y += y;
-	camera.position.z += z;
+void Engine::handleEvent(const SDL_Event& event) {
+	switch (event.type) {
+		case SDL_KEYDOWN:
+			handleKeyDown(event.key.keysym.sym);
+			break;
+		case SDL_KEYUP:
+			handleKeyUp(event.key.keysym.sym);
+			break;
+		case SDL_MOUSEMOTION:
+			handleMouseMotionEvent(event.motion);
+			break;
+	}
+}
+
+void Engine::handleKeyDown(const SDL_Keycode& code) {
+	switch (code) {
+		case SDLK_w: movement.z = 1; break;
+		case SDLK_s: movement.z = -1; break;
+		case SDLK_a: movement.x = -1; break;
+		case SDLK_d: movement.x = 1; break;
+	}
+}
+
+void Engine::handleKeyUp(const SDL_Keycode& code) {
+	switch (code) {
+		case SDLK_w: movement.z = 0; break;
+		case SDLK_s: movement.z = 0; break;
+		case SDLK_a: movement.x = 0; break;
+		case SDLK_d: movement.x = 0; break;
+	}
+}
+
+void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
+	int mx = event.x - width / 2;
+	int my = event.y - height / 2;
+	int xDelta = lastMouseCoordinate.x - event.x;
+	int yDelta = lastMouseCoordinate.y - event.y;
+	float deltaFactor = 1.0f / sqrt(mx * mx + my * my);
+
+	camera.rotation.y += (float)xDelta * deltaFactor;
+	camera.rotation.x += (float)yDelta * deltaFactor;
+
+	lastMouseCoordinate.x = event.x;
+	lastMouseCoordinate.y = event.y;
 }
 
 void Engine::run() {
 	int lastStartTime;
-	bool hasQuit = false;
+	bool isRunning = true;
 
-	while (!hasQuit) {
+	while (isRunning) {
 		lastStartTime = SDL_GetTicks();
 
-		move(velocity.x, velocity.y, velocity.z);
+		updateMovement();
 		draw();
 
 		int delta = SDL_GetTicks() - lastStartTime;
@@ -145,41 +185,24 @@ void Engine::run() {
 		SDL_Event event;
 		float speed = 5;
 
-		if (SDL_PollEvent(&event)) {
-			switch (event.type) {
-				// Throwaway code, I promise
-				case SDL_KEYDOWN:
-					if (event.key.keysym.sym == SDLK_w) {
-						velocity.z = speed;
-					}
-					else if (event.key.keysym.sym == SDLK_s) {
-						velocity.z = -speed;
-					}
-					else if (event.key.keysym.sym == SDLK_a) {
-						velocity.x = -speed;
-					}
-					else if (event.key.keysym.sym == SDLK_d) {
-						velocity.x = speed;
-					}
-					break;
-				case SDL_KEYUP:
-					if (event.key.keysym.sym == SDLK_w) {
-						velocity.z = 0;
-					}
-					else if (event.key.keysym.sym == SDLK_s) {
-						velocity.z = 0;
-					}
-					else if (event.key.keysym.sym == SDLK_a) {
-						velocity.x = 0;
-					}
-					else if (event.key.keysym.sym == SDLK_d) {
-						velocity.x = 0;
-					}
-					break;
-				case SDL_QUIT:
-					hasQuit = true;
-					break;
+		while (SDL_PollEvent(&event)) {
+			handleEvent(event);
+
+			if (event.type == SDL_QUIT) {
+				isRunning = false;
+				break;
 			}
 		}
 	}
+}
+
+void Engine::updateMovement() {
+	float sy = std::sin(camera.rotation.y);
+	float cy = std::cos(camera.rotation.y);
+
+	float xDelta = movement.x * cy - movement.z * sy;
+	float zDelta = movement.z * cy + movement.x * sy;
+
+	camera.position.x += MOVEMENT_SPEED * xDelta;
+	camera.position.z += MOVEMENT_SPEED * zDelta;
 }

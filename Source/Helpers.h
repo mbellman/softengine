@@ -14,7 +14,3 @@ inline Color lerp(const Color& c1, const Color& c2, float ratio) {
 		lerp(c1.B, c2.B, ratio)
 	};
 }
-
-inline float degreesToRadians(int degrees) {
-	return degrees * M_PI / 180;
-}

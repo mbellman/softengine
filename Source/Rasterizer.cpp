@@ -31,10 +31,12 @@ void Rasterizer::clear() {
 }
 
 void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right) {
-	if (
+	int isHorizontallyOffscreen = (
 		(corner.coordinate.x >= width && left.coordinate.x >= width) ||
 		(corner.coordinate.x < 0 && right.coordinate.x < 0)
-	) {
+	);
+
+	if (isHorizontallyOffscreen) {
 		return;
 	}
 
@@ -164,6 +166,7 @@ void Rasterizer::triangle(Triangle& triangle) {
 	}
 
 	if (top->coordinate.y >= height || bottom->coordinate.y < 0) {
+		// Optimize for vertically offscreen triangles
 		return;
 	}
 
@@ -180,14 +183,14 @@ void Rasterizer::triangle(Triangle& triangle) {
 
 		flatBottomTriangle(*top, *middle, *bottom);
 	} else {
-		float ttbSlope = (float)(bottom->coordinate.y - top->coordinate.y) / (bottom->coordinate.x - top->coordinate.x);
-		float middleYRatio = (float)(middle->coordinate.y - top->coordinate.y) / (bottom->coordinate.y - top->coordinate.y);
+		float hypotenuseSlope = (float)(bottom->coordinate.y - top->coordinate.y) / (bottom->coordinate.x - top->coordinate.x);
+		float middleYProgress = (float)(middle->coordinate.y - top->coordinate.y) / (bottom->coordinate.y - top->coordinate.y);
 
 		Vertex2d middleOpposite;
 
-		middleOpposite.coordinate = { top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / ttbSlope), middle->coordinate.y };
-		middleOpposite.depth = lerp(top->depth, bottom->depth, middleYRatio);
-		middleOpposite.color = lerp(top->color, bottom->color, middleYRatio);
+		middleOpposite.coordinate = { top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / hypotenuseSlope), middle->coordinate.y };
+		middleOpposite.depth = lerp(top->depth, bottom->depth, middleYProgress);
+		middleOpposite.color = lerp(top->color, bottom->color, middleYProgress);
 
 		Vertex2d* middleLeft = middle;
 		Vertex2d* middleRight = &middleOpposite;
