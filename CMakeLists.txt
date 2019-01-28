@@ -3,7 +3,8 @@ set(EXECUTABLE_NAME softengine)
 project(${EXECUTABLE_NAME})
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "-O3")
+# -Wall -Wextra
 
 include_directories(Source)
 
@@ -15,8 +16,8 @@ include_directories(${SDL2_INCLUDE_DIR})
 set(SOURCE_FILES 
     Source/main.cpp 
     Source/Helpers.h
-    Source/Types.h
-    Source/Objects.h
+    Source/Objects.h Source/Objects.cpp
+    Source/Types.h Source/Types.cpp
     Source/Rasterizer.cpp Source/Rasterizer.h
     Source/Engine.cpp Source/Engine.h
 )

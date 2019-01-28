@@ -131,7 +131,7 @@ struct Cube : Object {
 			}
 
 			for (int p = 0; p < 12; p++) {
-				const int (*polygonVertices)[3] = &Cube::polygonVertexMap[p];
+				const int (*polygonVertices)[3] = &(Cube::polygonVertexMap[p]);
 
 				addPolygon(
 					&vertices.at((*polygonVertices)[0]),

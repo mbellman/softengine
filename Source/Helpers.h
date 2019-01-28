@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <Types.h>
 
+
 inline int lerp(int v1, int v2, float ratio) {
 	return v1 + (int)(v2 - v1) * ratio;
 }
