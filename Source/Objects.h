@@ -33,7 +33,7 @@ struct Mesh : Object {
 };
 
 namespace CubeVertices {
-	const static int vertexMap[12][3] = {
+	constexpr static int vertexMap[12][3] = {
 		{ 0, 1, 4 },
 		{ 1, 4, 5 },
 		{ 1, 2, 5 },
