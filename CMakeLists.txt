@@ -25,6 +25,7 @@ set(SOURCE_FILES
     Source/Types.h Source/Types.cpp
     Source/Rasterizer.cpp Source/Rasterizer.h
     Source/Engine.cpp Source/Engine.h
+    Source/Quaternion.h Source/Quaternion.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})

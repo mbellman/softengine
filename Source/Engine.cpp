@@ -5,10 +5,19 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <algorithm>
 #include <Objects.h>
 #include <Rasterizer.h>
 #include <Helpers.h>
 #include <Engine.h>
+#include <Quaternion.h>
+
+RotationMatrix Camera::getRotationMatrix() {
+	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
+	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);
+
+	return (q1 * q2).toRotationMatrix();
+}
 
 Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -53,7 +62,7 @@ void Engine::delay(int ms) {
 }
 
 void Engine::draw() {
-	RotationMatrix rotationMatrix = RotationMatrix::calculate(camera.rotation);
+	RotationMatrix rotationMatrix = camera.getRotationMatrix();
 	int fovScalar = 500 * (360 / camera.fov);
 
 	for (int o = 0; o < objects.size(); o++) {
@@ -144,8 +153,8 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	int yDelta = lastMouseCoordinate.y - event.y;
 	float deltaFactor = 1.0f / 500;
 
-	camera.rotation.y += (float)xDelta * deltaFactor;
-	camera.rotation.x += (float)yDelta * deltaFactor;
+	camera.pitch = clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
+	camera.yaw += (float)xDelta * deltaFactor;
 
 	lastMouseCoordinate.x = event.x;
 	lastMouseCoordinate.y = event.y;
@@ -195,8 +204,8 @@ void Engine::run() {
 }
 
 void Engine::updateMovement() {
-	float sy = std::sin(camera.rotation.y);
-	float cy = std::cos(camera.rotation.y);
+	float sy = std::sin(camera.yaw);
+	float cy = std::cos(camera.yaw);
 
 	float xDelta = movement.x * cy - movement.z * sy;
 	float zDelta = movement.z * cy + movement.x * sy;

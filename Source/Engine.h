@@ -5,6 +5,7 @@
 #include <vector>
 #include <Rasterizer.h>
 #include <Objects.h>
+#include <Types.h>
 
 enum Flags: Uint32 {
 	DEBUG_DRAWTIME = 1 << 0,
@@ -13,8 +14,11 @@ enum Flags: Uint32 {
 
 struct Camera {
 	Vec3 position = { 0, 100, 0 };
-	Vec3 rotation = { 0, 0, 0 };
+	float pitch = 0.0f;
+	float yaw = 0.0f;
 	int fov = 90;
+	constexpr static float MAX_PITCH = 89 * M_PI / 180;
+	RotationMatrix getRotationMatrix();
 };
 
 struct Movement {
