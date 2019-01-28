@@ -9,7 +9,7 @@ Object::~Object() {
 
 void Object::forEachPolygon(std::function<void(const Polygon&)> handle) {
 	for (int i = 0; i < polygons.size(); i++) {
-			handle(polygons.at(i));
+		handle(polygons.at(i));
 	}
 }
 
@@ -21,7 +21,7 @@ void Object::rotate(const Vec3& rotation) {
 	RotationMatrix rotationMatrix = RotationMatrix::calculate(rotation);
 
 	for (int i = 0; i < vertices.size(); i++) {
-			vertices.at(i).vector.rotate(rotationMatrix);
+		vertices.at(i).vector.rotate(rotationMatrix);
 	}
 }
 
@@ -50,9 +50,9 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 	int verticesPerColumn = rows + 1;
 
 	for (int z = 0; z < verticesPerColumn; z++) {
-			for (int x = 0; x < verticesPerRow; x++) {
-					addVertex({ x * tileSize, (float)(rand() % 50), z * tileSize }, { 255, 255, 255 });
-			}
+		for (int x = 0; x < verticesPerRow; x++) {
+			addVertex({ x * tileSize, (float)(rand() % 50), z * tileSize }, { 255, 255, 255 });
+		}
 	}
 
 	// Polygon creation, using the previously allotted vertices. The total
@@ -71,23 +71,23 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 	int polygonsPerRow = 2 * columns;
 
 	for (int row = 0; row < rows; row++) {
-			for (int p = 1; p <= polygonsPerRow; p++) {
-					bool isLowerPolygon = p % 2 == 0;
-					int firstVertexIndex = row * verticesPerRow + (int)p / 2;
+		for (int p = 1; p <= polygonsPerRow; p++) {
+			bool isLowerPolygon = p % 2 == 0;
+			int firstVertexIndex = row * verticesPerRow + (int)p / 2;
 
-					addPolygon(
-							&vertices.at(firstVertexIndex),
-							&vertices.at(isLowerPolygon ? firstVertexIndex + verticesPerRow - 1 : firstVertexIndex + 1),
-							&vertices.at(firstVertexIndex + verticesPerRow)
-					);
-			}
+			addPolygon(
+				&vertices.at(firstVertexIndex),
+				&vertices.at(isLowerPolygon ? firstVertexIndex + verticesPerRow - 1 : firstVertexIndex + 1),
+				&vertices.at(firstVertexIndex + verticesPerRow)
+			);
+		}
 	}
 }
 
 void Mesh::setColor(int R, int G, int B) {
 	for (int i = 0; i < vertices.size(); i++) {
-			// vertices.at(i).color = { R, G, B };
-			vertices.at(i).color = { rand() % 255, rand() % 255, rand() % 255 };
+		// vertices.at(i).color = { R, G, B };
+		vertices.at(i).color = { rand() % 255, rand() % 255, rand() % 255 };
 	}
 }
 
@@ -114,24 +114,24 @@ Cube::Cube(float radius) {
 	float diameter = 2 * radius;
 
 	for (int i = 0; i < 2; i++) {
-			for (int j = 0; j < 4; j++) {
-					Vec3 vector;
+		for (int j = 0; j < 4; j++) {
+			Vec3 vector;
 
-					vector.x = (j == 2 || j == 3 ? diameter : 0) - radius;
-					vector.y = (i * diameter) - radius;
-					vector.z = (j == 1 || j == 2 ? diameter : 0) - radius;
+			vector.x = (j == 2 || j == 3 ? diameter : 0) - radius;
+			vector.y = (i * diameter) - radius;
+			vector.z = (j == 1 || j == 2 ? diameter : 0) - radius;
 
-					addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
-			}
+			addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
+		}
 	}
 
 	for (int p = 0; p < 12; p++) {
-			const int (*polygonVertices)[3] = &(Cube::polygonVertices[p]);
+		const int (*polygonVertices)[3] = &(Cube::polygonVertices[p]);
 
-			addPolygon(
-				&vertices.at((*polygonVertices)[0]),
-				&vertices.at((*polygonVertices)[1]),
-				&vertices.at((*polygonVertices)[2])
-			);
+		addPolygon(
+			&vertices.at((*polygonVertices)[0]),
+			&vertices.at((*polygonVertices)[1]),
+			&vertices.at((*polygonVertices)[2])
+		);
 	}
 }
