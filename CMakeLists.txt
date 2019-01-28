@@ -3,7 +3,7 @@ set(EXECUTABLE_NAME softengine)
 project(${EXECUTABLE_NAME})
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "-O3")
+set(CMAKE_CXX_FLAGS "-Ofast")
 # -Wall -Wextra
 
 include_directories(Source)

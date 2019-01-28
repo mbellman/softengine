@@ -145,12 +145,17 @@ void Engine::handleKeyUp(const SDL_Keycode& code) {
 		case SDLK_s: movement.z = 0; break;
 		case SDLK_a: movement.x = 0; break;
 		case SDLK_d: movement.x = 0; break;
+		case SDLK_ESCAPE:
+		case SDLK_SPACE:
+			SDL_SetRelativeMouseMode(SDL_FALSE);
+			break;
 	}
 }
 
 void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
-	int xDelta = lastMouseCoordinate.x - event.x;
-	int yDelta = lastMouseCoordinate.y - event.y;
+	bool isRelativeMouseMode = SDL_GetRelativeMouseMode();
+	int xDelta = isRelativeMouseMode ? -event.xrel : lastMouseCoordinate.x - event.x;
+	int yDelta = isRelativeMouseMode ? -event.yrel : lastMouseCoordinate.y - event.y;
 	float deltaFactor = 1.0f / 500;
 
 	camera.pitch = clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
@@ -163,6 +168,8 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 void Engine::run() {
 	int lastStartTime;
 	bool isRunning = true;
+
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	while (isRunning) {
 		lastStartTime = SDL_GetTicks();
