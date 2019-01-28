@@ -32,23 +32,25 @@ struct Mesh : Object {
 	void setColor(const Color& color);
 };
 
+namespace CubeVertices {
+	const static int vertexMap[12][3] = {
+		{ 0, 1, 4 },
+		{ 1, 4, 5 },
+		{ 1, 2, 5 },
+		{ 2, 5, 6 },
+		{ 2, 3, 6 },
+		{ 3, 6, 7 },
+		{ 3, 0, 7 },
+		{ 0, 4, 7 },
+		{ 0, 2, 3 },
+		{ 0, 1, 2 },
+		{ 4, 5, 6 },
+		{ 4, 6, 7 }
+	};
+};
+
+
 struct Cube : Object {
 	public:
 		Cube(float radius);
-
-	private:
-		constexpr static int polygonVertexMap[12][3] = {
-			{ 0, 1, 4 },
-			{ 1, 4, 5 },
-			{ 1, 2, 5 },
-			{ 2, 5, 6 },
-			{ 2, 3, 6 },
-			{ 3, 6, 7 },
-			{ 3, 0, 7 },
-			{ 0, 4, 7 },
-			{ 0, 2, 3 },
-			{ 0, 1, 2 },
-			{ 4, 5, 6 },
-			{ 4, 6, 7 }
-		};
 };

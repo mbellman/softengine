@@ -111,12 +111,12 @@ Cube::Cube(float radius) {
     }
 
     for (int p = 0; p < 12; p++) {
-        // const int (*polygonVertices)[3] = &(Cube::polygonVertexMap[p]);
+        const int (*polygonVertices)[3] = &(CubeVertices::vertexMap[p]);
 
-        // addPolygon(
-        // 	&vertices.at((*polygonVertices)[0]),
-        // 	&vertices.at((*polygonVertices)[1]),
-        // 	&vertices.at((*polygonVertices)[2])
-        // );
+        addPolygon(
+        	&vertices.at((*polygonVertices)[0]),
+        	&vertices.at((*polygonVertices)[1]),
+        	&vertices.at((*polygonVertices)[2])
+        );
     }
 }
