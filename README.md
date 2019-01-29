@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Back-face culling
 * 2x pixel size (render at half resolution, scale to window size without filtering)
 * Blender model support
 * Texture mapping

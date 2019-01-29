@@ -70,6 +70,13 @@ void Engine::draw() {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
 		object->forEachPolygon([=](const Polygon& polygon) {
+			Vec3 cameraToPolygonVector = relativeObjectPosition + polygon.vertices[0]->vector;
+			float dotProduct = Vec3::dotProduct(polygon.normal, cameraToPolygonVector);
+
+			if (dotProduct >= 0) {
+				return;
+			}
+
 			Triangle triangle;
 			bool isInView = false;
 
@@ -79,12 +86,13 @@ void Engine::draw() {
 				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
 				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + width / 2);
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
+				int depth = (int)vertex.z;
 
-				if (!isInView && vertex.z > 0) {
+				if (!isInView && depth > 0) {
 					isInView = true;
 				}
 
-				triangle.createVertex(i, x, y, (int)vertex.z, polygon.vertices[i]->color);
+				triangle.createVertex(i, x, y, depth, polygon.vertices[i]->color);
 			}
 
 			if (isInView) {

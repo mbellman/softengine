@@ -202,11 +202,13 @@ void Rasterizer::triangle(Triangle& triangle) {
 		// To rasterize each half of the triangle properly, we must
 		// construct an intermediate vertex along its hypotenuse,
 		// level with the actual middle vertex. This will serve to
-		// help interpolate between the top/bottom points along the
-		// sliced portion of the hypotenuse for each new triangle.
+		// help interpolate between the top/bottom vertices along the
+		// sliced portions of the hypotenuse for each new triangle.
 		Vertex2d hypotenuseVertex;
+		int x = top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / hypotenuseSlope);
+		int y = middle->coordinate.y;
 
-		hypotenuseVertex.coordinate = { top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / hypotenuseSlope), middle->coordinate.y };
+		hypotenuseVertex.coordinate = { x, y };
 		hypotenuseVertex.depth = lerp(top->depth, bottom->depth, middleYProgress);
 		hypotenuseVertex.color = lerp(top->color, bottom->color, middleYProgress);
 

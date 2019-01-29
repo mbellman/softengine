@@ -11,7 +11,7 @@ struct Object {
 
 		Object();
 		~Object();
-		
+
 		void forEachPolygon(std::function<void(const Polygon&)> handle);
 		int getPolygonCount();
 		void rotate(const Vec3& rotation);
@@ -21,6 +21,7 @@ struct Object {
 
 		void addPolygon(Vertex3d* v1, Vertex3d* v2, Vertex3d* v3);
 		void addVertex(const Vec3& vector, const Color& color);
+		void computeSurfaceNormals();
 
 	private:
 		std::vector<Polygon> polygons;

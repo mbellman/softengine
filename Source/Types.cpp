@@ -41,6 +41,18 @@ Vec3::Vec3(float x, float y, float z) {
 	this->z = z;
 }
 
+Vec3 Vec3::crossProduct(const Vec3& v1, const Vec3& v2) {
+	return {
+		v1.y * v2.z - v1.z * v2.y,
+		v1.z * v2.x - v1.x * v2.z,
+		v1.x * v2.y - v1.y * v2.x
+	};
+}
+
+float Vec3::dotProduct(const Vec3& v1, const Vec3& v2) {
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
 float Vec3::magnitude() {
 	return sqrt(x * x + y * y + z * z);
 }
