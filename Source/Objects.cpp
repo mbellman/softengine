@@ -58,9 +58,9 @@ void Object::addVertex(const Vec3& vector, const Color& color) {
 }
 
 /**
- * Creates a flat square mesh of given rows and columns using a static
+ * Creates a flat polygon mesh of given rows and columns using a fixed
  * tile size. The total polygon count corresponds to 2x the number of
- * tiles (rows x columns). We add polygons in the following manner:
+ * tiles (2 x rows x columns). We add polygons in the following manner:
  *
  *   ----------------
  *   |1 / |3 / |5 / |
@@ -151,7 +151,7 @@ Cube::Cube(float radius) {
 
 			vector.x = (j == 2 || j == 3 ? diameter : 0) - radius;
 			vector.y = (i * diameter) - radius;
-			vector.z = -1 * ((j == 1 || j == 2 ? diameter : 0) - radius);
+			vector.z = (j == 1 || j == 2 ? -diameter : 0) + radius;
 
 			addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
 		}

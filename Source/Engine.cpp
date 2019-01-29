@@ -70,10 +70,10 @@ void Engine::draw() {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
 		object->forEachPolygon([=](const Polygon& polygon) {
-			Vec3 cameraToPolygonVector = relativeObjectPosition + polygon.vertices[0]->vector;
-			float dotProduct = Vec3::dotProduct(polygon.normal, cameraToPolygonVector);
+			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
+			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
 
-			if (dotProduct >= 0) {
+			if (!isFacingCamera) {
 				return;
 			}
 
