@@ -181,28 +181,15 @@ void Engine::run() {
 	//
 	// FONT RENDERING PROTOTYPE
 	//
-	if(!TTF_Init()){
-		printf("ahhh");
-	}
-	TTF_Font* Sans = TTF_OpenFont("./Assets/wcp.ttf", 16);
-	SDL_Color White = {255, 255, 255};
+	TTF_Init();
+	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
+	SDL_Color white = {255, 255, 255};
 
 	while (isRunning) {
 		lastStartTime = SDL_GetTicks();
 
 		updateMovement();
 		draw();
-
-		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "TestText", White);
-		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-		SDL_Rect Message_rect;
-		Message_rect.x = 10;
-		Message_rect.y = 10;
-		Message_rect.w = 8*(8 + 1);
-		Message_rect.h = 16;
-
-		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
-		SDL_RenderPresent(renderer);
 
 		// Render text
 
@@ -219,11 +206,26 @@ void Engine::run() {
 		}
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
+
 		char title[100];
 
 		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
-
 		SDL_SetWindowTitle(window, title);
+
+
+		// Delta DEBUG text
+		std::string deltaMessage = "Delta frames: " + std::to_string(delta);
+
+		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(mono, deltaMessage.c_str(), white);
+		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+		SDL_Rect Message_rect;
+		Message_rect.x = 12;
+		Message_rect.y = 12;
+		TTF_SizeText(mono, deltaMessage.c_str(), &Message_rect.w, &Message_rect.h);
+
+		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
+		SDL_RenderPresent(renderer);
+		// End DEBUG text
 
 		SDL_Event event;
 		float speed = 5;
