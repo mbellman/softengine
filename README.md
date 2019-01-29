@@ -52,7 +52,11 @@ Configuration Properties
 - Make sure the project is using `x86` mode before trying to debug or build.
 
 ### Linux
-1. It just works!
+
+#### VSCode:
+- Ensure you have CMake, CMakeTools and the SDL2 libraries installed.
+- Install the CMakeTools and C++ Intellisense extensions.
+- Use the `Project Outline` to build and debug the executable.
 
 ### OS X
 1. R.I.P. Steve Jobs.
