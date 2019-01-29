@@ -3,10 +3,10 @@
 #include <Quaternion.h>
 
 Quaternion Quaternion::fromAxisAngle(float angle, float xi, float yj, float zk) {
-	float sa = sin(angle / 2);
+	float sa = sinf(angle / 2);
 
 	return {
-		cos(angle / 2),
+		cosf(angle / 2),
 		xi * sa,
 		yj * sa,
 		zk * sa
