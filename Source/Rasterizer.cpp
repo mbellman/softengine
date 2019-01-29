@@ -6,9 +6,10 @@
 #include <Helpers.h>
 #include <Rasterizer.h>
 
-Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height) {
+Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldUsePerVertexColoration) {
 	this->width = width;
 	this->height = height;
+	this->shouldUsePerVertexColoration = shouldUsePerVertexColoration;
 
 	screenTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
 	pixelBuffer = new Uint32[width * height];
@@ -151,6 +152,7 @@ void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
  * Rasterize a filled triangle with per-vertex coloration.
  */
 void Rasterizer::triangle(Triangle& triangle) {
+	// Sort each vertex from top to bottom
 	Vertex2d* top = &triangle.vertices[0];
 	Vertex2d* middle = &triangle.vertices[1];
 	Vertex2d* bottom = &triangle.vertices[2];
@@ -172,30 +174,44 @@ void Rasterizer::triangle(Triangle& triangle) {
 		return;
 	}
 
+	if (!shouldUsePerVertexColoration) {
+		setColor(&triangle.vertices[0].color);
+	}
+
 	if (top->coordinate.y == middle->coordinate.y) {
+		// Trivial case #1: Triangle with a flat top edge
 		if (top->coordinate.x > middle->coordinate.x) {
 			std::swap(top, middle);
 		}
 
 		flatTopTriangle(*top, *middle, *bottom);
 	} else if (bottom->coordinate.y == middle->coordinate.y) {
+		// Trivial case #2: Triangle with a flat bottom edge
 		if (bottom->coordinate.x < middle->coordinate.x) {
 			std::swap(bottom, middle);
 		}
 
 		flatBottomTriangle(*top, *middle, *bottom);
 	} else {
+		// Nontrivial case: Triangle with neither a flat top nor
+		// flat bottom edge. These must be rasterized as two
+		// separate flat-bottom-edge and flat-top-edge triangles.
 		float hypotenuseSlope = (float)(bottom->coordinate.y - top->coordinate.y) / (bottom->coordinate.x - top->coordinate.x);
 		float middleYProgress = (float)(middle->coordinate.y - top->coordinate.y) / (bottom->coordinate.y - top->coordinate.y);
 
-		Vertex2d middleOpposite;
+		// To rasterize each half of the triangle properly, we must
+		// construct an intermediate vertex along its hypotenuse,
+		// level with the actual middle vertex. This will serve to
+		// help interpolate between the top/bottom points along the
+		// sliced portion of the hypotenuse for each new triangle.
+		Vertex2d hypotenuseVertex;
 
-		middleOpposite.coordinate = { top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / hypotenuseSlope), middle->coordinate.y };
-		middleOpposite.depth = lerp(top->depth, bottom->depth, middleYProgress);
-		middleOpposite.color = lerp(top->color, bottom->color, middleYProgress);
+		hypotenuseVertex.coordinate = { top->coordinate.x + (int)((middle->coordinate.y - top->coordinate.y) / hypotenuseSlope), middle->coordinate.y };
+		hypotenuseVertex.depth = lerp(top->depth, bottom->depth, middleYProgress);
+		hypotenuseVertex.color = lerp(top->color, bottom->color, middleYProgress);
 
 		Vertex2d* middleLeft = middle;
-		Vertex2d* middleRight = &middleOpposite;
+		Vertex2d* middleRight = &hypotenuseVertex;
 
 		if (middleLeft->coordinate.x > middleRight->coordinate.x) {
 			std::swap(middleLeft, middleRight);
@@ -235,14 +251,16 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& l
 		int index = pixelIndexOffset + x;
 
 		if (depthBuffer[index] > depth) {
-			// Lerping the color components individually is more
-			// efficient than lerping leftColor -> rightColor and
-			// generating a new Color object each time
-			int R = lerp(leftColor.R, rightColor.R, progress);
-			int G = lerp(leftColor.G, rightColor.G, progress);
-			int B = lerp(leftColor.B, rightColor.B, progress);
+			if (shouldUsePerVertexColoration) {
+				// Lerping the color components individually is more
+				// efficient than lerping leftColor -> rightColor and
+				// generating a new Color object each time
+				int R = lerp(leftColor.R, rightColor.R, progress);
+				int G = lerp(leftColor.G, rightColor.G, progress);
+				int B = lerp(leftColor.B, rightColor.B, progress);
 
-			setColor(R, G, B);
+				setColor(R, G, B);
+			}
 
 			// We refrain from calling setPixel() here to avoid
 			// its additional redunant calculation of the index

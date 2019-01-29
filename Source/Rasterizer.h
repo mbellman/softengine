@@ -5,7 +5,7 @@
 
 class Rasterizer {
 	public:
-		Rasterizer(SDL_Renderer* renderer, int width, int height);
+		Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldUsePerVertexColoration);
 		~Rasterizer();
 		void line(int x1, int y1, int x2, int y2);
 		void render(SDL_Renderer* renderer);
@@ -17,6 +17,7 @@ class Rasterizer {
 		SDL_Texture* screenTexture;
 		Uint32* pixelBuffer;
 		int* depthBuffer;
+		bool shouldUsePerVertexColoration = true;
 		long int color;
 		int width;
 		int height;

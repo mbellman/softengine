@@ -9,7 +9,8 @@
 
 enum Flags: Uint32 {
 	DEBUG_DRAWTIME = 1 << 0,
-	SHOW_WIREFRAME = 1 << 1
+	SHOW_WIREFRAME = 1 << 1,
+	FLAT_SHADING = 1 << 2
 };
 
 struct Camera {
@@ -39,7 +40,6 @@ class Engine {
 		std::vector<Object*> objects;
 		Rasterizer* rasterizer;
 		Camera camera;
-		Coordinate lastMouseCoordinate;
 		Vec3 velocity;
 		Movement movement;
 		Uint32 flags = 0;

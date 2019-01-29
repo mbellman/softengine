@@ -31,7 +31,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	);
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
-	rasterizer = new Rasterizer(renderer, width, height);
+	rasterizer = new Rasterizer(renderer, width, height, flags & FLAT_SHADING ? false : true);
 
 	this->width = width;
 	this->height = height;
@@ -154,15 +154,12 @@ void Engine::handleKeyUp(const SDL_Keycode& code) {
 
 void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	bool isRelativeMouseMode = SDL_GetRelativeMouseMode();
-	int xDelta = isRelativeMouseMode ? -event.xrel : lastMouseCoordinate.x - event.x;
-	int yDelta = isRelativeMouseMode ? -event.yrel : lastMouseCoordinate.y - event.y;
+	int xDelta = isRelativeMouseMode ? -event.xrel : 0;
+	int yDelta = isRelativeMouseMode ? -event.yrel : 0;
 	float deltaFactor = 1.0f / 500;
 
 	camera.pitch = clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
 	camera.yaw += (float)xDelta * deltaFactor;
-
-	lastMouseCoordinate.x = event.x;
-	lastMouseCoordinate.y = event.y;
 }
 
 void Engine::run() {
