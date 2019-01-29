@@ -82,4 +82,3 @@ struct Polygon {
 
 	void bindVertex(int index, Vertex3d* vertex);
 };
-

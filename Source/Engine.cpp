@@ -190,7 +190,7 @@ void Engine::run() {
 			} else {
 				printf("[DRAW TIME WARNING] ");
 			}
-			
+
 			printf("Unlocked delta: %d\n", delta);
 		}
 
