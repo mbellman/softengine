@@ -243,9 +243,19 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& l
 		return;
 	}
 
-	int start = std::max(x1, 0);
-	int end = std::min(x1 + lineLength, width - 1);
+	using namespace std;
+
+	int start = max(x1, 0);
+	int end = min(x1 + lineLength, width - 1);
 	int pixelIndexOffset = y1 * width;
+
+	// Rather than interpolating a new color value at every pixel
+	// along the line, we can derive an optimal lerp update interval
+	// based on the color change over the line and its length. The
+	// use of a counter also improves performance compared to modulo.
+	float averageColorDelta = (abs(rightColor.R - leftColor.R) + abs(rightColor.G - leftColor.G) + abs(rightColor.B - leftColor.B)) / 3;
+	int lerpInterval = max(1, (int)(lineLength / averageColorDelta));
+	int lerpIntervalCounter = lerpInterval;
 
 	for (int x = start; x <= end; x++) {
 		float progress = (float)(x - x1) / lineLength;
@@ -254,14 +264,18 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& l
 
 		if (depthBuffer[index] > depth) {
 			if (shouldUsePerVertexColoration) {
-				// Lerping the color components individually is more
-				// efficient than lerping leftColor -> rightColor and
-				// generating a new Color object each time
-				int R = lerp(leftColor.R, rightColor.R, progress);
-				int G = lerp(leftColor.G, rightColor.G, progress);
-				int B = lerp(leftColor.B, rightColor.B, progress);
+				if (++lerpIntervalCounter > lerpInterval || x == end) {
+					// Lerping the color components individually is more
+					// efficient than lerping leftColor -> rightColor and
+					// generating a new Color object each time
+					int R = lerp(leftColor.R, rightColor.R, progress);
+					int G = lerp(leftColor.G, rightColor.G, progress);
+					int B = lerp(leftColor.B, rightColor.B, progress);
 
-				setColor(R, G, B);
+					setColor(R, G, B);
+
+					lerpIntervalCounter = 0;
+				}
 			}
 
 			// We refrain from calling setPixel() here to avoid
