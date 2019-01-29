@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "-Ofast")
 # -Wall -Wextra
 
-include_directories(Source)
+include_directories(Library)
 
 # Find SDL2
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-modules)
@@ -18,14 +18,14 @@ endif(WIN32)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
-set(SOURCE_FILES 
-    Source/main.cpp 
-    Source/Helpers.h
-    Source/Objects.h Source/Objects.cpp
-    Source/Types.h Source/Types.cpp
-    Source/Rasterizer.cpp Source/Rasterizer.h
-    Source/Engine.cpp Source/Engine.h
-    Source/Quaternion.h Source/Quaternion.cpp
+set(SOURCE_FILES
+    Source/main.cpp
+    Library/Helpers.h
+    Library/Objects.h       Source/Objects.cpp
+    Library/Types.h         Source/Types.cpp
+    Library/Rasterizer.h    Source/Rasterizer.cpp
+    Library/Engine.h        Source/Engine.cpp
+    Library/Quaternion.h    Source/Quaternion.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})

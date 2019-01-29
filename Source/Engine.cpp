@@ -2,6 +2,7 @@
 
 #include <SDL.h>
 #include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
@@ -188,10 +189,10 @@ void Engine::run() {
 			if (delta < 17) {
 				delay(17 - delta);
 			} else {
-				printf("[DRAW TIME WARNING] ");
+				std::cout << "[DRAW TIME WARNING] ";
 			}
 
-			printf("Unlocked delta: %d\n", delta);
+			std::cout << "Unlocked delta: " << delta << "\n";
 		}
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
