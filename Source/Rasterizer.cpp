@@ -123,7 +123,6 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 void Rasterizer::render(SDL_Renderer* renderer) {
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
 	SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
-	SDL_RenderPresent(renderer);
 	clear();
 }
 

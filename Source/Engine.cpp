@@ -181,21 +181,11 @@ void Engine::run() {
 	//
 	// FONT RENDERING PROTOTYPE
 	//
-	TTF_Init();
-	TTF_Font* Sans = TTF_OpenFont("./Assets/wcp.ttf", 16); //this opens a font style and sets a size
-
-	SDL_Color White = {255, 255, 255};  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
-
-	SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "TestText", White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-
-	SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
-
-	SDL_Rect Message_rect; //create a rect
-	Message_rect.x = 10;  //controls the rect's x coordinate
-	Message_rect.y = 10; // controls the rect's y coordinte
-	Message_rect.w = 100; // controls the width of the rect
-	Message_rect.h = 100; // controls the height of the rect
-
+	if(!TTF_Init()){
+		printf("ahhh");
+	}
+	TTF_Font* Sans = TTF_OpenFont("./Assets/wcp.ttf", 16);
+	SDL_Color White = {255, 255, 255};
 
 	while (isRunning) {
 		lastStartTime = SDL_GetTicks();
@@ -203,8 +193,18 @@ void Engine::run() {
 		updateMovement();
 		draw();
 
-		// Render text
+		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "TestText", White);
+		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+		SDL_Rect Message_rect;
+		Message_rect.x = 10;
+		Message_rect.y = 10;
+		Message_rect.w = 8*(8 + 1);
+		Message_rect.h = 16;
+
 		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
+		SDL_RenderPresent(renderer);
+
+		// Render text
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
@@ -221,7 +221,7 @@ void Engine::run() {
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 		char title[100];
 
-		// sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
+		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
 
 		SDL_SetWindowTitle(window, title);
 
