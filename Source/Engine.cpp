@@ -204,8 +204,6 @@ void Engine::run() {
 		ui->draw();
 		SDL_RenderPresent(renderer);
 
-		// Render text
-
 		int delta = SDL_GetTicks() - lastStartTime;
 
 		if (flags & DEBUG_DRAWTIME) {
