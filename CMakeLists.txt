@@ -24,6 +24,11 @@ include_directories(${SDL2TTF_INCLUDE_DIRS})
 set(SOURCE_FILES
     Source/main.cpp
     Library/Helpers.h
+
+    # UI
+    Library/UI/UIObjects.h  Source/UIObjects.cpp
+
+    # Engine
     Library/Objects.h       Source/Objects.cpp
     Library/Types.h         Source/Types.cpp
     Library/Rasterizer.h    Source/Rasterizer.cpp
