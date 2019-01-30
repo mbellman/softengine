@@ -21,10 +21,10 @@ struct UIText : UIObject {
 	void draw(SDL_Renderer* renderer);
 	void setFont(TTF_Font* font);
 	void setColor(const SDL_Color &color);
-	void setValue(char* value);
+	void setValue(const char* value);
 
 protected:
-	char* m_value;
+	const char* m_value;
 	TTF_Font* m_font;
 	SDL_Color m_color;
-}
+};

@@ -14,6 +14,8 @@
 #include <Engine.h>
 #include <Quaternion.h>
 
+#include <UI/UIObjects.h>
+
 RotationMatrix Camera::getRotationMatrix() {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
 	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);
@@ -183,7 +185,11 @@ void Engine::run() {
 	//
 	TTF_Init();
 	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
-	SDL_Color white = {255, 255, 255};
+
+	UIText text;
+	text.setFont(mono);
+	text.setPosition(10, 10);
+	text.setColor({255, 255, 255});
 
 	while (isRunning) {
 		lastStartTime = SDL_GetTicks();
@@ -215,17 +221,11 @@ void Engine::run() {
 
 		// Delta DEBUG text
 		std::string deltaMessage = "Delta frames: " + std::to_string(delta);
-
-		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(mono, deltaMessage.c_str(), white);
-		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-		SDL_Rect Message_rect;
-		Message_rect.x = 12;
-		Message_rect.y = 12;
-		TTF_SizeText(mono, deltaMessage.c_str(), &Message_rect.w, &Message_rect.h);
-
-		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
-		SDL_RenderPresent(renderer);
+		text.setValue(deltaMessage.c_str());
+		text.draw(renderer);
 		// End DEBUG text
+
+		SDL_RenderPresent(renderer);
 
 		SDL_Event event;
 		float speed = 5;
