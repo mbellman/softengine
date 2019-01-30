@@ -238,6 +238,9 @@ void Engine::run() {
 			}
 		}
 	}
+
+	TTF_CloseFont(mono);
+	TTF_Quit();
 }
 
 void Engine::updateMovement() {
