@@ -201,6 +201,8 @@ void Engine::run() {
 
 		updateMovement();
 		draw();
+		ui->draw();
+		SDL_RenderPresent(renderer);
 
 		// Render text
 
@@ -219,13 +221,10 @@ void Engine::run() {
 		char title[100];
 		sprintf(
 			title,
-			"Objects: %lu, Polygons: %d, FPS: %dfps, Unlocked delta: %dms",
-			objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta
+			"Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms",
+			(int)objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta
 		);
 		SDL_SetWindowTitle(window, title);
-
-		ui->render();
-		SDL_RenderPresent(renderer);
 
 		SDL_Event event;
 		float speed = 5;

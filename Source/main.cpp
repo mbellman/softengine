@@ -5,17 +5,17 @@ int width = 1200;
 int height = 720;
 
 int main(int argc, char* argv[]) {
-	Engine engine(width, height, DEBUG_DRAWTIME);
+	Engine engine(width, height);
 
 	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
 
 	UIText text("Test Text");
+
 	text.setRenderer(engine.getRenderer());
 	text.setFont(mono);
 	text.setPosition(10, 10);
-	engine.addUIObject(&text);
 
-	Mesh mesh(100, 40, 50);
+	Mesh mesh(80, 40, 40);
 
 	mesh.position = { -1000, 0, -1000 };
 	mesh.setColor(0, 255, 0);
@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
 	cube2.rotate({ 1, 1.5, 0.7 });
 	cube3.rotate({ -0.5, 0.8, -0.3 });
 
+	engine.addUIObject(&text);
 	engine.addObject(&mesh);
 	engine.addObject(&cube);
 	engine.addObject(&cube2);
