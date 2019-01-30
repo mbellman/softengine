@@ -7,6 +7,15 @@ int height = 720;
 int main(int argc, char* argv[]) {
 	Engine engine(width, height, DEBUG_DRAWTIME);
 
+	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
+
+	UIText text;
+	text.setRenderer(engine.getRenderer());
+	text.setFont(mono);
+	text.setPosition(10, 10);
+	text.setValue("Test Text!");
+	engine.addUIObject(&text);
+
 	Mesh mesh(100, 40, 50);
 
 	mesh.position = { -1000, 0, -1000 };
@@ -29,6 +38,9 @@ int main(int argc, char* argv[]) {
 	engine.addObject(&cube2);
 	engine.addObject(&cube3);
 	engine.run();
+
+	TTF_CloseFont(mono);
+	TTF_Quit();
 
 	return 0;
 }

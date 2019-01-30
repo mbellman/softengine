@@ -22,6 +22,7 @@ set(SOURCE_FILES
     Library/Helpers.h
 
     # UI
+    Library/UI/UI.h         Source/UI/UI.cpp
     Library/UI/UIObjects.h  Source/UI/UIObjects.cpp
 
     # Engine

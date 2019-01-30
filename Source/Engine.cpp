@@ -24,6 +24,7 @@ RotationMatrix Camera::getRotationMatrix() {
 
 Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
+	TTF_Init();
 
 	window = SDL_CreateWindow(
 		"HEY ZACK",
@@ -38,6 +39,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & FLAT_SHADING);
+	ui = new UI();
 
 	this->width = width;
 	this->height = height;
@@ -48,6 +50,9 @@ Engine::~Engine() {
 	objects.clear();
 
 	delete rasterizer;
+	delete ui;
+
+	TTF_Quit();
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
@@ -56,6 +61,10 @@ Engine::~Engine() {
 
 void Engine::addObject(Object* object) {
 	objects.push_back(object);
+}
+
+void Engine::addUIObject(UIObject* object) {
+	ui->addObject(object);
 }
 
 void Engine::delay(int ms) {
@@ -187,17 +196,6 @@ void Engine::run() {
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	//
-	// FONT RENDERING PROTOTYPE
-	//
-	TTF_Init();
-	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
-
-	UIText text;
-	text.setRenderer(renderer);
-	text.setFont(mono);
-	text.setPosition(10, 10);
-
 	while (isRunning) {
 		lastStartTime = SDL_GetTicks();
 
@@ -226,13 +224,7 @@ void Engine::run() {
 		);
 		SDL_SetWindowTitle(window, title);
 
-
-		// Delta DEBUG text
-		std::string deltaMessage = "Draw time: " + std::to_string(delta) + "ms";
-		text.setValue(deltaMessage.c_str());
-		text.draw();
-		// End DEBUG text
-
+		ui->draw();
 		SDL_RenderPresent(renderer);
 
 		SDL_Event event;
@@ -247,9 +239,6 @@ void Engine::run() {
 			}
 		}
 	}
-
-	TTF_CloseFont(mono);
-	TTF_Quit();
 }
 
 void Engine::updateMovement() {
@@ -261,4 +250,8 @@ void Engine::updateMovement() {
 
 	camera.position.x += MOVEMENT_SPEED * xDelta;
 	camera.position.z += MOVEMENT_SPEED * zDelta;
+}
+
+SDL_Renderer* Engine::getRenderer() {
+	return renderer;
 }
