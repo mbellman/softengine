@@ -204,10 +204,8 @@ void Engine::run() {
 			if (delta < 17) {
 				delay(17 - delta);
 			} else {
-				std::cout << "[DRAW TIME WARNING] ";
+				std::cout << "[DRAW TIME WARNING]: " << delta << "ms\n";
 			}
-
-			std::cout << "Unlocked delta: " << delta << "\n";
 		}
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
