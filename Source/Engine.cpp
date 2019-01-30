@@ -213,8 +213,11 @@ void Engine::run() {
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 
 		char title[100];
-
-		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
+		sprintf(
+			title,
+			"Objects: %lu, Polygons: %d, FPS: %dfps, Unlocked delta: %dms",
+			objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta
+		);
 		SDL_SetWindowTitle(window, title);
 
 
