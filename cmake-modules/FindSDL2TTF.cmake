@@ -74,6 +74,7 @@ SET(SDL2TTF_SEARCH_PATHS
 	/opt/local # DarwinPorts
 	/opt/csw # Blastwave
 	/opt
+	C:/mingw-dev/SDL2_ttf
 )
 
 FIND_PATH(SDL2TTF_INCLUDE_DIR SDL_ttf.h
