@@ -9,7 +9,7 @@ class UI {
 public:
 	~UI();
 
-	void draw();
+	void render();
 	void addObject(UIObject* object);
 
 protected:

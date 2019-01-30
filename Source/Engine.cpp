@@ -224,7 +224,7 @@ void Engine::run() {
 		);
 		SDL_SetWindowTitle(window, title);
 
-		ui->draw();
+		ui->render();
 		SDL_RenderPresent(renderer);
 
 		SDL_Event event;

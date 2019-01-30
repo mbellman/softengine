@@ -4,7 +4,7 @@ UI::~UI() {
 	m_objects.clear();
 }
 
-void UI::draw() {
+void UI::render() {
 	for(auto &object : m_objects) {
 		object->draw();
 	}

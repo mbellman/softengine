@@ -9,11 +9,10 @@ int main(int argc, char* argv[]) {
 
 	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
 
-	UIText text;
+	UIText text("Test Text");
 	text.setRenderer(engine.getRenderer());
 	text.setFont(mono);
 	text.setPosition(10, 10);
-	text.setValue("Test Text!");
 	engine.addUIObject(&text);
 
 	Mesh mesh(100, 40, 50);
@@ -40,7 +39,6 @@ int main(int argc, char* argv[]) {
 	engine.run();
 
 	TTF_CloseFont(mono);
-	TTF_Quit();
 
 	return 0;
 }

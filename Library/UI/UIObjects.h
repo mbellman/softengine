@@ -13,7 +13,7 @@ struct UIObject {
 	virtual void draw() = 0;
 
 protected:
-	SDL_Renderer* renderer = 0;
+	SDL_Renderer* m_renderer = 0;
 	SDL_Texture* m_texture = 0;
 	SDL_Rect m_rect;
 
@@ -22,6 +22,8 @@ protected:
 };
 
 struct UIText : UIObject {
+	UIText(const char* value);
+
 	void draw();
 	void setFont(TTF_Font* font);
 	void setColor(const SDL_Color &color);
