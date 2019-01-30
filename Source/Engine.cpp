@@ -33,8 +33,11 @@ Engine::Engine(int width, int height, Uint32 flags) {
 		SDL_WINDOW_SHOWN
 	);
 
+	int rasterWidth = flags & PIXEL_FILTER ? width / 2 : width;
+	int rasterHeight = flags & PIXEL_FILTER ? height / 2 : height;
+
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
-	rasterizer = new Rasterizer(renderer, width, height, flags & FLAT_SHADING ? false : true);
+	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & FLAT_SHADING);
 
 	this->width = width;
 	this->height = height;
@@ -43,6 +46,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 Engine::~Engine() {
 	objects.clear();
+
 	delete rasterizer;
 
 	SDL_DestroyRenderer(renderer);
@@ -65,8 +69,12 @@ void Engine::delay(int ms) {
 }
 
 void Engine::draw() {
+	bool hasPixelFilter = flags & PIXEL_FILTER;
+	int fovScalar = (hasPixelFilter ? 250 : 500) * (360 / camera.fov);
+	int midpointX = width / (hasPixelFilter ? 4 : 2);
+	int midpointY = height / (hasPixelFilter ? 4 : 2);
+
 	RotationMatrix rotationMatrix = camera.getRotationMatrix();
-	int fovScalar = 500 * (360 / camera.fov);
 
 	for (int o = 0; o < objects.size(); o++) {
 		Object* object = objects.at(o);
@@ -87,8 +95,8 @@ void Engine::draw() {
 				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
 				Vec3 unitVertex = vertex.unit();
 				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
-				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + width / 2);
-				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + height / 2);
+				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + midpointX);
+				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
 				int depth = (int)vertex.z;
 
 				if (!isInView && depth > 0) {
@@ -114,7 +122,7 @@ void Engine::draw() {
 		});
 	}
 
-	rasterizer->render(renderer);
+	rasterizer->render(renderer, flags & PIXEL_FILTER ? 2 : 1);
 }
 
 int Engine::getPolygonCount() {

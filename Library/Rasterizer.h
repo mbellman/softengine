@@ -8,7 +8,7 @@ class Rasterizer {
 		Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldUsePerVertexColoration);
 		~Rasterizer();
 		void line(int x1, int y1, int x2, int y2);
-		void render(SDL_Renderer* renderer);
+		void render(SDL_Renderer* renderer, int sizeFactor);
 		void setColor(int R, int G, int B);
 		void setColor(Color* color);
 		void triangle(int x1, int y1, int x2, int y2, int x3, int y3);
