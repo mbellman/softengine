@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <SDL.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL_ttf.h>
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -13,7 +13,6 @@
 #include <Helpers.h>
 #include <Engine.h>
 #include <Quaternion.h>
-
 #include <UI/UIObjects.h>
 
 RotationMatrix Camera::getRotationMatrix() {
@@ -187,9 +186,9 @@ void Engine::run() {
 	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
 
 	UIText text;
+	text.setRenderer(renderer);
 	text.setFont(mono);
 	text.setPosition(10, 10);
-	text.setColor({255, 255, 255});
 
 	while (isRunning) {
 		lastStartTime = SDL_GetTicks();
@@ -220,9 +219,9 @@ void Engine::run() {
 
 
 		// Delta DEBUG text
-		std::string deltaMessage = "Delta frames: " + std::to_string(delta);
+		std::string deltaMessage = "Draw time: " + std::to_string(delta) + "ms";
 		text.setValue(deltaMessage.c_str());
-		text.draw(renderer);
+		text.draw();
 		// End DEBUG text
 
 		SDL_RenderPresent(renderer);

@@ -10,16 +10,12 @@ include_directories(Library)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-modules)
 
-if (WIN32)
-    set(SDL2_PATH "C:/mingw-dev/SDL2")
-endif(WIN32)
-
 # Find SDL2 and SDL2_ttf
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
 find_package(SDL2TTF REQUIRED)
-include_directories(${SDL2TTF_INCLUDE_DIRS})
+include_directories(${SDL2TTF_INCLUDE_DIR})
 
 set(SOURCE_FILES
     Source/main.cpp
