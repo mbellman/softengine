@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -12,6 +13,7 @@
 #include <Helpers.h>
 #include <Engine.h>
 #include <Quaternion.h>
+#include <UI/UIObjects.h>
 
 RotationMatrix Camera::getRotationMatrix() {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
@@ -22,6 +24,7 @@ RotationMatrix Camera::getRotationMatrix() {
 
 Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
+	TTF_Init();
 
 	window = SDL_CreateWindow(
 		"HEY ZACK",
@@ -36,6 +39,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & FLAT_SHADING);
+	ui = new UI();
 
 	this->width = width;
 	this->height = height;
@@ -46,6 +50,9 @@ Engine::~Engine() {
 	objects.clear();
 
 	delete rasterizer;
+	delete ui;
+
+	TTF_Quit();
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
@@ -54,6 +61,11 @@ Engine::~Engine() {
 
 void Engine::addObject(Object* object) {
 	objects.push_back(object);
+}
+
+void Engine::addUIObject(UIObject* uiObject) {
+	uiObject->setRenderer(renderer);
+	ui->addObject(uiObject);
 }
 
 void Engine::delay(int ms) {
@@ -190,6 +202,8 @@ void Engine::run() {
 
 		updateMovement();
 		draw();
+		ui->draw();
+		SDL_RenderPresent(renderer);
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
@@ -197,17 +211,18 @@ void Engine::run() {
 			if (delta < 17) {
 				delay(17 - delta);
 			} else {
-				std::cout << "[DRAW TIME WARNING] ";
+				std::cout << "[DRAW TIME WARNING]: " << delta << "ms\n";
 			}
-
-			std::cout << "Unlocked delta: " << delta << "\n";
 		}
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
+
 		char title[100];
-
-		sprintf(title, "Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms", objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta);
-
+		sprintf(
+			title,
+			"Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms",
+			(int)objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta
+		);
 		SDL_SetWindowTitle(window, title);
 
 		SDL_Event event;
