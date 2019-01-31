@@ -1,3 +1,4 @@
+#include <Loaders/ObjLoader.h>
 #include <Objects.h>
 #include <Engine.h>
 
@@ -24,10 +25,19 @@ int main(int argc, char* argv[]) {
 	cube2.rotate({ 1, 1.5, 0.7 });
 	cube3.rotate({ -0.5, 0.8, -0.3 });
 
+	ObjLoader icosahedronModel("TestAssets/da-vinci.obj");
+
+	Model icosahedron(icosahedronModel);
+
+	icosahedron.position = { 0, 0, 2000 };
+
+	icosahedron.scale(200);
+
 	engine.addObject(&mesh);
 	engine.addObject(&cube);
 	engine.addObject(&cube2);
 	engine.addObject(&cube3);
+	engine.addObject(&icosahedron);
 	engine.run();
 
 	return 0;

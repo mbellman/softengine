@@ -21,11 +21,13 @@ include_directories(${SDL2_INCLUDE_DIR})
 set(SOURCE_FILES
     Source/main.cpp
     Library/Helpers.h
-    Library/Objects.h       Source/Objects.cpp
-    Library/Types.h         Source/Types.cpp
-    Library/Rasterizer.h    Source/Rasterizer.cpp
-    Library/Engine.h        Source/Engine.cpp
-    Library/Quaternion.h    Source/Quaternion.cpp
+    Library/Objects.h              Source/Objects.cpp
+    Library/Types.h                Source/Types.cpp
+    Library/Rasterizer.h           Source/Rasterizer.cpp
+    Library/Engine.h               Source/Engine.cpp
+    Library/Quaternion.h           Source/Quaternion.cpp
+    Library/Loaders/Loader.h       Source/Loaders/Loader.cpp
+    Library/Loaders/ObjLoader.h    Source/Loaders/ObjLoader.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})

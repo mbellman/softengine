@@ -7,7 +7,7 @@
 #include <Objects.h>
 #include <Types.h>
 
-enum Flags: Uint32 {
+enum Flags : Uint32 {
 	DEBUG_DRAWTIME = 1 << 0,
 	SHOW_WIREFRAME = 1 << 1,
 	FLAT_SHADING = 1 << 2,

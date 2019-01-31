@@ -4,40 +4,59 @@
 #include <vector>
 #include <algorithm>
 #include <Types.h>
+#include <Loaders/ObjLoader.h>
 
+/**
+ * Object
+ * ------
+ */
 struct Object {
-	public:
-		Vec3 position;
+	Vec3 position;
 
-		Object();
-		~Object();
+	Object();
+	~Object();
 
-		void forEachPolygon(std::function<void(const Polygon&)> handle);
-		int getPolygonCount();
-		void rotate(const Vec3& rotation);
-
-	protected:
-		std::vector<Vertex3d> vertices;
-
-		void addPolygon(Vertex3d* v1, Vertex3d* v2, Vertex3d* v3);
-		void addVertex(const Vec3& vector, const Color& color);
-		void computeSurfaceNormals();
-
-	private:
-		std::vector<Polygon> polygons;
-};
-
-struct Mesh : Object {
-	Mesh(int rows, int columns, float tileSize);
-
+	void forEachPolygon(std::function<void(const Polygon&)> handle);
+	int getPolygonCount();
+	void rotate(const Vec3& rotation);
+	void scale(float scalar);
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
+
+protected:
+	std::vector<Vertex3d> vertices;
+
+	void addPolygon(int v1, int v2, int v3);
+	void addVertex(const Vec3& vector, const Color& color);
+	void computeSurfaceNormals();
+
+private:
+	std::vector<Polygon> polygons;
 };
 
-struct Cube : Object {
-	public:
-		Cube(float radius);
+/**
+ * Model
+ * -----
+ */
+struct Model : Object {
+	Model(const ObjLoader& obj);
+};
 
-	private:
-		static int polygonVertices[12][3];
+/**
+ * Mesh
+ * ----
+ */
+struct Mesh : Object {
+	Mesh(int rows, int columns, float tileSize);
+};
+
+/**
+ * Cube
+ * ----
+ */
+struct Cube : Object {
+	Cube(float radius);
+
+private:
+	static int polygonVertices[12][3];
 };
