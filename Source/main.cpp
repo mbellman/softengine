@@ -25,12 +25,10 @@ int main(int argc, char* argv[]) {
 	cube2.rotate({ 1, 1.5, 0.7 });
 	cube3.rotate({ -0.5, 0.8, -0.3 });
 
-	ObjLoader icosahedronModel("TestAssets/da-vinci.obj");
+	ObjLoader icosahedronObj("TestAssets/da-vinci.obj");
+	Model icosahedron(icosahedronObj);
 
-	Model icosahedron(icosahedronModel);
-
-	icosahedron.position = { 0, 0, 2000 };
-
+	icosahedron.position = { 0, 50, 2000 };
 	icosahedron.scale(200);
 
 	engine.addObject(&mesh);

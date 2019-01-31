@@ -29,7 +29,7 @@ struct VertexData {
  * Face
  * ----
  *
- * Describes the vertices for a polygonal face.
+ * Contains vertex data for polygonal faces.
  */
 struct Face {
 	VertexData v1;
@@ -43,6 +43,11 @@ struct Face {
  *
  * Opens and parses .obj files into an intermediate representation
  * for conversion into Model instances.
+ *
+ * Usage:
+ *
+ *   ObjLoader modelObj("path/to/file.obj");
+ *   Model model(modelObj);
  */
 class ObjLoader : Loader {
 public:

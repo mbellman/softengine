@@ -52,6 +52,8 @@ void Loader::load(const char* filePath) {
 	if (f != NULL) {
 		file = f;
 		isLoading = true;
+	} else {
+		printf("[Loader] Error opening file: %s\n", filePath);
 	}
 }
 
