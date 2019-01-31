@@ -79,10 +79,10 @@ VertexData ObjLoader::parseVertexData(string chunk) {
 	int offset = 0;
 
 	for (int i = 0; i < 3; i++) {
-		int p = chunk.find("/", offset);
-		bool found = p > -1;
+		int next = chunk.find("/", offset);
+		bool hasNext = next > -1;
 
-		if (p - offset == 0 || offset >= chunk.length()) {
+		if (next - offset == 0 || offset >= chunk.length()) {
 			// If the next '/' is immediately after the last,
 			// or we've reached the end of the chunk with
 			// cycles to spare, this type of vertex index isn't
@@ -92,12 +92,12 @@ VertexData ObjLoader::parseVertexData(string chunk) {
 			// As long as characters are found in between the
 			// previous '/' and the next, or we still have extra
 			// characters in the chunk, attempt to parse the index.
-			int len = found ? p : string::npos;
+			int len = hasNext ? next : string::npos;
 
 			vertexData.indexes[i] = stoi(chunk.substr(offset, len));
 		}
 
-		offset = found ? p + 1 : chunk.length();
+		offset = hasNext ? next + 1 : chunk.length();
 	}
 
 	return vertexData;
