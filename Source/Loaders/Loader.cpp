@@ -71,7 +71,6 @@ string Loader::readNextChunk() {
 }
 
 void Loader::nextLine() {
-	fillBufferUntil("\n");
 	buffer.clear();
 }
 
