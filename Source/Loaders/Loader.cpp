@@ -7,6 +7,10 @@
 Loader::~Loader() {}
 
 void Loader::fillBufferUntil(string end) {
+	if (!isLoading) {
+		return;
+	}
+
 	setChunkDelimiter(end);
 
 	char c;
