@@ -5,13 +5,12 @@ int width = 1200;
 int height = 720;
 
 int main(int argc, char* argv[]) {
-	Engine engine(width, height);
+	Engine engine(width, height, DEBUG_DRAWTIME);
 
 	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
 
 	UIText text("Test Text");
 
-	text.setRenderer(engine.getRenderer());
 	text.setFont(mono);
 	text.setPosition(10, 10);
 

@@ -63,8 +63,9 @@ void Engine::addObject(Object* object) {
 	objects.push_back(object);
 }
 
-void Engine::addUIObject(UIObject* object) {
-	ui->addObject(object);
+void Engine::addUIObject(UIObject* uiObject) {
+	uiObject->setRenderer(renderer);
+	ui->addObject(uiObject);
 }
 
 void Engine::delay(int ms) {
@@ -247,8 +248,4 @@ void Engine::updateMovement() {
 
 	camera.position.x += MOVEMENT_SPEED * xDelta;
 	camera.position.z += MOVEMENT_SPEED * zDelta;
-}
-
-SDL_Renderer* Engine::getRenderer() {
-	return renderer;
 }

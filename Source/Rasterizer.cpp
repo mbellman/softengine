@@ -125,7 +125,7 @@ void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
 
-	SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
+	SDL_RenderCopy(renderer, screenTexture, NULL, &destinationRect);
 
 	clear();
 }

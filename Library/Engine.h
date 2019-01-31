@@ -35,11 +35,9 @@ class Engine {
 		~Engine();
 
 		void addObject(Object* object);
-		void addUIObject(UIObject* object);
+		void addUIObject(UIObject* uiObject);
 		void draw();
 		void run();
-
-		SDL_Renderer* getRenderer();
 
 	private:
 		SDL_Window* window;
