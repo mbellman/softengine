@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 	cube2.rotate({ 1, 1.5, 0.7 });
 	cube3.rotate({ -0.5, 0.8, -0.3 });
 
-	ObjLoader icosahedronObj("TestAssets/da-vinci.obj");
+	ObjLoader icosahedronObj("./TestAssets/da-vinci.obj");
 	Model icosahedron(icosahedronObj);
 
 	icosahedron.position = { 0, 50, 2000 };
