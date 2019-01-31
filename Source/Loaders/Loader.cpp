@@ -4,11 +4,7 @@
 #include <algorithm>
 #include <Loaders/Loader.h>
 
-Loader::~Loader() {
-	if (file != NULL) {
-		fclose(file);
-	}
-}
+Loader::~Loader() {}
 
 void Loader::fillBufferUntil(string end) {
 	setChunkDelimiter(end);
@@ -20,6 +16,8 @@ void Loader::fillBufferUntil(string end) {
 	}
 
 	if (c == EOF) {
+		fclose(file);
+
 		isLoading = false;
 	} else if (isAtDelimiter()) {
 		int pos = (int)(buffer.length() - delimiter.length());

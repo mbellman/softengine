@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 	text.setFont(mono);
 	text.setPosition(10, 10);
 
-	Mesh mesh(80, 40, 40);
+	Mesh mesh(100, 40, 50);
 
 	mesh.position = { -1000, 0, -1000 };
 	mesh.setColor(0, 255, 0);
