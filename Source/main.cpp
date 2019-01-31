@@ -8,7 +8,14 @@ int height = 720;
 int main(int argc, char* argv[]) {
 	Engine engine(width, height, DEBUG_DRAWTIME);
 
-	Mesh mesh(100, 40, 50);
+	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
+
+	UIText text("Test Text");
+
+	text.setFont(mono);
+	text.setPosition(10, 10);
+
+	Mesh mesh(80, 40, 40);
 
 	mesh.position = { -1000, 0, -1000 };
 	mesh.setColor(0, 255, 0);
@@ -31,12 +38,15 @@ int main(int argc, char* argv[]) {
 	icosahedron.position = { 0, 50, 2000 };
 	icosahedron.scale(200);
 
+	engine.addUIObject(&text);
 	engine.addObject(&mesh);
 	engine.addObject(&cube);
 	engine.addObject(&cube2);
 	engine.addObject(&cube3);
 	engine.addObject(&icosahedron);
 	engine.run();
+
+	TTF_CloseFont(mono);
 
 	return 0;
 }

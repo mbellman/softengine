@@ -6,6 +6,7 @@
 #include <Rasterizer.h>
 #include <Objects.h>
 #include <Types.h>
+#include <UI/UI.h>
 
 enum Flags : Uint32 {
 	DEBUG_DRAWTIME = 1 << 0,
@@ -32,19 +33,25 @@ class Engine {
 	public:
 		Engine(int width, int height, Uint32 flags = 0);
 		~Engine();
+
 		void addObject(Object* object);
+		void addUIObject(UIObject* uiObject);
 		void draw();
 		void run();
+
 	private:
 		SDL_Window* window;
 		SDL_Renderer* renderer;
 		std::vector<Object*> objects;
 		Rasterizer* rasterizer;
+		UI* ui;
+
 		Camera camera;
 		Vec3 velocity;
 		Movement movement;
-		Uint32 flags = 0;
 		constexpr static int MOVEMENT_SPEED = 5;
+		Uint32 flags = 0;
+
 		int width;
 		int height;
 		void delay(int ms);
