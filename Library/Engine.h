@@ -3,10 +3,11 @@
 #include <SDL.h>
 #include <math.h>
 #include <vector>
-#include <Graphics/Rasterizer.h>
 #include <Objects.h>
 #include <Types.h>
 #include <UI/UI.h>
+#include <Graphics/Rasterizer.h>
+#include <Graphics/RasterQueue.h>
 
 enum Flags : Uint32 {
 	DEBUG_DRAWTIME = 1 << 0,
@@ -16,11 +17,12 @@ enum Flags : Uint32 {
 };
 
 struct Camera {
+	constexpr static float MAX_PITCH = 89 * M_PI / 180;
 	Vec3 position = { 0, 100, 0 };
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	int fov = 90;
-	constexpr static float MAX_PITCH = 89 * M_PI / 180;
+
 	RotationMatrix getRotationMatrix();
 };
 
@@ -36,7 +38,6 @@ class Engine {
 
 		void addObject(Object* object);
 		void addUIObject(UIObject* uiObject);
-		void draw();
 		void run();
 
 	private:
@@ -44,21 +45,27 @@ class Engine {
 		SDL_Renderer* renderer;
 		std::vector<Object*> objects;
 		Rasterizer* rasterizer;
+		RasterQueue* rasterQueue;
 		UI* ui;
 
 		Camera camera;
 		Vec3 velocity;
 		Movement movement;
+		bool isRunning = false;
 		constexpr static int MOVEMENT_SPEED = 5;
+		constexpr static int ZONE_SIZE = 500;
 		Uint32 flags = 0;
 
 		int width;
 		int height;
 		void delay(int ms);
+		void drawScene();
+		void fillRasterQueue();
 		int getPolygonCount();
 		void handleEvent(const SDL_Event& event);
 		void handleKeyDown(const SDL_Keycode& code);
 		void handleKeyUp(const SDL_Keycode& code);
 		void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
+		void update();
 		void updateMovement();
 };

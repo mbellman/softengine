@@ -6,7 +6,7 @@ int width = 1200;
 int height = 720;
 
 int main(int argc, char* argv[]) {
-	Engine engine(width, height, DEBUG_DRAWTIME);
+	Engine* engine = new Engine(width, height, DEBUG_DRAWTIME);
 
 	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
 
@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
 	text.setFont(mono);
 	text.setPosition(10, 10);
 
-	Mesh mesh(100, 40, 50);
+	Mesh* mesh = new Mesh(100, 40, 50);
 
-	mesh.position = { -1000, 0, -1000 };
-	mesh.setColor(0, 255, 0);
+	mesh->position = { -1000, 0, -1000 };
+	mesh->setColor(0, 255, 0);
 
 	Cube cube(100);
 	Cube cube2(50);
@@ -38,15 +38,18 @@ int main(int argc, char* argv[]) {
 	icosahedron.position = { 0, 50, 2000 };
 	icosahedron.scale(200);
 
-	engine.addUIObject(&text);
-	engine.addObject(&mesh);
-	engine.addObject(&cube);
-	engine.addObject(&cube2);
-	engine.addObject(&cube3);
-	engine.addObject(&icosahedron);
-	engine.run();
+	engine->addUIObject(&text);
+	engine->addObject(mesh);
+	engine->addObject(&cube);
+	engine->addObject(&cube2);
+	engine->addObject(&cube3);
+	engine->addObject(&icosahedron);
+	engine->run();
 
 	TTF_CloseFont(mono);
+
+	delete mesh;
+	delete engine;
 
 	return 0;
 }
