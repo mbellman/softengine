@@ -9,7 +9,7 @@
 #include <time.h>
 #include <algorithm>
 #include <Objects.h>
-#include <Rasterizer.h>
+#include <Graphics/Rasterizer.h>
 #include <Helpers.h>
 #include <Engine.h>
 #include <Quaternion.h>

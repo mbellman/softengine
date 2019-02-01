@@ -3,7 +3,7 @@
 #include <SDL.h>
 #include <math.h>
 #include <vector>
-#include <Rasterizer.h>
+#include <Graphics/Rasterizer.h>
 #include <Objects.h>
 #include <Types.h>
 #include <UI/UI.h>

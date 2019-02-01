@@ -21,18 +21,35 @@ set(SOURCE_FILES
     Source/main.cpp
     Library/Helpers.h
 
-    # UI
-    Library/UI/UI.h                Source/UI/UI.cpp
-    Library/UI/UIObjects.h         Source/UI/UIObjects.cpp
+    # -- Header files --
 
-    # Engine
-    Library/Objects.h              Source/Objects.cpp
-    Library/Types.h                Source/Types.cpp
-    Library/Rasterizer.h           Source/Rasterizer.cpp
-    Library/Engine.h               Source/Engine.cpp
-    Library/Quaternion.h           Source/Quaternion.cpp
-    Library/Loaders/Loader.h       Source/Loaders/Loader.cpp
-    Library/Loaders/ObjLoader.h    Source/Loaders/ObjLoader.cpp
+    # UI
+    Library/UI/UI.h
+    Library/UI/UIObjects.h
+
+    # Engine (Headers)
+    Library/Objects.h
+    Library/Types.h
+    Library/Graphics/Rasterizer.h
+    Library/Engine.h
+    Library/Quaternion.h
+    Library/Loaders/Loader.h
+    Library/Loaders/ObjLoader.h
+
+    # -- CPP Files --
+
+    # UI (CPP Files)
+    Source/UI/UI.cpp
+    Source/UI/UIObjects.cpp
+
+    # Engine (CPP Files)
+    Source/Objects.cpp
+    Source/Types.cpp
+    Source/Graphics/Rasterizer.cpp
+    Source/Engine.cpp
+    Source/Quaternion.cpp
+    Source/Loaders/Loader.cpp
+    Source/Loaders/ObjLoader.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})

@@ -2,9 +2,8 @@
 #include <stdio.h>
 #include <algorithm>
 #include <limits.h>
-
 #include <Helpers.h>
-#include <Rasterizer.h>
+#include <Graphics/Rasterizer.h>
 
 Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldUsePerVertexColoration) {
 	this->width = width;
