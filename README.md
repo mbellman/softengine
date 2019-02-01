@@ -5,20 +5,19 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Texture mapping
+* Improved hidden surface removal
 * Light sources
+* Texture mapping
 * Parallelization
 
 **Maybe:**
 
-* Improved hidden surface removal
-* Ambient occlusion
-* Dynamic shadows
 * OpenGL/hardware mode
+* Dynamic shadows
+* Ambient occlusion
 
 ### Refactoring/organization
 
-* Use a right-handed coordinate system for better Blender object support
 * Move existing documentation into .h files, add more documentation
 * Separate `Camera` into its own class with keyboard/mouse event handling
 

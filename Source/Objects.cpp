@@ -96,8 +96,9 @@ Model::Model(const ObjLoader& obj) {
 	for (int v = 0; v < obj.vertices.size(); v++) {
 		Vec3 vector = obj.vertices.at(v);
 
-		// Temporary fix for opposite coordinate system
-		// handedness between the engine and Blender
+		// Coordinate system handedness fix (Blender uses a right-handed
+		// screen space coordinate system, whereas we use a left-handed
+		// coordinate system).
 		vector.x *= -1;
 
 		addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
