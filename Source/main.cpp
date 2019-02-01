@@ -1,3 +1,4 @@
+#include <Loaders/ObjLoader.h>
 #include <Objects.h>
 #include <Engine.h>
 
@@ -14,7 +15,7 @@ int main(int argc, char* argv[]) {
 	text.setFont(mono);
 	text.setPosition(10, 10);
 
-	Mesh mesh(80, 40, 40);
+	Mesh mesh(100, 40, 50);
 
 	mesh.position = { -1000, 0, -1000 };
 	mesh.setColor(0, 255, 0);
@@ -31,11 +32,18 @@ int main(int argc, char* argv[]) {
 	cube2.rotate({ 1, 1.5, 0.7 });
 	cube3.rotate({ -0.5, 0.8, -0.3 });
 
+	ObjLoader icosahedronObj("./TestAssets/da-vinci.obj");
+	Model icosahedron(icosahedronObj);
+
+	icosahedron.position = { 0, 50, 2000 };
+	icosahedron.scale(200);
+
 	engine.addUIObject(&text);
 	engine.addObject(&mesh);
 	engine.addObject(&cube);
 	engine.addObject(&cube2);
 	engine.addObject(&cube3);
+	engine.addObject(&icosahedron);
 	engine.run();
 
 	TTF_CloseFont(mono);

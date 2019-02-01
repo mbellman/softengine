@@ -1,10 +1,37 @@
 #include <Objects.h>
+#include <Loaders/ObjLoader.h>
 
+/**
+ * Object
+ * ------
+ *
+ * A base class used for 3D objects. Subclasses offer more
+ * specialized types of Objects with custom geometry.
+ */
 Object::Object() {}
 
 Object::~Object() {
 	polygons.clear();
 	vertices.clear();
+}
+
+void Object::addPolygon(int v1, int v2, int v3) {
+	Polygon polygon;
+
+	polygon.bindVertex(0, &vertices.at(v1));
+	polygon.bindVertex(1, &vertices.at(v2));
+	polygon.bindVertex(2, &vertices.at(v3));
+
+	polygons.push_back(polygon);
+}
+
+void Object::addVertex(const Vec3& vector, const Color& color) {
+	Vertex3d vertex;
+
+	vertex.vector = vector;
+	vertex.color = color;
+
+	vertices.push_back(vertex);
 }
 
 void Object::computeSurfaceNormals() {
@@ -38,26 +65,61 @@ void Object::rotate(const Vec3& rotation) {
 	computeSurfaceNormals();
 }
 
-void Object::addPolygon(Vertex3d* v1, Vertex3d* v2, Vertex3d* v3) {
-	Polygon polygon;
+void Object::scale(float scalar) {
+	for (int i = 0; i < vertices.size(); i++) {
+		Vec3* vector = &vertices.at(i).vector;
 
-	polygon.bindVertex(0, v1);
-	polygon.bindVertex(1, v2);
-	polygon.bindVertex(2, v3);
-
-	polygons.push_back(polygon);
+		vector->x *= scalar;
+		vector->y *= scalar;
+		vector->z *= scalar;
+	}
 }
 
-void Object::addVertex(const Vec3& vector, const Color& color) {
-	Vertex3d vertex;
+void Object::setColor(int R, int G, int B) {
+	for (int i = 0; i < vertices.size(); i++) {
+		// vertices.at(i).color = { R, G, B };
+		vertices.at(i).color = { rand() % 255, rand() % 255, rand() % 255 };
+	}
+}
 
-	vertex.vector = vector;
-	vertex.color = color;
-
-	vertices.push_back(vertex);
+void Object::setColor(const Color& color) {
+	setColor(color.R, color.G, color.B);
 }
 
 /**
+ * Model
+ * -----
+ *
+ * Creates an object from ObjLoader instance data.
+ */
+Model::Model(const ObjLoader& obj) {
+	for (int v = 0; v < obj.vertices.size(); v++) {
+		Vec3 vector = obj.vertices.at(v);
+
+		// Temporary fix for opposite coordinate system
+		// handedness between the engine and Blender
+		vector.x *= -1;
+
+		addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
+	}
+
+	for (int f = 0; f < obj.faces.size(); f++) {
+		const Face* face = &obj.faces.at(f);
+
+		int v1 = face->v1.indexes[0] - 1;
+		int v2 = face->v2.indexes[0] - 1;
+		int v3 = face->v3.indexes[0] - 1;
+
+		addPolygon(v1, v2, v3);
+	}
+
+	computeSurfaceNormals();
+}
+
+/**
+ * Mesh
+ * ----
+ *
  * Creates a flat polygon mesh of given rows and columns using a fixed
  * tile size. The total polygon count corresponds to 2x the number of
  * tiles (2 x rows x columns). We add polygons in the following manner:
@@ -98,30 +160,45 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 			bool isLowerPolygon = p % 2 == 0;
 			int firstVertexIndex = row * verticesPerRow + (int)p / 2;
 			int vertexBelowFirstIndex = firstVertexIndex + verticesPerRow;
-			int i1 = firstVertexIndex;
-			int i2 = vertexBelowFirstIndex - (isLowerPolygon ? 1 : 0);
-			int i3 = isLowerPolygon ? vertexBelowFirstIndex : firstVertexIndex + 1;
+			int v1 = firstVertexIndex;
+			int v2 = vertexBelowFirstIndex - (isLowerPolygon ? 1 : 0);
+			int v3 = isLowerPolygon ? vertexBelowFirstIndex : firstVertexIndex + 1;
 
-			addPolygon(
-				&vertices.at(i1),
-				&vertices.at(i2),
-				&vertices.at(i3)
-			);
+			addPolygon(v1, v2, v3);
 		}
 	}
 
 	computeSurfaceNormals();
 }
 
-void Mesh::setColor(int R, int G, int B) {
-	for (int i = 0; i < vertices.size(); i++) {
-		// vertices.at(i).color = { R, G, B };
-		vertices.at(i).color = { rand() % 255, rand() % 255, rand() % 255 };
-	}
-}
+/**
+ * Cube
+ * ----
+ *
+ * Produces a cube of a given radius.
+ */
+Cube::Cube(float radius) {
+	float diameter = 2 * radius;
 
-void Mesh::setColor(const Color& color) {
-	setColor(color.R, color.G, color.B);
+	for (int i = 0; i < 2; i++) {
+		for (int j = 0; j < 4; j++) {
+			Vec3 vector;
+
+			vector.x = (j == 2 || j == 3 ? diameter : 0) - radius;
+			vector.y = (i * diameter) - radius;
+			vector.z = (j == 1 || j == 2 ? -diameter : 0) + radius;
+
+			addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
+		}
+	}
+
+	for (int p = 0; p < 12; p++) {
+		const int (*polygonVertices)[3] = &(Cube::polygonVertices[p]);
+
+		addPolygon((*polygonVertices)[0], (*polygonVertices)[1], (*polygonVertices)[2]);
+	}
+
+	computeSurfaceNormals();
 }
 
 int Cube::polygonVertices[12][3] = {
@@ -141,31 +218,3 @@ int Cube::polygonVertices[12][3] = {
 	{ 4, 6, 5 },
 	{ 4, 7, 6 }
 };
-
-Cube::Cube(float radius) {
-	float diameter = 2 * radius;
-
-	for (int i = 0; i < 2; i++) {
-		for (int j = 0; j < 4; j++) {
-			Vec3 vector;
-
-			vector.x = (j == 2 || j == 3 ? diameter : 0) - radius;
-			vector.y = (i * diameter) - radius;
-			vector.z = (j == 1 || j == 2 ? -diameter : 0) + radius;
-
-			addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
-		}
-	}
-
-	for (int p = 0; p < 12; p++) {
-		const int (*polygonVertices)[3] = &(Cube::polygonVertices[p]);
-
-		addPolygon(
-			&vertices.at((*polygonVertices)[0]),
-			&vertices.at((*polygonVertices)[1]),
-			&vertices.at((*polygonVertices)[2])
-		);
-	}
-
-	computeSurfaceNormals();
-}

@@ -22,15 +22,17 @@ set(SOURCE_FILES
     Library/Helpers.h
 
     # UI
-    Library/UI/UI.h         Source/UI/UI.cpp
-    Library/UI/UIObjects.h  Source/UI/UIObjects.cpp
+    Library/UI/UI.h                Source/UI/UI.cpp
+    Library/UI/UIObjects.h         Source/UI/UIObjects.cpp
 
     # Engine
-    Library/Objects.h       Source/Objects.cpp
-    Library/Types.h         Source/Types.cpp
-    Library/Rasterizer.h    Source/Rasterizer.cpp
-    Library/Engine.h        Source/Engine.cpp
-    Library/Quaternion.h    Source/Quaternion.cpp
+    Library/Objects.h              Source/Objects.cpp
+    Library/Types.h                Source/Types.cpp
+    Library/Rasterizer.h           Source/Rasterizer.cpp
+    Library/Engine.h               Source/Engine.cpp
+    Library/Quaternion.h           Source/Quaternion.cpp
+    Library/Loaders/Loader.h       Source/Loaders/Loader.cpp
+    Library/Loaders/ObjLoader.h    Source/Loaders/ObjLoader.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
