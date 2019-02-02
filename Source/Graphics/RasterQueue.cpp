@@ -88,7 +88,7 @@ bool RasterQueue::isTriangleOccluded(const Triangle& triangle, const Cover& cove
 	return true;
 }
 
-bool RasterQueue::isTriangleVisible(Triangle& triangle) {
+bool RasterQueue::isTriangleVisible(const Triangle& triangle) {
 	for (const auto &cover : covers) {
 		if (cover.zone < currentZoneIndex && isTriangleOccluded(triangle, cover)) {
 			return false;
