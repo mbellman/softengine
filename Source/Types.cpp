@@ -2,6 +2,10 @@
 #include <cmath>
 #include <Types.h>
 
+/**
+ * RotationMatrix
+ * --------------
+ */
 RotationMatrix RotationMatrix::operator *(const RotationMatrix& rm) const {
 	return {
 		m11 * rm.m11 + m12 * rm.m21 + m13 * rm.m31, m11 * rm.m12 + m12 * rm.m22 + m13 * rm.m32, m11 * rm.m13 + m12 * rm.m23 + m13 * rm.m33,
@@ -33,6 +37,10 @@ Vec3 RotationMatrix::operator *(const Vec3& v) const {
 	};
 }
 
+/**
+ * Vec3
+ * ----
+ */
 Vec3::Vec3() {}
 
 Vec3::Vec3(float x, float y, float z) {
@@ -91,6 +99,10 @@ Vec3 Vec3::operator -(const Vec3& vector) const {
 	};
 }
 
+/**
+ * Triangle
+ * --------
+ */
 void Triangle::createVertex(int index, int x, int y, int depth, const Color& color) {
 	Vertex2d vertex;
 
@@ -102,6 +114,10 @@ void Triangle::createVertex(int index, int x, int y, int depth, const Color& col
 	vertices[index] = vertex;
 }
 
+/**
+ * Polygon
+ * -------
+ */
 void Polygon::bindVertex(int index, Vertex3d* vertex) {
 	vertices[index] = vertex;
 }

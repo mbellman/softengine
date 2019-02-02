@@ -3,12 +3,16 @@
 #include <Helpers.h>
 #include <Graphics/RasterQueue.h>
 
+/**
+ * RasterQueue
+ * -----------
+ */
 RasterQueue::RasterQueue(int width, int height) {
 	this->width = width;
 	this->height = height;
 }
 
-void RasterQueue::addCover(Triangle& triangle, int zone) {
+void RasterQueue::addCover(const Triangle& triangle, int zone) {
 	covers.push_back({
 		triangle.vertices[0].coordinate,
 		triangle.vertices[1].coordinate,
@@ -31,36 +35,14 @@ void RasterQueue::addTriangle(Triangle triangle, int zoneIndex) {
 	zones[zoneIndex].push_back(triangle);
 }
 
-int RasterQueue::DEBUG_getTotalCovers() {
-	return covers.size();
-}
-
 bool RasterQueue::isPointWithinEdge(int x, int y, int ex1, int ey1, int ex2, int ey2) {
-	if (ex1 == ex2) {
-		// Trivial case #1: For vertical edges, we can simply
-		// check whether the point x is > the edge x for downward
-		// lines or < the edge x for upward lines.
-		return ey2 > ey1 ? (x > ex1) : (x < ex1);
-	} else if (ey1 == ey2) {
-		// Trivial case #2: For horizontal edges, we can simply
-		// check whether the point y is < the edge y for rightward
-		// lines or > the edge y for leftward lines.
-		return ex2 > ex1 ? (y < ey1) : (y > ey1);
-	} else {
-		// Nontrivial case: we have to determine the edge slope
-		// and check whether the point is 'inside' or 'outside'.
-		float slope = (float)(ey2 - ey1) / (ex2 - ex1);
-		bool isDownwardEdge = ey2 > ey1;
-		int edgeXAtPoint = ex1 + (int)((y - ey1) / slope);
-
-		return isDownwardEdge ? (x > edgeXAtPoint) : (x < edgeXAtPoint);
-	}
+	return ((x - ex1) * (ey2 - ey1) - (y - ey1) * (ex2 - ex1)) > 0;
 }
 
-bool RasterQueue::isTriangleCoverable(Triangle& triangle) {
-	Coordinate* c1 = &triangle.vertices[0].coordinate;
-	Coordinate* c2 = &triangle.vertices[1].coordinate;
-	Coordinate* c3 = &triangle.vertices[2].coordinate;
+bool RasterQueue::isTriangleCoverable(const Triangle& triangle) {
+	const Coordinate* c1 = &triangle.vertices[0].coordinate;
+	const Coordinate* c2 = &triangle.vertices[1].coordinate;
+	const Coordinate* c3 = &triangle.vertices[2].coordinate;
 
 	int minX = std::min(c1->x, std::min(c2->x, c3->x));
 	int maxX = std::max(c1->x, std::max(c2->x, c3->x));
@@ -83,9 +65,9 @@ bool RasterQueue::isTriangleCoverable(Triangle& triangle) {
 /**
  * Determines whether a Triangle is occluded by a Cover.
  */
-bool RasterQueue::isTriangleOccluded(Triangle& triangle, const Cover& cover) {
+bool RasterQueue::isTriangleOccluded(const Triangle& triangle, const Cover& cover) {
 	for (int i = 0; i < 3; i++) {
-		Coordinate* v = &triangle.vertices[i].coordinate;
+		const Coordinate* v = &triangle.vertices[i].coordinate;
 
 		// To determine whether a triangle T is completely covered by
 		// another triangle T*, we have to check T's vertices against

@@ -18,7 +18,6 @@ public:
 	RasterQueue(int width, int height);
 
 	void addTriangle(Triangle triangle, int zoneIndex);
-	int DEBUG_getTotalCovers();
 	Triangle* next();
 
 private:
@@ -32,10 +31,11 @@ private:
 	Zone zones[RasterQueue::MAX_ZONES];
 	std::vector<Cover> covers;
 
-	void addCover(Triangle& triangle, int zone);
-	bool isTriangleCoverable(Triangle& triangle);
-	bool isTriangleVisible(Triangle& triangle);
-	bool isTriangleOccluded(Triangle& triangle, const Cover& cover);
+	void addCover(const Triangle& triangle, int zone);
 	bool isPointWithinEdge(int x, int y, int ex1, int ey1, int ex2, int ey2);
+	bool isTriangleCoverable(const Triangle& triangle);
+	bool isTriangleNearby(const Triangle& triangle, const Cover& cover);
+	bool isTriangleOccluded(const Triangle& triangle, const Cover& cover);
+	bool isTriangleVisible(Triangle& triangle);
 	void reset();
 };

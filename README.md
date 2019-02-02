@@ -5,6 +5,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
+* Swappable "Benchmark" scenarios
 * On-screen debug stats
 * Light sources
 * Texture mapping
