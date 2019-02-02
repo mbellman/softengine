@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <optional>
 #include <Helpers.h>
 #include <Graphics/RasterQueue.h>
 
@@ -8,8 +7,8 @@
  * -----------
  */
 RasterQueue::RasterQueue(int width, int height) {
-	this->width = width;
-	this->height = height;
+	this->rasterWidth = width;
+	this->rasterHeight = height;
 }
 
 void RasterQueue::addCover(const Triangle& triangle, int zone) {
@@ -57,8 +56,8 @@ bool RasterQueue::isTriangleCoverable(const Triangle& triangle) {
 		(maxY - minY) > MIN_COVER_SIZE &&
 		// Ensure that it extends far enough into the screen
 		// that distant triangles are likely to be covered by it
-		(minX < (width - MIN_COVER_SIZE) && maxX > MIN_COVER_SIZE) &&
-		(minY < (height - MIN_COVER_SIZE) && maxY > MIN_COVER_SIZE)
+		(minX < (rasterWidth - MIN_COVER_SIZE) && maxX > MIN_COVER_SIZE) &&
+		(minY < (rasterHeight - MIN_COVER_SIZE) && maxY > MIN_COVER_SIZE)
 	);
 }
 

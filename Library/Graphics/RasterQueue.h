@@ -4,8 +4,21 @@
 #include <optional>
 #include <Types.h>
 
+/**
+ * Zone
+ * ----
+ *
+ * A lineup of Triangle objects corresponding to a given zone.
+ */
 typedef std::vector<Triangle> Zone;
 
+/**
+ * Cover
+ * -----
+ *
+ * Represents the screen coverage of larger Triangles which
+ * are capable of occluding others behind them.
+ */
 struct Cover {
 	Coordinate c1;
 	Coordinate c2;
@@ -13,6 +26,14 @@ struct Cover {
 	int zone;
 };
 
+/**
+ * RasterQueue
+ * -----------
+ *
+ * Provides a mechanism for receiving and storing Triangles by 'zone'
+ * before they are drawn, and dispensing them in zone-order, also
+ * filtering out triangles occluded by larger, closer ones.
+ */
 class RasterQueue {
 public:
 	RasterQueue(int width, int height);
@@ -26,8 +47,8 @@ private:
 	int currentZoneIndex = 0;
 	int highestZoneIndex = 0;
 	int currentElementIndex = 0;
-	int width;
-	int height;
+	int rasterWidth;
+	int rasterHeight;
 	Zone zones[RasterQueue::MAX_ZONES];
 	std::vector<Cover> covers;
 
