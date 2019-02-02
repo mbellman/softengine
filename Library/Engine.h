@@ -13,7 +13,8 @@ enum Flags : Uint32 {
 	DEBUG_DRAWTIME = 1 << 0,
 	SHOW_WIREFRAME = 1 << 1,
 	FLAT_SHADING = 1 << 2,
-	PIXEL_FILTER = 1 << 3
+	PIXEL_FILTER = 1 << 3,
+	REMOVE_OCCLUDED_SURFACES = 1 << 4
 };
 
 struct Camera {
@@ -53,14 +54,14 @@ class Engine {
 		Movement movement;
 		bool isRunning = false;
 		constexpr static int MOVEMENT_SPEED = 5;
-		constexpr static int ZONE_SIZE = 500;
+		constexpr static int ZONE_RANGE = 250;
 		Uint32 flags = 0;
 
 		int width;
 		int height;
 		void delay(int ms);
 		void drawScene();
-		void fillRasterQueue();
+		void drawTriangle(Triangle& triangle);
 		int getPolygonCount();
 		void handleEvent(const SDL_Event& event);
 		void handleKeyDown(const SDL_Keycode& code);

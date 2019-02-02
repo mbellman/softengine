@@ -40,7 +40,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & FLAT_SHADING);
-	rasterQueue = new RasterQueue();
+	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
 
 	this->width = width;
@@ -80,28 +80,24 @@ void Engine::delay(int ms) {
 	}
 }
 
-void Engine::drawScene() {
-	Triangle* triangle;
+void Engine::drawTriangle(Triangle& triangle) {
+	if (flags & SHOW_WIREFRAME) {
+		rasterizer->setColor(255, 255, 255);
 
-	while ((triangle = rasterQueue->next()) != NULL) {
-		if (flags & SHOW_WIREFRAME) {
-			rasterizer->setColor(255, 255, 255);
-
-			rasterizer->triangle(
-				triangle->vertices[0].coordinate.x, triangle->vertices[0].coordinate.y,
-				triangle->vertices[1].coordinate.x, triangle->vertices[1].coordinate.y,
-				triangle->vertices[2].coordinate.x, triangle->vertices[2].coordinate.y
-			);
-		} else {
-			rasterizer->triangle(*triangle);
-		}
+		rasterizer->triangle(
+			triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
+			triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
+			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
+		);
+	} else {
+		rasterizer->triangle(triangle);
 	}
-
-	rasterizer->render(renderer, flags & PIXEL_FILTER ? 2 : 1);
 }
 
-void Engine::fillRasterQueue() {
+void Engine::drawScene() {
 	bool hasPixelFilter = flags & PIXEL_FILTER;
+	bool shouldRemoveOccludedSurfaces = flags & REMOVE_OCCLUDED_SURFACES;
+
 	int fovScalar = (hasPixelFilter ? 250 : 500) * (360 / camera.fov);
 	int midpointX = width / (hasPixelFilter ? 4 : 2);
 	int midpointY = height / (hasPixelFilter ? 4 : 2);
@@ -142,12 +138,26 @@ void Engine::fillRasterQueue() {
 			}
 
 			if (isInView) {
-				int zone = (int)((depthSum / 3) / Engine::ZONE_SIZE);
+				if (shouldRemoveOccludedSurfaces) {
+					int zone = (int)((depthSum / 3) / Engine::ZONE_RANGE);
 
-				rasterQueue->queue(triangle, zone);
+					rasterQueue->addTriangle(triangle, zone);
+				} else {
+					drawTriangle(triangle);
+				}
 			}
 		});
 	}
+
+	if (shouldRemoveOccludedSurfaces) {
+		Triangle* triangle;
+
+		while ((triangle = rasterQueue->next()) != NULL) {
+			drawTriangle(*triangle);
+		}
+	}
+
+	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
 }
 
 int Engine::getPolygonCount() {
@@ -170,6 +180,11 @@ void Engine::handleEvent(const SDL_Event& event) {
 			break;
 		case SDL_MOUSEMOTION:
 			handleMouseMotionEvent(event.motion);
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			if (event.button.button == SDL_BUTTON_LEFT) {
+				SDL_SetRelativeMouseMode(SDL_TRUE);
+			}
 			break;
 	}
 }
@@ -254,7 +269,6 @@ void Engine::run() {
 
 void Engine::update() {
 		updateMovement();
-		fillRasterQueue();
 		drawScene();
 		ui->draw();
 		SDL_RenderPresent(renderer);
