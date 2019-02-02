@@ -103,6 +103,10 @@ Vec3 Vec3::operator -(const Vec3& vector) const {
  * Triangle
  * --------
  */
+float Triangle::averageDepth() const {
+	return (vertices[0].depth + vertices[1].depth + vertices[2].depth) / 3;
+}
+
 void Triangle::createVertex(int index, int x, int y, int depth, const Color& color) {
 	Vertex2d vertex;
 

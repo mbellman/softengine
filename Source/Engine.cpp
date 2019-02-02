@@ -117,8 +117,7 @@ void Engine::drawScene() {
 			}
 
 			Triangle triangle;
-			bool isInView = false;
-			int depthSum = 0;
+			bool isInFront = false;
 
 			for (int i = 0; i < 3; i++) {
 				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
@@ -128,18 +127,16 @@ void Engine::drawScene() {
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
 				int depth = (int)vertex.z;
 
-				depthSum += depth;
-
-				if (!isInView && depth > 0) {
-					isInView = true;
+				if (!isInFront && depth > 0) {
+					isInFront = true;
 				}
 
 				triangle.createVertex(i, x, y, depth, polygon.vertices[i]->color);
 			}
 
-			if (isInView) {
+			if (isInFront) {
 				if (shouldRemoveOccludedSurfaces) {
-					int zone = (int)((depthSum / 3) / Engine::ZONE_RANGE);
+					int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
 
 					rasterQueue->addTriangle(triangle, zone);
 				} else {
