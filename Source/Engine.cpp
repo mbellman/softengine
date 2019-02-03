@@ -66,6 +66,8 @@ void Engine::clearActiveLevel() {
 	if (activeLevel != NULL) {
 		delete activeLevel;
 	}
+
+	activeLevel = NULL;
 }
 
 void Engine::delay(int ms) {
