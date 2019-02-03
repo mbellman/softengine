@@ -19,7 +19,7 @@ public:
 	bool hasQuit();
 	virtual void load() = 0;
 	void quit();
-	virtual void update(int dt);
+	virtual void update(int dt, int runningTime);
 
 protected:
 	void add(const char* name, Object* object);

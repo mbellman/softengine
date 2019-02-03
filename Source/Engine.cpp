@@ -219,6 +219,8 @@ void Engine::run() {
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 
+		activeLevel->update(fullDelta, SDL_GetTicks());
+
 		char title[100];
 		sprintf(
 			title,

@@ -59,4 +59,4 @@ void Level::remove(const char* name) {
 	objectMap.erase(name);
 }
 
-void Level::update(int dt) {}
+void Level::update(int dt, int runningTime) {}
