@@ -77,8 +77,7 @@ void Object::scale(float scalar) {
 
 void Object::setColor(int R, int G, int B) {
 	for (int i = 0; i < vertices.size(); i++) {
-		// vertices.at(i).color = { R, G, B };
-		vertices.at(i).color = { rand() % 255, rand() % 255, rand() % 255 };
+		vertices.at(i).color = { R, G, B };
 	}
 }
 
@@ -93,6 +92,8 @@ void Object::setColor(const Color& color) {
  * Creates an object from ObjLoader instance data.
  */
 Model::Model(const ObjLoader& obj) {
+	printf("Instatiating Model...V: %d\n", obj.vertices.size());
+
 	for (int v = 0; v < obj.vertices.size(); v++) {
 		Vec3 vector = obj.vertices.at(v);
 
@@ -150,7 +151,7 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 
 	for (int z = 0; z < verticesPerColumn; z++) {
 		for (int x = 0; x < verticesPerRow; x++) {
-			addVertex({ x * tileSize, (float)(rand() % 50), z * tileSize }, { 255, 255, 255 });
+			addVertex({ x * tileSize, (float)(rand() % 50), z * tileSize }, { rand() % 255, rand() % 255, rand() % 255 });
 		}
 	}
 

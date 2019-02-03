@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Ofast")
 # -Wall -Wextra
 
+include_directories(Demo)
 include_directories(Library)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-modules)
@@ -18,8 +19,12 @@ find_package(SDL2TTF REQUIRED)
 include_directories(${SDL2TTF_INCLUDE_DIR})
 
 set(SOURCE_FILES
-    Source/main.cpp
-    Library/Helpers.h
+    # -- Demo files --
+    Demo/main.cpp
+    Demo/Levels/Default.cpp
+    Demo/Levels/Default.h
+    Demo/Levels/StressTest.cpp
+    Demo/Levels/StressTest.h
 
     # -- Header files --
 
@@ -28,7 +33,9 @@ set(SOURCE_FILES
     Library/UI/UIObjects.h
 
     # Engine (Headers)
+    Library/Helpers.h
     Library/Objects.h
+    Library/Level.h
     Library/Types.h
     Library/Graphics/Rasterizer.h
     Library/Engine.h
@@ -44,6 +51,7 @@ set(SOURCE_FILES
 
     # Engine (CPP Files)
     Source/Objects.cpp
+    Source/Level.cpp
     Source/Types.cpp
     Source/Graphics/Rasterizer.cpp
     Source/Engine.cpp
