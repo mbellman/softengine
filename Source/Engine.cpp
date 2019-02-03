@@ -9,11 +9,12 @@
 #include <time.h>
 #include <algorithm>
 #include <Objects.h>
-#include <Graphics/Rasterizer.h>
 #include <Helpers.h>
 #include <Engine.h>
 #include <Quaternion.h>
 #include <UI/UIObjects.h>
+#include <Graphics/Rasterizer.h>
+#include <Graphics/RasterQueue.h>
 
 RotationMatrix Camera::getRotationMatrix() {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
@@ -39,6 +40,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & FLAT_SHADING);
+	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
 
 	this->width = width;
@@ -80,8 +82,24 @@ void Engine::delay(int ms) {
 	}
 }
 
-void Engine::draw() {
+void Engine::drawTriangle(Triangle& triangle) {
+	if (flags & SHOW_WIREFRAME) {
+		rasterizer->setColor(255, 255, 255);
+
+		rasterizer->triangle(
+			triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
+			triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
+			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
+		);
+	} else {
+		rasterizer->triangle(triangle);
+	}
+}
+
+void Engine::drawScene() {
 	bool hasPixelFilter = flags & PIXEL_FILTER;
+	bool shouldRemoveOccludedSurfaces = flags & REMOVE_OCCLUDED_SURFACES;
+
 	int fovScalar = (hasPixelFilter ? 250 : 500) * (360 / camera.fov);
 	int midpointX = width / (hasPixelFilter ? 4 : 2);
 	int midpointY = height / (hasPixelFilter ? 4 : 2);
@@ -100,7 +118,7 @@ void Engine::draw() {
 			}
 
 			Triangle triangle;
-			bool isInView = false;
+			bool isInFront = false;
 
 			for (int i = 0; i < 3; i++) {
 				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
@@ -110,30 +128,34 @@ void Engine::draw() {
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
 				int depth = (int)vertex.z;
 
-				if (!isInView && depth > 0) {
-					isInView = true;
+				if (!isInFront && depth > 0) {
+					isInFront = true;
 				}
 
 				triangle.createVertex(i, x, y, depth, polygon.vertices[i]->color);
 			}
 
-			if (isInView) {
-				if (flags & SHOW_WIREFRAME) {
-					rasterizer->setColor(255, 255, 255);
+			if (isInFront) {
+				if (shouldRemoveOccludedSurfaces) {
+					int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
 
-					rasterizer->triangle(
-						triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
-						triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
-						triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
-					);
+					rasterQueue->addTriangle(triangle, zone);
 				} else {
-					rasterizer->triangle(triangle);
+					drawTriangle(triangle);
 				}
 			}
 		});
 	}
 
-	rasterizer->render(renderer, flags & PIXEL_FILTER ? 2 : 1);
+	if (shouldRemoveOccludedSurfaces) {
+		Triangle* triangle;
+
+		while ((triangle = rasterQueue->next()) != NULL) {
+			drawTriangle(*triangle);
+		}
+	}
+
+	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
 }
 
 int Engine::getPolygonCount() {
@@ -157,6 +179,11 @@ void Engine::handleEvent(const SDL_Event& event) {
 		case SDL_MOUSEMOTION:
 			handleMouseMotionEvent(event.motion);
 			break;
+		case SDL_MOUSEBUTTONDOWN:
+			if (event.button.button == SDL_BUTTON_LEFT) {
+				SDL_SetRelativeMouseMode(SDL_TRUE);
+			}
+			break;
 	}
 }
 
@@ -166,6 +193,7 @@ void Engine::handleKeyDown(const SDL_Keycode& code) {
 		case SDLK_s: movement.z = -1; break;
 		case SDLK_a: movement.x = -1; break;
 		case SDLK_d: movement.x = 1; break;
+		case SDLK_LSHIFT: isRunning = true; break;
 	}
 }
 
@@ -175,6 +203,7 @@ void Engine::handleKeyUp(const SDL_Keycode& code) {
 		case SDLK_s: movement.z = 0; break;
 		case SDLK_a: movement.x = 0; break;
 		case SDLK_d: movement.x = 0; break;
+		case SDLK_LSHIFT: isRunning = false; break;
 		case SDLK_ESCAPE:
 		case SDLK_SPACE:
 			SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -204,10 +233,7 @@ void Engine::run() {
 	while (!activeLevel->hasQuit()) {
 		lastStartTime = SDL_GetTicks();
 
-		updateMovement();
-		draw();
-		ui->draw();
-		SDL_RenderPresent(renderer);
+		update();
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
@@ -232,7 +258,6 @@ void Engine::run() {
 		SDL_SetWindowTitle(window, title);
 
 		SDL_Event event;
-		float speed = 5;
 
 		while (SDL_PollEvent(&event)) {
 			handleEvent(event);
@@ -255,6 +280,13 @@ void Engine::setActiveLevel(Level* level) {
 	activeLevel = level;
 }
 
+void Engine::update() {
+		updateMovement();
+		drawScene();
+		ui->draw();
+		SDL_RenderPresent(renderer);
+}
+
 void Engine::updateMovement() {
 	float sy = std::sin(camera.yaw);
 	float cy = std::cos(camera.yaw);
@@ -262,6 +294,8 @@ void Engine::updateMovement() {
 	float xDelta = movement.x * cy - movement.z * sy;
 	float zDelta = movement.z * cy + movement.x * sy;
 
-	camera.position.x += MOVEMENT_SPEED * xDelta;
-	camera.position.z += MOVEMENT_SPEED * zDelta;
+	int scalar = (isRunning ? 4 : 1) * MOVEMENT_SPEED;
+
+	camera.position.x += scalar * xDelta;
+	camera.position.z += scalar * zDelta;
 }

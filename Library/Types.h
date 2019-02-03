@@ -73,6 +73,7 @@ struct Vertex3d : Colorable {
 struct Triangle {
 	Vertex2d vertices[3];
 
+	float averageDepth() const;
 	void createVertex(int index, int x, int y, int depth, const Color& color);
 };
 

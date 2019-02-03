@@ -37,11 +37,12 @@ set(SOURCE_FILES
     Library/Objects.h
     Library/Level.h
     Library/Types.h
-    Library/Graphics/Rasterizer.h
     Library/Engine.h
     Library/Quaternion.h
     Library/Loaders/Loader.h
     Library/Loaders/ObjLoader.h
+    Library/Graphics/Rasterizer.h
+    Library/Graphics/RasterQueue.h
 
     # -- CPP Files --
 
@@ -53,11 +54,12 @@ set(SOURCE_FILES
     Source/Objects.cpp
     Source/Level.cpp
     Source/Types.cpp
-    Source/Graphics/Rasterizer.cpp
     Source/Engine.cpp
     Source/Quaternion.cpp
     Source/Loaders/Loader.cpp
     Source/Loaders/ObjLoader.cpp
+    Source/Graphics/Rasterizer.cpp
+    Source/Graphics/RasterQueue.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
