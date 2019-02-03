@@ -7,18 +7,18 @@
  * Level
  * -----
  */
-void Level::add(const char* name, Object* object) {
+void Level::add(const char* key, Object* object) {
 	add(object);
 
-	objectMap.emplace(name, objects.size() - 1);
+	objectMap.emplace(key, objects.size() - 1);
 }
 
 void Level::add(Object* object) {
 	objects.push_back(object);
 }
 
-void Level::add(const char* name, ObjLoader* objLoader) {
-	objLoaderMap.emplace(name, objLoader);
+void Level::add(const char* key, ObjLoader* objLoader) {
+	objLoaderMap.emplace(key, objLoader);
 }
 
 Object* Level::getObject(const char* key) {
@@ -55,8 +55,15 @@ void Level::quit() {
 	state = State::INACTIVE;
 }
 
-void Level::remove(const char* name) {
-	objectMap.erase(name);
+void Level::remove(const char* key) {
+	auto it = objectMap.find(key);
+
+	if (it != objectMap.end()) {
+		delete objects.at(it->second);
+
+		objects.erase(objects.begin() + it->second);
+		objectMap.erase(key);
+	}
 }
 
 void Level::update(int dt, int runningTime) {}

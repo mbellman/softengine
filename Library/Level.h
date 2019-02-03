@@ -22,12 +22,12 @@ public:
 	virtual void update(int dt, int runningTime);
 
 protected:
-	void add(const char* name, Object* object);
+	void add(const char* key, Object* object);
 	void add(Object* object);
-	void add(const char* name, ObjLoader* objLoader);
-	Object* getObject(const char* name);
-	ObjLoader* getLoader(const char* name);
-	void remove(const char* name);
+	void add(const char* key, ObjLoader* objLoader);
+	Object* getObject(const char* key);
+	ObjLoader* getLoader(const char* key);
+	void remove(const char* key);
 
 private:
 	std::vector<Object*> objects;
