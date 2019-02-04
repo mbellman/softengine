@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <algorithm>
-
 struct RotationMatrix;
 
 struct Color {
@@ -10,21 +7,8 @@ struct Color {
 	int G = 255;
 	int B = 255;
 
-	Color operator +(int attenuation) const {
-		return {
-			std::min(R + attenuation, 255),
-			std::min(G + attenuation, 255),
-			std::min(B + attenuation, 255)
-		};
-	}
-
-	Color operator -(int attenuation) const {
-		return {
-			std::max(R - attenuation, 0),
-			std::max(G - attenuation, 0),
-			std::max(B - attenuation, 0)
-		};
-	}
+	Color operator +(int attenuation) const;
+	Color operator -(int attenuation) const;
 };
 
 struct Colorable {

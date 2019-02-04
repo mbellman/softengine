@@ -1,6 +1,27 @@
 #include <memory>
 #include <cmath>
+#include <algorithm>
 #include <Types.h>
+
+/**
+ * Color
+ * -----
+ */
+Color Color::operator +(int illumination) const {
+	return {
+		std::min(R + illumination, 255),
+		std::min(G + illumination, 255),
+		std::min(B + illumination, 255)
+	};
+}
+
+Color Color::operator -(int attenuation) const {
+	return {
+		std::max(R - attenuation, 0),
+		std::max(G - attenuation, 0),
+		std::max(B - attenuation, 0)
+	};
+}
 
 /**
  * RotationMatrix

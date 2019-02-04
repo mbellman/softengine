@@ -5,6 +5,12 @@
 #include <Helpers.h>
 #include <Graphics/Rasterizer.h>
 
+using namespace std;
+
+/**
+ * Rasterizer
+ * ----------
+ */
 Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldUsePerVertexColoration) {
 	this->width = width;
 	this->height = height;
@@ -28,8 +34,8 @@ Rasterizer::~Rasterizer() {
 void Rasterizer::clear() {
 	int bufferLength = width * height;
 
-	std::fill(pixelBuffer, pixelBuffer + bufferLength, 0);
-	std::fill(depthBuffer, depthBuffer + bufferLength, INT_MAX);
+	fill(pixelBuffer, pixelBuffer + bufferLength, 0);
+	fill(depthBuffer, depthBuffer + bufferLength, INT_MAX);
 }
 
 void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right) {
@@ -42,14 +48,13 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 		return;
 	}
 
-	int triangleHeight = std::abs(left.coordinate.y - corner.coordinate.y);
-	int topY = std::min(corner.coordinate.y, left.coordinate.y);
+	int triangleHeight = abs(left.coordinate.y - corner.coordinate.y);
+	int topY = min(corner.coordinate.y, left.coordinate.y);
 	float leftSlope = (float)triangleHeight / (left.coordinate.x - corner.coordinate.x);
 	float rightSlope = (float)triangleHeight / (right.coordinate.x - corner.coordinate.x);
 	bool hasFlatTop = corner.coordinate.y > left.coordinate.y;
-	int i = topY < 0 ? -topY : 0;
 
-	while (i < triangleHeight) {
+	for (int i = topY < 0 ? -topY : 0; i < triangleHeight; i++) {
 		int y = topY + i;
 
 		if (y >= height) {
@@ -60,14 +65,12 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 		float progress = (float)j / triangleHeight;
 		int startX = corner.coordinate.x + (int)j / leftSlope;
 		int endX = corner.coordinate.x + (int)j / rightSlope;
-		Color leftColor = lerp(corner.color, left.color, progress);
-		Color rightColor = lerp(corner.color, right.color, progress);
-		int leftDepth = lerp(corner.depth, left.depth, progress);
-		int rightDepth = lerp(corner.depth, right.depth, progress);
+		Color startColor = lerp(corner.color, left.color, progress);
+		Color endColor = lerp(corner.color, right.color, progress);
+		int startDepth = lerp(corner.depth, left.depth, progress);
+		int endDepth = lerp(corner.depth, right.depth, progress);
 
-		triangleScanLine(startX, y, endX - startX, leftColor, rightColor, leftDepth, rightDepth);
-
-		i++;
+		triangleScanLine(startX, y, endX - startX, startColor, endColor, startDepth, endDepth);
 	}
 }
 
@@ -81,10 +84,10 @@ void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRig
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
 	bool isOffScreen = (
-		std::max(x1, x2) < 0 ||
-		std::min(x1, x2) >= width ||
-		std::max(y1, y2) < 0 ||
-		std::min(y1, y2) >= height
+		max(x1, x2) < 0 ||
+		min(x1, x2) >= width ||
+		max(y1, y2) < 0 ||
+		min(y1, y2) >= height
 	);
 
 	if (isOffScreen) {
@@ -123,9 +126,7 @@ void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 	SDL_Rect destinationRect = { 0, 0, sizeFactor * width, sizeFactor * height };
 
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
-
 	SDL_RenderCopy(renderer, screenTexture, NULL, &destinationRect);
-
 	clear();
 }
 
@@ -160,15 +161,15 @@ void Rasterizer::triangle(Triangle& triangle) {
 	Vertex2d* bottom = &triangle.vertices[2];
 
 	if (top->coordinate.y > middle->coordinate.y) {
-		std::swap(top, middle);
+		swap(top, middle);
 	}
 
 	if (middle->coordinate.y > bottom->coordinate.y) {
-		std::swap(middle, bottom);
+		swap(middle, bottom);
 	}
 
 	if (top->coordinate.y > middle->coordinate.y) {
-		std::swap(top, middle);
+		swap(top, middle);
 	}
 
 	if (top->coordinate.y >= height || bottom->coordinate.y < 0) {
@@ -183,14 +184,14 @@ void Rasterizer::triangle(Triangle& triangle) {
 	if (top->coordinate.y == middle->coordinate.y) {
 		// Trivial case #1: Triangle with a flat top edge
 		if (top->coordinate.x > middle->coordinate.x) {
-			std::swap(top, middle);
+			swap(top, middle);
 		}
 
 		flatTopTriangle(*top, *middle, *bottom);
 	} else if (bottom->coordinate.y == middle->coordinate.y) {
 		// Trivial case #2: Triangle with a flat bottom edge
 		if (bottom->coordinate.x < middle->coordinate.x) {
-			std::swap(bottom, middle);
+			swap(bottom, middle);
 		}
 
 		flatBottomTriangle(*top, *middle, *bottom);
@@ -218,7 +219,7 @@ void Rasterizer::triangle(Triangle& triangle) {
 		Vertex2d* middleRight = &hypotenuseVertex;
 
 		if (middleLeft->coordinate.x > middleRight->coordinate.x) {
-			std::swap(middleLeft, middleRight);
+			swap(middleLeft, middleRight);
 		}
 
 		flatBottomTriangle(*top, *middleLeft, *middleRight);
@@ -233,7 +234,7 @@ void Rasterizer::triangle(Triangle& triangle) {
  * of the system, and care must be taken to ensure that it includes
  * no unnecessary work.
  */
-void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& leftColor, const Color& rightColor, int leftDepth, int rightDepth) {
+void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& startColor, const Color& endColor, int startDepth, int endDepth) {
 	if (y1 >= height || y1 < 0 || lineLength == 0) {
 		// Optimize for vertically offscreen lines or zero-length
 		// lines. Most horizontally offscreen lines are automatically
@@ -245,8 +246,6 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& l
 		return;
 	}
 
-	using namespace std;
-
 	int start = max(x1, 0);
 	int end = min(x1 + lineLength, width - 1);
 	int pixelIndexOffset = y1 * width;
@@ -255,24 +254,24 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& l
 	// along the line, we can derive an optimal lerp update interval
 	// based on the color change over the line and its length. The
 	// use of a counter also improves performance compared to modulo.
-	float averageColorDelta = (abs(rightColor.R - leftColor.R) + abs(rightColor.G - leftColor.G) + abs(rightColor.B - leftColor.B)) / 3;
-	int lerpInterval = max(1, (int)(lineLength / averageColorDelta));
+	float colorDelta = (abs(endColor.R - startColor.R) + abs(endColor.G - startColor.G) + abs(endColor.B - startColor.B)) / 3;
+	int lerpInterval = colorDelta > 0 ? max(1, (int)(lineLength / colorDelta)) : lineLength;
 	int lerpIntervalCounter = lerpInterval;
 
 	for (int x = start; x <= end; x++) {
 		float progress = (float)(x - x1) / lineLength;
-		int depth = lerp(leftDepth, rightDepth, progress);
+		int depth = lerp(startDepth, endDepth, progress);
 		int index = pixelIndexOffset + x;
 
 		if (depthBuffer[index] > depth) {
 			if (shouldUsePerVertexColoration) {
 				if (++lerpIntervalCounter > lerpInterval || x == end) {
 					// Lerping the color components individually is more
-					// efficient than lerping leftColor -> rightColor and
+					// efficient than lerping startColor -> endColor and
 					// generating a new Color object each time
-					int R = lerp(leftColor.R, rightColor.R, progress);
-					int G = lerp(leftColor.G, rightColor.G, progress);
-					int B = lerp(leftColor.B, rightColor.B, progress);
+					int R = lerp(startColor.R, endColor.R, progress);
+					int G = lerp(startColor.G, endColor.G, progress);
+					int B = lerp(startColor.B, endColor.B, progress);
 
 					setColor(R, G, B);
 
