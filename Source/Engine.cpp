@@ -49,8 +49,6 @@ Engine::Engine(int width, int height, Uint32 flags) {
 }
 
 Engine::~Engine() {
-	objects.clear();
-
 	delete rasterizer;
 	delete ui;
 
@@ -61,13 +59,17 @@ Engine::~Engine() {
 	SDL_Quit();
 }
 
-void Engine::addObject(Object* object) {
-	objects.push_back(object);
-}
-
 void Engine::addUIObject(UIObject* uiObject) {
 	uiObject->setRenderer(renderer);
 	ui->addObject(uiObject);
+}
+
+void Engine::clearActiveLevel() {
+	if (activeLevel != NULL) {
+		delete activeLevel;
+	}
+
+	activeLevel = NULL;
 }
 
 void Engine::delay(int ms) {
@@ -104,8 +106,7 @@ void Engine::drawScene() {
 
 	RotationMatrix rotationMatrix = camera.getRotationMatrix();
 
-	for (int o = 0; o < objects.size(); o++) {
-		Object* object = objects.at(o);
+	for (auto object : activeLevel->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
 		object->forEachPolygon([=](const Polygon& polygon) {
@@ -160,8 +161,8 @@ void Engine::drawScene() {
 int Engine::getPolygonCount() {
 	int total = 0;
 
-	for (int o = 0; o < objects.size(); o++) {
-		total += objects.at(o)->getPolygonCount();
+	for (auto object : activeLevel->getObjects()) {
+		total += object->getPolygonCount();
 	}
 
 	return total;
@@ -221,12 +222,15 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 }
 
 void Engine::run() {
+	if (activeLevel == NULL) {
+		return;
+	}
+
 	int lastStartTime;
-	bool isRunning = true;
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	while (isRunning) {
+	while (!activeLevel->hasQuit()) {
 		lastStartTime = SDL_GetTicks();
 
 		update();
@@ -243,11 +247,13 @@ void Engine::run() {
 
 		int fullDelta = SDL_GetTicks() - lastStartTime;
 
+		activeLevel->update(fullDelta, SDL_GetTicks());
+
 		char title[100];
 		sprintf(
 			title,
-			"Objects: %d, Polygons: %d, FPS: %dfps, Unlocked delta: %dms",
-			(int)objects.size(), getPolygonCount(), (int)round(60 * 17 / fullDelta), delta
+			"Polygons: %d, FPS: %dfps, Unlocked delta: %dms",
+			getPolygonCount(), (int)round(60 * 17 / fullDelta), delta
 		);
 		SDL_SetWindowTitle(window, title);
 
@@ -257,11 +263,21 @@ void Engine::run() {
 			handleEvent(event);
 
 			if (event.type == SDL_QUIT) {
-				isRunning = false;
+				activeLevel->quit();
 				break;
 			}
 		}
 	}
+
+	clearActiveLevel();
+}
+
+void Engine::setActiveLevel(Level* level) {
+	clearActiveLevel();
+
+	level->load();
+
+	activeLevel = level;
 }
 
 void Engine::update() {

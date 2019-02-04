@@ -4,6 +4,7 @@
 #include <math.h>
 #include <vector>
 #include <Objects.h>
+#include <Level.h>
 #include <Types.h>
 #include <UI/UI.h>
 #include <Graphics/Rasterizer.h>
@@ -37,17 +38,17 @@ class Engine {
 		Engine(int width, int height, Uint32 flags = 0);
 		~Engine();
 
-		void addObject(Object* object);
 		void addUIObject(UIObject* uiObject);
+		void setActiveLevel(Level* level);
 		void run();
 
 	private:
 		SDL_Window* window;
 		SDL_Renderer* renderer;
-		std::vector<Object*> objects;
 		Rasterizer* rasterizer;
 		RasterQueue* rasterQueue;
 		UI* ui;
+		Level* activeLevel = NULL;
 
 		Camera camera;
 		Vec3 velocity;
@@ -59,6 +60,8 @@ class Engine {
 
 		int width;
 		int height;
+
+		void clearActiveLevel();
 		void delay(int ms);
 		void drawScene();
 		void drawTriangle(Triangle& triangle);
