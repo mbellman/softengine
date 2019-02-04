@@ -21,6 +21,8 @@ void Object::addPolygon(int v1, int v2, int v3) {
 	polygon.bindVertex(0, &vertices.at(v1));
 	polygon.bindVertex(1, &vertices.at(v2));
 	polygon.bindVertex(2, &vertices.at(v3));
+	polygon.normal = Object::computePolygonNormal(polygon);
+	polygon.object = this;
 
 	polygons.push_back(polygon);
 }
@@ -34,14 +36,17 @@ void Object::addVertex(const Vec3& vector, const Color& color) {
 	vertices.push_back(vertex);
 }
 
-void Object::computeSurfaceNormals() {
-	for (int i = 0; i < polygons.size(); i++) {
-		Polygon* polygon = &polygons.at(i);
-		Vec3* v0 = &polygon->vertices[0]->vector;
-		Vec3* v1 = &polygon->vertices[1]->vector;
-		Vec3* v2 = &polygon->vertices[2]->vector;
+Vec3 Object::computePolygonNormal(const Polygon& polygon) {
+	const Vec3* v0 = &polygon.vertices[0]->vector;
+	const Vec3* v1 = &polygon.vertices[1]->vector;
+	const Vec3* v2 = &polygon.vertices[2]->vector;
 
-		polygon->normal = Vec3::crossProduct(*v1 - *v0, *v2 - *v0).unit();
+	return Vec3::crossProduct(*v1 - *v0, *v2 - *v0).unit();
+}
+
+void Object::computeSurfaceNormals() {
+	for (auto& polygon : polygons) {
+		polygon.normal = Object::computePolygonNormal(polygon);
 	}
 }
 
@@ -112,8 +117,6 @@ Model::Model(const ObjLoader& obj) {
 
 		addPolygon(v1, v2, v3);
 	}
-
-	computeSurfaceNormals();
 }
 
 /**
@@ -167,8 +170,6 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 			addPolygon(v1, v2, v3);
 		}
 	}
-
-	computeSurfaceNormals();
 }
 
 /**
@@ -197,8 +198,6 @@ Cube::Cube(float radius) {
 
 		addPolygon((*polygonVertices)[0], (*polygonVertices)[1], (*polygonVertices)[2]);
 	}
-
-	computeSurfaceNormals();
 }
 
 int Cube::polygonVertices[12][3] = {

@@ -43,7 +43,6 @@ void LightTest::load() {
 	light3->position = { -200, 150, 2200 };
 	light3->color = { 0, 0, 255 };
 	light3->spread = 600;
-	light3->power = 1;
 
 	add(leftWall);
 	add(rightWall);

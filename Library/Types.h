@@ -1,7 +1,13 @@
 #pragma once
 
 struct RotationMatrix;
+struct Polygon;
+struct Object;
 
+/**
+ * Color
+ * -----
+ */
 struct Color {
 	int R = 255;
 	int G = 255;
@@ -20,15 +26,27 @@ private:
 	static int normalize(int component);
 };
 
+/**
+ * Colorable
+ * ---------
+ */
 struct Colorable {
 	Color color;
 };
 
+/**
+ * Coordinate
+ * ----------
+ */
 struct Coordinate {
 	int x = 0;
 	int y = 0;
 };
 
+/**
+ * Vec3
+ * ----
+ */
 struct Vec3 {
 	float x = 0.0f;
 	float y = 0.0f;
@@ -46,6 +64,10 @@ struct Vec3 {
 	Vec3 operator -(const Vec3& vector) const;
 };
 
+/**
+ * RotationMatrix
+ * --------------
+ */
 struct RotationMatrix {
 	float m11, m12, m13, m21, m22, m23, m31, m32, m33;
 
@@ -54,25 +76,43 @@ struct RotationMatrix {
 	Vec3 operator *(const Vec3& vector) const;
 };
 
+/**
+ * Vertex2d
+ * --------
+ */
 struct Vertex2d : Colorable {
 	Coordinate coordinate;
 	int depth;
 };
 
+/**
+ * Vertex3d
+ * --------
+ */
 struct Vertex3d : Colorable {
 	Vec3 vector;
 };
 
+/**
+ * Triangle
+ * --------
+ */
 struct Triangle {
 	Vertex2d vertices[3];
+	Polygon* polygon = NULL;
 
 	float averageDepth() const;
 	void createVertex(int index, int x, int y, int depth, const Color& color);
 };
 
+/**
+ * Polygon
+ * -------
+ */
 struct Polygon {
 	Vertex3d* vertices[3];
 	Vec3 normal;
+	Object* object = NULL;
 
 	void bindVertex(int index, Vertex3d* vertex);
 };

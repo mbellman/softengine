@@ -32,6 +32,8 @@ protected:
 
 private:
 	std::vector<Polygon> polygons;
+
+	static Vec3 computePolygonNormal(const Polygon& polygon);
 };
 
 /**
