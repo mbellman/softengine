@@ -8,7 +8,7 @@ int height = 720;
 int main(int argc, char* argv[]) {
 	Engine engine(width, height, REMOVE_OCCLUDED_SURFACES | DEBUG_DRAWTIME);
 
-	TTF_Font* mono = TTF_OpenFont("./Assets/FreeMono.ttf", 15);
+	TTF_Font* mono = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
 	UIText text("Test Text");
 

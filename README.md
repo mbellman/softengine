@@ -8,18 +8,20 @@ A software 3D rendering engine, written as an educational exercise.
 * Light sources
 * Texture mapping
 * On-screen debug stats
+* 2D sprite projection
+* Ambient/atmospheric effects (rain, snow, fog)
+* OpenGL/hardware mode
 * Parallelization
 
 **Maybe:**
 
-* OpenGL/hardware mode
 * Dynamic shadows
 * Ambient occlusion
 
 ### Refactoring/organization
 
-* Move existing documentation into .h files, add more documentation
 * Separate `Camera` into its own class with keyboard/mouse event handling
+* Move existing documentation into .h files, add more documentation
 
 ## Development
 
