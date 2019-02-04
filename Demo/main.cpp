@@ -1,6 +1,7 @@
 #include <Engine.h>
-#include <Levels/StressTest.h>
 #include <Levels/Default.h>
+#include <Levels/StressTest.h>
+#include <Levels/LightTest.h>
 
 int width = 1200;
 int height = 720;
@@ -16,7 +17,8 @@ int main(int argc, char* argv[]) {
 	text.setPosition(10, 10);
 
 	engine.addUIObject(&text);
-	engine.setActiveLevel(new Default());
+	engine.setActiveLevel(new LightTest());
+	engine.setDrawDistance(4000);
 	engine.run();
 
 	TTF_CloseFont(mono);

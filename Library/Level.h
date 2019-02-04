@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <Objects.h>
+#include <Types.h>
 
 enum State {
 	ACTIVE,
@@ -15,6 +16,7 @@ enum State {
  */
 class Level {
 public:
+	const Color& getBackgroundColor();
 	const std::vector<Object*> getObjects();
 	bool hasQuit();
 	virtual void load() = 0;
@@ -28,8 +30,10 @@ protected:
 	Object* getObject(const char* key);
 	ObjLoader* getLoader(const char* key);
 	void remove(const char* key);
+	void setBackgroundColor(int R, int G, int B);
 
 private:
+	Color backgroundColor = { 0, 0, 0 };
 	std::vector<Object*> objects;
 	std::map<const char*, int> objectMap;
 	std::map<const char*, ObjLoader*> objLoaderMap;

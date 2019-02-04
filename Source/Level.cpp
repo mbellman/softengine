@@ -21,6 +21,10 @@ void Level::add(const char* key, ObjLoader* objLoader) {
 	objLoaderMap.emplace(key, objLoader);
 }
 
+const Color& Level::getBackgroundColor() {
+	return backgroundColor;
+}
+
 Object* Level::getObject(const char* key) {
 	auto it = objectMap.find(key);
 
@@ -64,6 +68,12 @@ void Level::remove(const char* key) {
 		objects.erase(objects.begin() + it->second);
 		objectMap.erase(key);
 	}
+}
+
+void Level::setBackgroundColor(int R, int G, int B) {
+	backgroundColor.R = R;
+	backgroundColor.G = G;
+	backgroundColor.B = B;
 }
 
 void Level::update(int dt, int runningTime) {}

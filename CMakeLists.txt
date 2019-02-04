@@ -25,6 +25,8 @@ set(SOURCE_FILES
     Demo/Levels/Default.h
     Demo/Levels/StressTest.cpp
     Demo/Levels/StressTest.h
+    Demo/Levels/LightTest.cpp
+    Demo/Levels/LightTest.h
 
     # -- Header files --
 

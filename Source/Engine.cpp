@@ -6,7 +6,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
-#include <time.h>
 #include <algorithm>
 #include <Objects.h>
 #include <Helpers.h>
@@ -118,7 +117,8 @@ void Engine::drawScene() {
 			}
 
 			Triangle triangle;
-			bool isInFront = false;
+			float closestVertexDepth = drawDistance;
+			float farthestVertexDepth = -1.0f;
 
 			for (int i = 0; i < 3; i++) {
 				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
@@ -127,15 +127,21 @@ void Engine::drawScene() {
 				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + midpointX);
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
 				int depth = (int)vertex.z;
+				float distanceRatio = std::min(1.0f, (float)depth / drawDistance);
+				Color color = lerp(polygon.vertices[i]->color, activeLevel->getBackgroundColor(), distanceRatio);
 
-				if (!isInFront && depth > 0) {
-					isInFront = true;
+				if (depth < closestVertexDepth) {
+					closestVertexDepth = depth;
 				}
 
-				triangle.createVertex(i, x, y, depth, polygon.vertices[i]->color);
+				if (depth > farthestVertexDepth) {
+					farthestVertexDepth = depth;
+				}
+
+				triangle.createVertex(i, x, y, depth, color);
 			}
 
-			if (isInFront) {
+			if (farthestVertexDepth > 0 && closestVertexDepth < drawDistance) {
 				if (shouldRemoveOccludedSurfaces) {
 					int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
 
@@ -280,10 +286,19 @@ void Engine::setActiveLevel(Level* level) {
 	activeLevel = level;
 }
 
+void Engine::setDrawDistance(int drawDistance) {
+	this->drawDistance = drawDistance;
+}
+
 void Engine::update() {
 		updateMovement();
+
+		rasterizer->setBackgroundColor(activeLevel->getBackgroundColor());
+		rasterizer->clear();
+
 		drawScene();
 		ui->draw();
+
 		SDL_RenderPresent(renderer);
 }
 

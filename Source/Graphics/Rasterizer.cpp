@@ -34,7 +34,7 @@ Rasterizer::~Rasterizer() {
 void Rasterizer::clear() {
 	int bufferLength = width * height;
 
-	fill(pixelBuffer, pixelBuffer + bufferLength, 0);
+	fill(pixelBuffer, pixelBuffer + bufferLength, backgroundColor);
 	fill(depthBuffer, depthBuffer + bufferLength, INT_MAX);
 }
 
@@ -122,16 +122,23 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 	}
 }
 
+Uint32 Rasterizer::rgbToUint32(int R, int G, int B) {
+	return (255 << 24) | (R << 16) | (G << 8) | B;
+}
+
 void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 	SDL_Rect destinationRect = { 0, 0, sizeFactor * width, sizeFactor * height };
 
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
 	SDL_RenderCopy(renderer, screenTexture, NULL, &destinationRect);
-	clear();
+}
+
+void Rasterizer::setBackgroundColor(const Color& color) {
+	backgroundColor = rgbToUint32(color.R, color.G, color.B);
 }
 
 void Rasterizer::setColor(int R, int G, int B) {
-	color = (255 << 24) | (R << 16) | (G << 8) | B;
+	color = rgbToUint32(R, G, B);
 }
 
 void Rasterizer::setColor(Color* color) {
