@@ -18,6 +18,7 @@ class Level {
 public:
 	const Color& getBackgroundColor();
 	const std::vector<Object*> getObjects();
+	const std::vector<Light*> getLights();
 	bool hasQuit();
 	virtual void load() = 0;
 	void quit();
@@ -35,7 +36,10 @@ protected:
 private:
 	Color backgroundColor = { 0, 0, 0 };
 	std::vector<Object*> objects;
+	std::vector<Light*> lights;
 	std::map<const char*, int> objectMap;
 	std::map<const char*, ObjLoader*> objLoaderMap;
 	State state = State::ACTIVE;
+
+	void removeLight(Light* light);
 };

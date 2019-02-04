@@ -8,7 +8,16 @@ struct Color {
 	int B = 255;
 
 	Color operator +(int attenuation) const;
+	Color operator +(const Color& color) const;
+	Color operator +=(const Color& color);
 	Color operator -(int attenuation) const;
+	Color operator -(const Color& color) const;
+	Color operator -=(const Color& color);
+	Color operator *(float multiplier) const;
+	Color operator *=(float multiplier);
+
+private:
+	static int normalize(int component);
 };
 
 struct Colorable {

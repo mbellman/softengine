@@ -59,6 +59,7 @@ class Engine {
 		Movement movement;
 		bool isRunning = false;
 		int drawDistance = DEFAULT_DRAW_DISTANCE;
+		float ambientLight = 0.1;
 		Uint32 flags = 0;
 		int width;
 		int height;

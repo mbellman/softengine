@@ -41,7 +41,7 @@ void Object::computeSurfaceNormals() {
 		Vec3* v1 = &polygon->vertices[1]->vector;
 		Vec3* v2 = &polygon->vertices[2]->vector;
 
-		polygon->normal = Vec3::crossProduct(*v1 - *v0, *v2 - *v0);
+		polygon->normal = Vec3::crossProduct(*v1 - *v0, *v2 - *v0).unit();
 	}
 }
 
@@ -218,3 +218,19 @@ int Cube::polygonVertices[12][3] = {
 	{ 4, 6, 5 },
 	{ 4, 7, 6 }
 };
+
+/**
+ * Light
+ * -----
+ */
+bool Light::isLight(Object* object) {
+	return dynamic_cast<Light*>(object) != NULL;
+}
+
+void Light::setColor(int R, int G, int B) {
+	this->color = { R, G, B };
+}
+
+void Light::setColor(const Color& color) {
+	setColor(color.R, color.G, color.B);
+}

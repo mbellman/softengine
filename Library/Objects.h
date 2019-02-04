@@ -14,7 +14,7 @@ struct Object {
 	Vec3 position;
 
 	Object();
-	~Object();
+	virtual ~Object();
 
 	void forEachPolygon(std::function<void(const Polygon&)> handle);
 	int getPolygonCount();
@@ -59,4 +59,18 @@ struct Cube : Object {
 
 private:
 	static int polygonVertices[12][3];
+};
+
+/**
+ * Light
+ * -----
+ */
+struct Light : Object {
+	Color color = { 255, 255, 255 };
+	float power = 1;
+	float spread = 500;
+
+	static bool isLight(Object* object);
+	void setColor(int R, int G, int B);
+	void setColor(const Color& color);
 };

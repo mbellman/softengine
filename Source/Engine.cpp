@@ -113,6 +113,7 @@ void Engine::drawScene() {
 			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
 
 			if (!isFacingCamera) {
+				// Don't render back-faces
 				return;
 			}
 
@@ -121,14 +122,44 @@ void Engine::drawScene() {
 			float farthestVertexDepth = -1.0f;
 
 			for (int i = 0; i < 3; i++) {
-				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
-				Vec3 unitVertex = vertex.unit();
+				Vec3 worldSpaceVertex = (object->position + polygon.vertices[i]->vector);
+				Vec3 localSpaceVertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
+				Vec3 unitVertex = localSpaceVertex.unit();
 				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
 				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + midpointX);
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
-				int depth = (int)vertex.z;
-				float distanceRatio = std::min(1.0f, (float)depth / drawDistance);
-				Color color = lerp(polygon.vertices[i]->color, activeLevel->getBackgroundColor(), distanceRatio);
+				int depth = (int)localSpaceVertex.z;
+				Color color = polygon.vertices[i]->color * ambientLight;
+				Color aggregateLightColor = { 0, 0, 0 };
+
+				for (auto* light : activeLevel->getLights()) {
+					if (
+						abs(light->position.x - worldSpaceVertex.x) > light->spread ||
+						abs(light->position.y - worldSpaceVertex.y) > light->spread ||
+						abs(light->position.z - worldSpaceVertex.z) > light->spread
+					) {
+						continue;
+					}
+
+					Vec3 lightVector = (worldSpaceVertex - light->position);
+					float distance = lightVector.magnitude();
+
+					if (distance < light->spread) {
+						float dotProduct = Vec3::dotProduct(polygon.normal, lightVector.unit());
+
+						if (dotProduct < 0.1) {
+							float incidence = cosf((1 + dotProduct) * M_PI / 2);
+							float spreadRatio = (light->spread - distance) / light->spread;
+							float intensity = pow(spreadRatio, 2);
+
+							color *= 1 + (1 / ambientLight) * intensity;
+							aggregateLightColor += (light->color * light->power * incidence * intensity);
+						}
+					}
+				}
+
+				float distanceRatio = std::clamp((float)depth / drawDistance, 0.0f, 1.0f);
+				color = lerp(color + aggregateLightColor, activeLevel->getBackgroundColor(), distanceRatio);
 
 				if (depth < closestVertexDepth) {
 					closestVertexDepth = depth;
