@@ -1,10 +1,12 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.11)
 set(EXECUTABLE_NAME softengine)
 project(${EXECUTABLE_NAME})
 
+set(CMAKE_CXX_COMPILER /usr/bin/g++)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-Ofast")
-# -Wall -Wextra
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "-Ofast -std=c++17")
 
 include_directories(Demo)
 include_directories(Library)
