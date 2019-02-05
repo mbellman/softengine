@@ -45,7 +45,6 @@ protected:
 	void remove(const char* key);
 
 private:
-	Color backgroundColor = { 0, 0, 0 };
 	std::vector<Object*> objects;
 	std::vector<Light*> lights;
 	std::map<const char*, int> objectMap;
