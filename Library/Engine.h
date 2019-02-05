@@ -43,21 +43,20 @@ class Engine {
 		void run();
 
 	private:
+		constexpr static int MOVEMENT_SPEED = 5;
+		constexpr static int ZONE_RANGE = 250;
+
 		SDL_Window* window;
 		SDL_Renderer* renderer;
 		Rasterizer* rasterizer;
 		RasterQueue* rasterQueue;
 		UI* ui;
 		Level* activeLevel = NULL;
-
 		Camera camera;
 		Vec3 velocity;
 		Movement movement;
 		bool isRunning = false;
-		constexpr static int MOVEMENT_SPEED = 5;
-		constexpr static int ZONE_RANGE = 250;
 		Uint32 flags = 0;
-
 		int width;
 		int height;
 

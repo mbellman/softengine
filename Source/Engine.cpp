@@ -6,7 +6,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
-#include <time.h>
 #include <algorithm>
 #include <Objects.h>
 #include <Helpers.h>
@@ -15,6 +14,8 @@
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
+
+using namespace std;
 
 RotationMatrix Camera::getRotationMatrix() {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
@@ -83,6 +84,8 @@ void Engine::delay(int ms) {
 }
 
 void Engine::drawTriangle(Triangle& triangle) {
+	const Settings& settings = activeLevel->getSettings();
+
 	if (flags & SHOW_WIREFRAME) {
 		rasterizer->setColor(255, 255, 255);
 
@@ -92,6 +95,62 @@ void Engine::drawTriangle(Triangle& triangle) {
 			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
 		);
 	} else {
+		const Polygon* parentPolygon = triangle.polygon;
+		const Object* parentObject = parentPolygon->object;
+
+		// Before rasterizing the triangle, one more pass is necessary to
+		// determine the aggregate effect of area lights on each vertex color.
+		for (int i = 0; i < 3; i++) {
+			Color aggregateLightColor = { 0, 0, 0 };
+			Vec3 worldVertex = (parentObject->position + parentPolygon->vertices[i]->vector);
+			Vertex2d* screenVertex = &triangle.vertices[i];
+
+			// Ambient lighting is a special distance-invariant case
+			if (settings.ambientLightFactor > 0) {
+				float dot = Vec3::dotProduct(parentPolygon->normal, settings.ambientLightVector.unit());
+
+				if (dot < 0) {
+					float incidence = cosf((1 + dot) * M_PI / 2);
+
+					aggregateLightColor += settings.ambientLightColor * (incidence * settings.ambientLightFactor);
+				}
+			}
+
+			for (auto* light : activeLevel->getLights()) {
+				if (
+					abs(light->position.x - worldVertex.x) > light->spread ||
+					abs(light->position.y - worldVertex.y) > light->spread ||
+					abs(light->position.z - worldVertex.z) > light->spread ||
+					light->power == 0
+				) {
+					// If the light source is further away along any axis than
+					// its range (or it has no power), we can ignore it.
+					continue;
+				}
+
+				Vec3 lightVector = worldVertex - light->position;
+				float lightDistance = lightVector.magnitude();
+
+				if (lightDistance < light->spread) {
+					float dot = Vec3::dotProduct(parentPolygon->normal, lightVector.unit());
+					float incidence = cosf((1 + dot) * M_PI / 2);
+					float intensity = pow(1.0f - lightDistance / light->spread, 2);
+					float luminosity = light->power * incidence * intensity;
+
+					aggregateLightColor += light->color * luminosity;
+
+					// For each incident light source, reverse any potential
+					// ambient light color diminishment on the vertex in
+					// proportion to the light's luminosity at this point
+					screenVertex->color *= (1 + (luminosity / settings.albedo));
+				}
+			}
+
+			float drawDistanceRatio = clamp((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
+
+			screenVertex->color = lerp(screenVertex->color + aggregateLightColor, settings.backgroundColor, drawDistanceRatio);
+		}
+
 		rasterizer->triangle(triangle);
 	}
 }
@@ -100,51 +159,74 @@ void Engine::drawScene() {
 	bool hasPixelFilter = flags & PIXEL_FILTER;
 	bool shouldRemoveOccludedSurfaces = flags & REMOVE_OCCLUDED_SURFACES;
 
+	float fovAngleRange = sinf((((float)camera.fov / 2)) * M_PI / 180);
 	int fovScalar = (hasPixelFilter ? 250 : 500) * (360 / camera.fov);
 	int midpointX = width / (hasPixelFilter ? 4 : 2);
 	int midpointY = height / (hasPixelFilter ? 4 : 2);
 
 	RotationMatrix rotationMatrix = camera.getRotationMatrix();
 
-	for (auto object : activeLevel->getObjects()) {
+	for (auto* object : activeLevel->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
-		object->forEachPolygon([=](const Polygon& polygon) {
+		for (auto& polygon : object->getPolygons()) {
+			// Check #1: Ensure that the polygon is facing the camera
 			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
 			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
 
 			if (!isFacingCamera) {
-				return;
+				continue;
 			}
 
-			Triangle triangle;
-			bool isInFront = false;
+			// Check #2: Ensure that the polygon is within the camera view frustum
+			Vec3 localSpaceVertices[3];
+			Vec3 unitVertices[3];
+			bool isWithinViewFrustum = false;
 
 			for (int i = 0; i < 3; i++) {
-				Vec3 vertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
-				Vec3 unitVertex = vertex.unit();
-				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
+				localSpaceVertices[i] = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
+				unitVertices[i] = localSpaceVertices[i].unit();
+
+				if (
+					!isWithinViewFrustum &&
+					abs(unitVertices[i].x) < fovAngleRange &&
+					abs(unitVertices[i].y) < fovAngleRange &&
+					localSpaceVertices[i].z > 0 && localSpaceVertices[i].z < activeLevel->getSettings().drawDistance
+				) {
+					isWithinViewFrustum = true;
+				}
+			}
+
+			if (!isWithinViewFrustum) {
+				continue;
+			}
+
+			// Once a Polygon has passed the back-face and view frustum
+			// culling checks, we can create its Triangle projection.
+			Triangle triangle;
+
+			triangle.polygon = &polygon;
+
+			for (int i = 0; i < 3; i++) {
+				Vec3& localSpaceVertex = localSpaceVertices[i];
+				Vec3& unitVertex = unitVertices[i];
+				float distortionCorrectedZ = unitVertex.z * cosf(unitVertex.x);
 				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + midpointX);
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
-				int depth = (int)vertex.z;
+				int depth = (int)(localSpaceVertex.z);
+				Color color = polygon.vertices[i]->color * activeLevel->getSettings().albedo;
 
-				if (!isInFront && depth > 0) {
-					isInFront = true;
-				}
-
-				triangle.createVertex(i, x, y, depth, polygon.vertices[i]->color);
+				triangle.createVertex(i, x, y, depth, color);
 			}
 
-			if (isInFront) {
-				if (shouldRemoveOccludedSurfaces) {
-					int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
+			if (shouldRemoveOccludedSurfaces) {
+				int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
 
-					rasterQueue->addTriangle(triangle, zone);
-				} else {
-					drawTriangle(triangle);
-				}
+				rasterQueue->addTriangle(triangle, zone);
+			} else {
+				drawTriangle(triangle);
 			}
-		});
+		}
 	}
 
 	if (shouldRemoveOccludedSurfaces) {
@@ -282,8 +364,13 @@ void Engine::setActiveLevel(Level* level) {
 
 void Engine::update() {
 		updateMovement();
+
+		rasterizer->setBackgroundColor(activeLevel->getSettings().backgroundColor);
+		rasterizer->clear();
+
 		drawScene();
 		ui->draw();
+
 		SDL_RenderPresent(renderer);
 }
 

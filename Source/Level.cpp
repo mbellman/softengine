@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <Level.h>
 #include <Objects.h>
 
@@ -15,6 +16,10 @@ void Level::add(const char* key, Object* object) {
 
 void Level::add(Object* object) {
 	objects.push_back(object);
+
+	if (Light::isLight(object)) {
+		lights.push_back((Light*)object);
+	}
 }
 
 void Level::add(const char* key, ObjLoader* objLoader) {
@@ -31,8 +36,16 @@ Object* Level::getObject(const char* key) {
 	return NULL;
 }
 
-const std::vector<Object*> Level::getObjects() {
+const std::vector<Object*>& Level::getObjects() {
 	return objects;
+}
+
+const std::vector<Light*>& Level::getLights() {
+	return lights;
+}
+
+const Settings& Level::getSettings() {
+	return settings;
 }
 
 bool Level::hasQuit() {
@@ -49,6 +62,7 @@ void Level::quit() {
 	}
 
 	objects.clear();
+	lights.clear();
 	objectMap.clear();
 	objLoaderMap.clear();
 
@@ -59,10 +73,28 @@ void Level::remove(const char* key) {
 	auto it = objectMap.find(key);
 
 	if (it != objectMap.end()) {
-		delete objects.at(it->second);
+		Object* object = objects.at(it->second);
+
+		if (Light::isLight(object)) {
+			removeLight((Light*)object);
+		}
+
+		delete object;
 
 		objects.erase(objects.begin() + it->second);
 		objectMap.erase(key);
+	}
+}
+
+void Level::removeLight(Light* light) {
+	int index = 0;
+
+	while (index < lights.size()) {
+		if(lights.at(index) == light) {
+			lights.erase(lights.begin() + index);
+		} else {
+			index++;
+		}
 	}
 }
 

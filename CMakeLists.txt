@@ -1,10 +1,17 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.11)
 set(EXECUTABLE_NAME softengine)
 project(${EXECUTABLE_NAME})
 
+# Use the correct system wide version of g++ on Linux
+if (UNIX)
+    set(CMAKE_CXX_COMPILER /usr/bin/g++)
+endif (UNIX)
+
+# Compiler configuration
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "-Ofast")
-# -Wall -Wextra
 
 include_directories(Demo)
 include_directories(Library)
@@ -25,6 +32,8 @@ set(SOURCE_FILES
     Demo/Levels/Default.h
     Demo/Levels/StressTest.cpp
     Demo/Levels/StressTest.h
+    Demo/Levels/LightTest.cpp
+    Demo/Levels/LightTest.h
 
     # -- Header files --
 

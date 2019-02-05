@@ -14,9 +14,9 @@ struct Object {
 	Vec3 position;
 
 	Object();
-	~Object();
+	virtual ~Object();
 
-	void forEachPolygon(std::function<void(const Polygon&)> handle);
+	const std::vector<Polygon>& getPolygons();
 	int getPolygonCount();
 	void rotate(const Vec3& rotation);
 	void scale(float scalar);
@@ -32,6 +32,8 @@ protected:
 
 private:
 	std::vector<Polygon> polygons;
+
+	static Vec3 computePolygonNormal(const Polygon& polygon);
 };
 
 /**
@@ -59,4 +61,21 @@ struct Cube : Object {
 
 private:
 	static int polygonVertices[12][3];
+};
+
+/**
+ * Light
+ * -----
+ */
+struct Light : Object {
+	Color color = { 255, 255, 255 };
+	float power = 1;
+	float spread = 500;
+
+	static bool isLight(Object* object);
+	void flip();
+	void on();
+	void off();
+	void setColor(int R, int G, int B);
+	void setColor(const Color& color);
 };
