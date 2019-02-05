@@ -40,13 +40,11 @@ class Engine {
 
 		void addUIObject(UIObject* uiObject);
 		void setActiveLevel(Level* level);
-		void setDrawDistance(int drawDistance);
 		void run();
 
 	private:
 		constexpr static int MOVEMENT_SPEED = 5;
 		constexpr static int ZONE_RANGE = 250;
-		constexpr static int DEFAULT_DRAW_DISTANCE = INT_MAX;
 
 		SDL_Window* window;
 		SDL_Renderer* renderer;
@@ -58,8 +56,6 @@ class Engine {
 		Vec3 velocity;
 		Movement movement;
 		bool isRunning = false;
-		int drawDistance = DEFAULT_DRAW_DISTANCE;
-		float ambientLight = 0.1;
 		Uint32 flags = 0;
 		int width;
 		int height;

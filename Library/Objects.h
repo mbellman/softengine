@@ -73,6 +73,9 @@ struct Light : Object {
 	float spread = 500;
 
 	static bool isLight(Object* object);
+	void flip();
+	void on();
+	void off();
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
 };

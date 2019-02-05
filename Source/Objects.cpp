@@ -220,8 +220,20 @@ int Cube::polygonVertices[12][3] = {
  * Light
  * -----
  */
+void Light::flip() {
+	power = 0 - (power - 1);
+}
+
 bool Light::isLight(Object* object) {
 	return dynamic_cast<Light*>(object) != NULL;
+}
+
+void Light::on() {
+	power = 1;
+}
+
+void Light::off() {
+	power = 0;
 }
 
 void Light::setColor(int R, int G, int B) {

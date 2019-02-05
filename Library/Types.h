@@ -57,9 +57,9 @@ struct Vec3 {
 
 	static Vec3 crossProduct(const Vec3& v1, const Vec3& v2);
 	static float dotProduct(const Vec3& v1, const Vec3& v2);
-	float magnitude();
+	float magnitude() const;
 	void rotate(const RotationMatrix& rotationMatrix);
-	Vec3 unit();
+	Vec3 unit() const;
 	Vec3 operator +(const Vec3& vector) const;
 	Vec3 operator -(const Vec3& vector) const;
 };

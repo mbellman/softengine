@@ -36,12 +36,24 @@ void Default::load() {
 	add(cube3);
 	add(icosahedron);
 	add("oscillatingCube", oscillatingCube);
+
+	Light* light = new Light();
+	light->color = { 0, 0, 255 };
+	light->position = { 0, 100, 2000 };
+	light->spread = 1000;
+
+	add("light", light);
+
+	settings.backgroundColor = { 25, 0, 50 };
+	settings.albedo = 0.2;
+	settings.ambientLightColor = { 255, 0, 100 };
+	settings.ambientLightVector = { 0, -1, 1 };
+	settings.ambientLightFactor = 0.3;
 }
 
 void Default::update(int dt, int runningTime) {
-	Cube* cube = (Cube*)getObject("oscillatingCube");
+	getObject("oscillatingCube")->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
+	getObject("light")->position.x = 500.0f * sinf(runningTime / 400.0f);
 
-	if (cube != NULL) {
-		cube->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
-	}
+	settings.ambientLightVector.x = sinf(runningTime / 300.f);
 }

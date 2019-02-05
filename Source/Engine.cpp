@@ -15,6 +15,8 @@
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
 
+using namespace std;
+
 RotationMatrix Camera::getRotationMatrix() {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
 	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);
@@ -82,6 +84,8 @@ void Engine::delay(int ms) {
 }
 
 void Engine::drawTriangle(Triangle& triangle) {
+	const Settings& settings = activeLevel->getSettings();
+
 	if (flags & SHOW_WIREFRAME) {
 		rasterizer->setColor(255, 255, 255);
 
@@ -98,17 +102,29 @@ void Engine::drawTriangle(Triangle& triangle) {
 		// determine the aggregate effect of area lights on each vertex color.
 		for (int i = 0; i < 3; i++) {
 			Color aggregateLightColor = { 0, 0, 0 };
-			Vertex2d* screenVertex = &triangle.vertices[i];
 			Vec3 worldVertex = (parentObject->position + parentPolygon->vertices[i]->vector);
+			Vertex2d* screenVertex = &triangle.vertices[i];
+
+			// Ambient lighting is a special distance-invariant case
+			if (settings.ambientLightFactor > 0) {
+				float dot = Vec3::dotProduct(parentPolygon->normal, settings.ambientLightVector.unit());
+
+				if (dot < 0) {
+					float incidence = cosf((1 + dot) * M_PI / 2);
+
+					aggregateLightColor += settings.ambientLightColor * (incidence * settings.ambientLightFactor);
+				}
+			}
 
 			for (auto* light : activeLevel->getLights()) {
 				if (
 					abs(light->position.x - worldVertex.x) > light->spread ||
 					abs(light->position.y - worldVertex.y) > light->spread ||
-					abs(light->position.z - worldVertex.z) > light->spread
+					abs(light->position.z - worldVertex.z) > light->spread ||
+					light->power == 0
 				) {
 					// If the light source is further away along any axis than
-					// its range, we can automatically ignore it.
+					// its range (or it has no power), we can ignore it.
 					continue;
 				}
 
@@ -117,24 +133,22 @@ void Engine::drawTriangle(Triangle& triangle) {
 
 				if (lightDistance < light->spread) {
 					float dot = Vec3::dotProduct(parentPolygon->normal, lightVector.unit());
+					float incidence = cosf((1 + dot) * M_PI / 2);
+					float intensity = pow(1.0f - lightDistance / light->spread, 2);
+					float luminosity = light->power * incidence * intensity;
 
-					if (dot < 0) {
-						float incidence = cosf((1 + dot) * M_PI / 2);
-						float intensity = pow(1.0f - lightDistance / light->spread, 2);
+					aggregateLightColor += light->color * luminosity;
 
-						aggregateLightColor += light->color * (light->power * incidence * intensity);
-
-						// For each incident light source, reverse any potential
-						// ambient light color diminishment on the vertex in
-						// proportion to the light's intensity at this point
-						screenVertex->color *= (1 + (intensity / ambientLight));
-					}
+					// For each incident light source, reverse any potential
+					// ambient light color diminishment on the vertex in
+					// proportion to the light's luminosity at this point
+					screenVertex->color *= (1 + (luminosity / settings.albedo));
 				}
 			}
 
-			float distanceRatio = std::clamp((float)screenVertex->depth / drawDistance, 0.0f, 1.0f);
+			float drawDistanceRatio = clamp((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
 
-			screenVertex->color = lerp(screenVertex->color + aggregateLightColor, activeLevel->getBackgroundColor(), distanceRatio);
+			screenVertex->color = lerp(screenVertex->color + aggregateLightColor, settings.backgroundColor, drawDistanceRatio);
 		}
 
 		rasterizer->triangle(triangle);
@@ -177,7 +191,7 @@ void Engine::drawScene() {
 					!isWithinViewFrustum &&
 					abs(unitVertices[i].x) < fovAngleRange &&
 					abs(unitVertices[i].y) < fovAngleRange &&
-					localSpaceVertices[i].z > 0 && localSpaceVertices[i].z < drawDistance
+					localSpaceVertices[i].z > 0 && localSpaceVertices[i].z < activeLevel->getSettings().drawDistance
 				) {
 					isWithinViewFrustum = true;
 				}
@@ -200,7 +214,7 @@ void Engine::drawScene() {
 				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + midpointX);
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
 				int depth = (int)(localSpaceVertex.z);
-				Color color = polygon.vertices[i]->color * ambientLight;
+				Color color = polygon.vertices[i]->color * activeLevel->getSettings().albedo;
 
 				triangle.createVertex(i, x, y, depth, color);
 			}
@@ -348,14 +362,10 @@ void Engine::setActiveLevel(Level* level) {
 	activeLevel = level;
 }
 
-void Engine::setDrawDistance(int drawDistance) {
-	this->drawDistance = drawDistance;
-}
-
 void Engine::update() {
 		updateMovement();
 
-		rasterizer->setBackgroundColor(activeLevel->getBackgroundColor());
+		rasterizer->setBackgroundColor(activeLevel->getSettings().backgroundColor);
 		rasterizer->clear();
 
 		drawScene();

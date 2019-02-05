@@ -40,5 +40,12 @@ void StressTest::load() {
 
 		add(light);
 	}
+
+	settings.drawDistance = 6000;
+	settings.albedo = 0.2;
+	settings.ambientLightColor = { 0, 100, 0 };
+	settings.ambientLightVector = { 0, -1, 1 };
+	settings.ambientLightFactor = 0.2;
+	settings.backgroundColor = { 0, 100, 200 };
 }
 
