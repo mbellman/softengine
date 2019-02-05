@@ -16,7 +16,7 @@ struct Object {
 	Object();
 	virtual ~Object();
 
-	void forEachPolygon(std::function<void(const Polygon&)> handle);
+	const std::vector<Polygon>& getPolygons();
 	int getPolygonCount();
 	void rotate(const Vec3& rotation);
 	void scale(float scalar);

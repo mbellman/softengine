@@ -40,11 +40,11 @@ Object* Level::getObject(const char* key) {
 	return NULL;
 }
 
-const std::vector<Object*> Level::getObjects() {
+const std::vector<Object*>& Level::getObjects() {
 	return objects;
 }
 
-const std::vector<Light*> Level::getLights() {
+const std::vector<Light*>& Level::getLights() {
 	return lights;
 }
 

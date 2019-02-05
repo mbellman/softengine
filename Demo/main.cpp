@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
 	engine.addUIObject(&text);
 	engine.setActiveLevel(new LightTest());
-	engine.setDrawDistance(4000);
+	engine.setDrawDistance(5000);
 	engine.run();
 
 	TTF_CloseFont(mono);

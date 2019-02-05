@@ -50,14 +50,12 @@ void Object::computeSurfaceNormals() {
 	}
 }
 
-void Object::forEachPolygon(std::function<void(const Polygon&)> handle) {
-	for (int i = 0; i < polygons.size(); i++) {
-		handle(polygons.at(i));
-	}
-}
-
 int Object::getPolygonCount() {
 	return polygons.size();
+}
+
+const std::vector<Polygon>& Object::getPolygons() {
+	return polygons;
 }
 
 void Object::rotate(const Vec3& rotation) {

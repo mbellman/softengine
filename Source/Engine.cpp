@@ -91,6 +91,52 @@ void Engine::drawTriangle(Triangle& triangle) {
 			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
 		);
 	} else {
+		const Polygon* parentPolygon = triangle.polygon;
+		const Object* parentObject = parentPolygon->object;
+
+		// Before rasterizing the triangle, one more pass is necessary to
+		// determine the aggregate effect of area lights on each vertex color.
+		for (int i = 0; i < 3; i++) {
+			Color aggregateLightColor = { 0, 0, 0 };
+			Vertex2d* screenVertex = &triangle.vertices[i];
+			Vec3 worldVertex = (parentObject->position + parentPolygon->vertices[i]->vector);
+
+			for (auto* light : activeLevel->getLights()) {
+				if (
+					abs(light->position.x - worldVertex.x) > light->spread ||
+					abs(light->position.y - worldVertex.y) > light->spread ||
+					abs(light->position.z - worldVertex.z) > light->spread
+				) {
+					// If the light source is further away along any axis than
+					// its range, we can automatically ignore it.
+					continue;
+				}
+
+				Vec3 lightVector = worldVertex - light->position;
+				float lightDistance = lightVector.magnitude();
+
+				if (lightDistance < light->spread) {
+					float dot = Vec3::dotProduct(parentPolygon->normal, lightVector.unit());
+
+					if (dot < 0) {
+						float incidence = cosf((1 + dot) * M_PI / 2);
+						float intensity = pow(1.0f - lightDistance / light->spread, 2);
+
+						aggregateLightColor += light->color * (light->power * incidence * intensity);
+
+						// For each incident light source, reverse any potential
+						// ambient light color diminishment on the vertex in
+						// proportion to the light's intensity at this point
+						screenVertex->color *= (1 + (intensity / ambientLight));
+					}
+				}
+			}
+
+			float distanceRatio = std::clamp((float)screenVertex->depth / drawDistance, 0.0f, 1.0f);
+
+			screenVertex->color = lerp(screenVertex->color + aggregateLightColor, activeLevel->getBackgroundColor(), distanceRatio);
+		}
+
 		rasterizer->triangle(triangle);
 	}
 }
@@ -99,89 +145,74 @@ void Engine::drawScene() {
 	bool hasPixelFilter = flags & PIXEL_FILTER;
 	bool shouldRemoveOccludedSurfaces = flags & REMOVE_OCCLUDED_SURFACES;
 
+	float fovAngleRange = sinf((((float)camera.fov / 2)) * M_PI / 180);
 	int fovScalar = (hasPixelFilter ? 250 : 500) * (360 / camera.fov);
 	int midpointX = width / (hasPixelFilter ? 4 : 2);
 	int midpointY = height / (hasPixelFilter ? 4 : 2);
 
 	RotationMatrix rotationMatrix = camera.getRotationMatrix();
 
-	for (auto object : activeLevel->getObjects()) {
+	for (auto* object : activeLevel->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
-		object->forEachPolygon([=](const Polygon& polygon) {
+		for (auto& polygon : object->getPolygons()) {
+			// Check #1: Ensure that the polygon is facing the camera
 			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
 			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
 
 			if (!isFacingCamera) {
-				// Don't render back-faces
-				return;
+				continue;
 			}
 
-			Triangle triangle;
-			float closestVertexDepth = drawDistance;
-			float farthestVertexDepth = -1.0f;
+			// Check #2: Ensure that the polygon is within the camera view frustum
+			Vec3 localSpaceVertices[3];
+			Vec3 unitVertices[3];
+			bool isWithinViewFrustum = false;
 
 			for (int i = 0; i < 3; i++) {
-				Vec3 worldSpaceVertex = (object->position + polygon.vertices[i]->vector);
-				Vec3 localSpaceVertex = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
-				Vec3 unitVertex = localSpaceVertex.unit();
-				float distortionCorrectedZ = unitVertex.z * std::abs(std::cos(unitVertex.x));
+				localSpaceVertices[i] = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
+				unitVertices[i] = localSpaceVertices[i].unit();
+
+				if (
+					!isWithinViewFrustum &&
+					abs(unitVertices[i].x) < fovAngleRange &&
+					abs(unitVertices[i].y) < fovAngleRange &&
+					localSpaceVertices[i].z > 0 && localSpaceVertices[i].z < drawDistance
+				) {
+					isWithinViewFrustum = true;
+				}
+			}
+
+			if (!isWithinViewFrustum) {
+				continue;
+			}
+
+			// Once a Polygon has passed the back-face and view frustum
+			// culling checks, we can create its Triangle projection.
+			Triangle triangle;
+
+			triangle.polygon = &polygon;
+
+			for (int i = 0; i < 3; i++) {
+				Vec3& localSpaceVertex = localSpaceVertices[i];
+				Vec3& unitVertex = unitVertices[i];
+				float distortionCorrectedZ = unitVertex.z * cosf(unitVertex.x);
 				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + midpointX);
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
-				int depth = (int)localSpaceVertex.z;
+				int depth = (int)(localSpaceVertex.z);
 				Color color = polygon.vertices[i]->color * ambientLight;
-				Color aggregateLightColor = { 0, 0, 0 };
-
-				for (auto* light : activeLevel->getLights()) {
-					if (
-						abs(light->position.x - worldSpaceVertex.x) > light->spread ||
-						abs(light->position.y - worldSpaceVertex.y) > light->spread ||
-						abs(light->position.z - worldSpaceVertex.z) > light->spread
-					) {
-						continue;
-					}
-
-					Vec3 lightVector = (worldSpaceVertex - light->position);
-					float distance = lightVector.magnitude();
-
-					if (distance < light->spread) {
-						float dotProduct = Vec3::dotProduct(polygon.normal, lightVector.unit());
-
-						if (dotProduct < 0.1) {
-							float incidence = cosf((1 + dotProduct) * M_PI / 2);
-							float spreadRatio = (light->spread - distance) / light->spread;
-							float intensity = pow(spreadRatio, 2);
-
-							color *= 1 + (1 / ambientLight) * intensity;
-							aggregateLightColor += (light->color * light->power * incidence * intensity);
-						}
-					}
-				}
-
-				float distanceRatio = std::clamp((float)depth / drawDistance, 0.0f, 1.0f);
-				color = lerp(color + aggregateLightColor, activeLevel->getBackgroundColor(), distanceRatio);
-
-				if (depth < closestVertexDepth) {
-					closestVertexDepth = depth;
-				}
-
-				if (depth > farthestVertexDepth) {
-					farthestVertexDepth = depth;
-				}
 
 				triangle.createVertex(i, x, y, depth, color);
 			}
 
-			if (farthestVertexDepth > 0 && closestVertexDepth < drawDistance) {
-				if (shouldRemoveOccludedSurfaces) {
-					int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
+			if (shouldRemoveOccludedSurfaces) {
+				int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
 
-					rasterQueue->addTriangle(triangle, zone);
-				} else {
-					drawTriangle(triangle);
-				}
+				rasterQueue->addTriangle(triangle, zone);
+			} else {
+				drawTriangle(triangle);
 			}
-		});
+		}
 	}
 
 	if (shouldRemoveOccludedSurfaces) {

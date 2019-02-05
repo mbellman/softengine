@@ -99,7 +99,7 @@ struct Vertex3d : Colorable {
  */
 struct Triangle {
 	Vertex2d vertices[3];
-	Polygon* polygon = NULL;
+	const Polygon* polygon = NULL;
 
 	float averageDepth() const;
 	void createVertex(int index, int x, int y, int depth, const Color& color);
@@ -112,7 +112,7 @@ struct Triangle {
 struct Polygon {
 	Vertex3d* vertices[3];
 	Vec3 normal;
-	Object* object = NULL;
+	const Object* object = NULL;
 
 	void bindVertex(int index, Vertex3d* vertex);
 };

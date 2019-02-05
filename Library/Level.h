@@ -17,8 +17,8 @@ enum State {
 class Level {
 public:
 	const Color& getBackgroundColor();
-	const std::vector<Object*> getObjects();
-	const std::vector<Light*> getLights();
+	const std::vector<Object*>& getObjects();
+	const std::vector<Light*>& getLights();
 	bool hasQuit();
 	virtual void load() = 0;
 	void quit();

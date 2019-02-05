@@ -27,5 +27,18 @@ void StressTest::load() {
 		add(icosahedron);
 		add(cube);
 	}
+
+	for (int i = 0; i < 5; i++) {
+		Light* light = new Light();
+		float x = i % 2 == 0 ? -500 : 500;
+		float y = 200;
+		float z = i * 1200;
+
+		light->position = { x, y, z };
+		light->color = { 255, 0, 0 };
+		light->spread = 900;
+
+		add(light);
+	}
 }
 
