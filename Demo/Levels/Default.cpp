@@ -53,7 +53,10 @@ void Default::load() {
 
 void Default::update(int dt, int runningTime) {
 	getObject("oscillatingCube")->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
-	getObject("light")->position.x = 500.0f * sinf(runningTime / 400.0f);
+
+	Light* light = (Light*)getObject("light");
+	light->position.x = 500.0f * sinf(runningTime / 400.0f);
+	light->position.z = 2000 + 500.0f * cosf(runningTime / 400.0f);
 
 	settings.ambientLightVector.x = sinf(runningTime / 300.f);
 }
