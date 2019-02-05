@@ -2,11 +2,16 @@ cmake_minimum_required(VERSION 3.11)
 set(EXECUTABLE_NAME softengine)
 project(${EXECUTABLE_NAME})
 
-set(CMAKE_CXX_COMPILER /usr/bin/g++)
+# Use the correct system wide version of g++ on Linux
+if (UNIX)
+    set(CMAKE_CXX_COMPILER /usr/bin/g++)
+endif (UNIX)
+
+# Compiler configuration
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "-Ofast -std=c++17")
+set(CMAKE_CXX_FLAGS "-Ofast")
 
 include_directories(Demo)
 include_directories(Library)
