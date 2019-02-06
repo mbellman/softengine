@@ -18,12 +18,15 @@ include_directories(Library)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-modules)
 
-# Find SDL2 and SDL2_ttf
+# Find SDL2 dependencies
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
 find_package(SDL2TTF REQUIRED)
 include_directories(${SDL2TTF_INCLUDE_DIR})
+
+find_package(SDL2image REQUIRED)
+include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 
 set(SOURCE_FILES
     # -- Demo files --
@@ -34,6 +37,8 @@ set(SOURCE_FILES
     Demo/Levels/StressTest.h
     Demo/Levels/LightTest.cpp
     Demo/Levels/LightTest.h
+    Demo/Levels/TextureTest.cpp
+    Demo/Levels/TextureTest.h
 
     # -- Header files --
 

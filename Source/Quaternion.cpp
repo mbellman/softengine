@@ -1,4 +1,4 @@
-#include <cmath>
+#include <math.h>
 #include <Types.h>
 #include <Quaternion.h>
 

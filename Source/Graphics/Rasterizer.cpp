@@ -268,8 +268,8 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 	// little effect when used to update the color components,
 	// since the lerp interval reduces the number of actual color
 	// lerps by a significant degree.)
-	float f_depth = (float)startDepth;
 	float depthStep = (float)(endDepth - startDepth) / lineLength;
+	float f_depth = (float)startDepth + depthStep * (start - x1);
 
 	for (int x = start; x <= end; x++) {
 		int index = pixelIndexOffset + x;
