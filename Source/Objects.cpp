@@ -50,11 +50,11 @@ void Object::computeSurfaceNormals() {
 	}
 }
 
-int Object::getPolygonCount() {
+int Object::getPolygonCount() const {
 	return polygons.size();
 }
 
-const std::vector<Polygon>& Object::getPolygons() {
+const std::vector<Polygon>& Object::getPolygons() const {
 	return polygons;
 }
 

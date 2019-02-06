@@ -116,7 +116,7 @@ void Engine::drawTriangle(Triangle& triangle) {
 				}
 			}
 
-			for (auto* light : activeLevel->getLights()) {
+			for (const auto* light : activeLevel->getLights()) {
 				if (
 					abs(light->position.x - worldVertex.x) > light->spread ||
 					abs(light->position.y - worldVertex.y) > light->spread ||
@@ -146,9 +146,10 @@ void Engine::drawTriangle(Triangle& triangle) {
 				}
 			}
 
-			float drawDistanceRatio = clamp((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
+			float drawDistanceRatio = FAST_CLAMP((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
 
-			screenVertex->color = lerp(screenVertex->color + aggregateLightColor, settings.backgroundColor, drawDistanceRatio);
+			screenVertex->color += aggregateLightColor;
+			screenVertex->color = lerp(screenVertex->color, settings.backgroundColor, drawDistanceRatio);
 		}
 
 		rasterizer->triangle(triangle);
@@ -166,10 +167,10 @@ void Engine::drawScene() {
 
 	RotationMatrix rotationMatrix = camera.getRotationMatrix();
 
-	for (auto* object : activeLevel->getObjects()) {
+	for (const auto* object : activeLevel->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
-		for (auto& polygon : object->getPolygons()) {
+		for (const auto& polygon : object->getPolygons()) {
 			// Check #1: Ensure that the polygon is facing the camera
 			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
 			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
@@ -299,7 +300,7 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	int yDelta = isRelativeMouseMode ? -event.yrel : 0;
 	float deltaFactor = 1.0f / 500;
 
-	camera.pitch = clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
+	camera.pitch = std::clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
 	camera.yaw += (float)xDelta * deltaFactor;
 }
 
@@ -323,7 +324,7 @@ void Engine::run() {
 			if (delta < 17) {
 				delay(17 - delta);
 			} else {
-				std::cout << "[DRAW TIME WARNING]: " << delta << "ms\n";
+				// std::cout << "[DRAW TIME WARNING]: " << delta << "ms\n";
 			}
 		}
 

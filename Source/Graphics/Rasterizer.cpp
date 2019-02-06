@@ -49,22 +49,18 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 	}
 
 	int triangleHeight = abs(left.coordinate.y - corner.coordinate.y);
-	int topY = min(corner.coordinate.y, left.coordinate.y);
+	int topY = FAST_MIN(corner.coordinate.y, left.coordinate.y);
+	int start = FAST_MAX(topY, 0);
+	int end = FAST_MIN(topY + triangleHeight, height);
 	float leftSlope = (float)triangleHeight / (left.coordinate.x - corner.coordinate.x);
 	float rightSlope = (float)triangleHeight / (right.coordinate.x - corner.coordinate.x);
 	bool hasFlatTop = corner.coordinate.y > left.coordinate.y;
 
-	for (int i = topY < 0 ? -topY : 0; i < triangleHeight; i++) {
-		int y = topY + i;
-
-		if (y >= height) {
-			break;
-		}
-
-		int j = hasFlatTop ? triangleHeight - i : i;
-		float progress = (float)j / triangleHeight;
-		int startX = corner.coordinate.x + (int)j / leftSlope;
-		int endX = corner.coordinate.x + (int)j / rightSlope;
+	for (int y = start; y < end; y++) {
+		int step = hasFlatTop ? (triangleHeight - (y - topY)) : (y - topY);
+		float progress = (float)step / triangleHeight;
+		int startX = corner.coordinate.x + (int)step / leftSlope;
+		int endX = corner.coordinate.x + (int)step / rightSlope;
 		Color startColor = lerp(corner.color, left.color, progress);
 		Color endColor = lerp(corner.color, right.color, progress);
 		int startDepth = lerp(corner.depth, left.depth, progress);
@@ -253,8 +249,8 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 		return;
 	}
 
-	int start = max(x1, 0);
-	int end = min(x1 + lineLength, width - 1);
+	int start = FAST_MAX(x1, 0);
+	int end = FAST_MIN(x1 + lineLength, width - 1);
 	int pixelIndexOffset = y1 * width;
 
 	// Rather than interpolating a new color value at every pixel
@@ -262,13 +258,24 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 	// based on the color change over the line and its length. The
 	// use of a counter also improves performance compared to modulo.
 	float colorDelta = (abs(endColor.R - startColor.R) + abs(endColor.G - startColor.G) + abs(endColor.B - startColor.B)) / 3;
-	int lerpInterval = colorDelta > 0 ? max(1, (int)(lineLength / colorDelta)) : lineLength;
+	int lerpInterval = colorDelta > 0 ? FAST_MAX(1, (int)(lineLength / colorDelta)) : lineLength;
 	int lerpIntervalCounter = lerpInterval;
 
+	// There is a small but appreciable performance improvement
+	// when adding a floating-point depth step on each cycle to =
+	// determine the new per-pixel depth, rather than lerping
+	// startDepth -> endDepth each time. (This technique has
+	// little effect when used to update the color components,
+	// since the lerp interval reduces the number of actual color
+	// lerps by a significant degree.)
+	float f_depth = (float)startDepth;
+	float depthStep = (float)(endDepth - startDepth) / lineLength;
+
 	for (int x = start; x <= end; x++) {
-		float progress = (float)(x - x1) / lineLength;
-		int depth = lerp(startDepth, endDepth, progress);
 		int index = pixelIndexOffset + x;
+		int depth = (int)f_depth;
+
+		f_depth += depthStep;
 
 		if (depthBuffer[index] > depth) {
 			if (shouldUsePerVertexColoration) {
@@ -276,6 +283,8 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 					// Lerping the color components individually is more
 					// efficient than lerping startColor -> endColor and
 					// generating a new Color object each time
+					float progress = (float)(x - x1) / lineLength;
+
 					int R = lerp(startColor.R, endColor.R, progress);
 					int G = lerp(startColor.G, endColor.G, progress);
 					int B = lerp(startColor.B, endColor.B, progress);

@@ -16,8 +16,8 @@ struct Object {
 	Object();
 	virtual ~Object();
 
-	const std::vector<Polygon>& getPolygons();
-	int getPolygonCount();
+	const std::vector<Polygon>& getPolygons() const;
+	int getPolygonCount() const;
 	void rotate(const Vec3& rotation);
 	void scale(float scalar);
 	void setColor(int R, int G, int B);

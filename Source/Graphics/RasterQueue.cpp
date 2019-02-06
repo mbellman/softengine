@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <Helpers.h>
 #include <Graphics/RasterQueue.h>
 
 /**
@@ -21,7 +20,7 @@ void RasterQueue::addCover(const Triangle& triangle, int zone) {
 }
 
 void RasterQueue::addTriangle(Triangle triangle, int zoneIndex) {
-	zoneIndex = clamp(zoneIndex, 0, RasterQueue::MAX_ZONES - 1);
+	zoneIndex = std::clamp(zoneIndex, 0, RasterQueue::MAX_ZONES - 1);
 
 	if (zoneIndex > highestZoneIndex) {
 		highestZoneIndex = zoneIndex;

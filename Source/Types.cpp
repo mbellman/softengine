@@ -1,6 +1,7 @@
 #include <memory>
 #include <cmath>
 #include <algorithm>
+#include <Helpers.h>
 #include <Types.h>
 
 using namespace std;
@@ -10,7 +11,7 @@ using namespace std;
  * -----
  */
 int Color::normalize(int component) {
-	return clamp(component, 0, 255);
+	return FAST_CLAMP(component, 0, 255);
 }
 
 Color Color::operator +(int illumination) const {
