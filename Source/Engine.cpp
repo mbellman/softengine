@@ -2,6 +2,7 @@
 
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <SDL_image.h>
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -27,6 +28,7 @@ RotationMatrix Camera::getRotationMatrix() {
 Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
+	IMG_Init(IMG_INIT_PNG);
 
 	window = SDL_CreateWindow(
 		"HEY ZACK",

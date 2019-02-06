@@ -81,3 +81,4 @@ add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
 # Link SDL libraries
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARY})
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2TTF_LIBRARY})
+target_link_libraries(${EXECUTABLE_NAME} ${SDL2_IMAGE_LIBRARY})

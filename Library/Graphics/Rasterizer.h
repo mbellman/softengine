@@ -4,6 +4,18 @@
 #include <limits.h>
 #include <Types.h>
 
+/**
+ * Rasterizer
+ * ----------
+ */
+struct TextureBuffer {
+	Uint32* pixels;
+};
+
+/**
+ * Rasterizer
+ * ----------
+ */
 class Rasterizer {
 public:
 	Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldUsePerVertexColoration);

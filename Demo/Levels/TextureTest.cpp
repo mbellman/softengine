@@ -29,6 +29,7 @@ void TextureTest::load() {
 	settings.albedo = 0.4;
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightFactor = 0.7;
+	settings.ambientLightVector = { 0.5, -1, 1 };
 }
 
 void TextureTest::update(int dt, int runningTime) {
