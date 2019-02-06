@@ -44,6 +44,15 @@ struct Coordinate {
 };
 
 /**
+ * Vec2
+ * ----
+ */
+struct Vec2 {
+	float x;
+	float y;
+};
+
+/**
  * Vec3
  * ----
  */
@@ -82,7 +91,7 @@ struct RotationMatrix {
  */
 struct Vertex2d : Colorable {
 	Coordinate coordinate;
-	Coordinate textureUV;
+	Vec2 uv;
 	int depth;
 };
 
@@ -92,7 +101,7 @@ struct Vertex2d : Colorable {
  */
 struct Vertex3d : Colorable {
 	Vec3 vector;
-	Coordinate textureUV;
+	Vec2 uv;
 };
 
 /**
