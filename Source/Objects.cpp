@@ -1,5 +1,6 @@
 #include <Objects.h>
 #include <Loaders/ObjLoader.h>
+#include <Graphics/TextureBuffer.h>
 
 /**
  * Object
@@ -22,7 +23,7 @@ void Object::addPolygon(int v1, int v2, int v3) {
 	polygon.bindVertex(1, &vertices.at(v2));
 	polygon.bindVertex(2, &vertices.at(v3));
 	polygon.normal = Object::computePolygonNormal(polygon);
-	polygon.object = this;
+	polygon.parentObject = this;
 
 	polygons.push_back(polygon);
 }
@@ -66,6 +67,12 @@ void Object::rotate(const Vec3& rotation) {
 	}
 
 	computeSurfaceNormals();
+}
+
+void Object::setTexture(TextureBuffer* textureBuffer) {
+	if (textureBuffer != NULL) {
+		this->texture = textureBuffer;
+	}
 }
 
 void Object::scale(float scalar) {

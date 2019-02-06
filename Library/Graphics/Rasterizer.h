@@ -3,14 +3,7 @@
 #include <SDL.h>
 #include <limits.h>
 #include <Types.h>
-
-/**
- * Rasterizer
- * ----------
- */
-struct TextureBuffer {
-	Uint32* pixels;
-};
+#include <Graphics/TextureBuffer.h>
 
 /**
  * Rasterizer

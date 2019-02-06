@@ -2,14 +2,18 @@
 #include <math.h>
 #include <Levels/TextureTest.h>
 #include <Objects.h>
+#include <Graphics/TextureBuffer.h>
 
 /**
  * TextureTest
  * -----------
  */
 void TextureTest::load() {
+	add("catTexture", new TextureBuffer("./DemoAssets/cat.png"));
+
 	Cube* cube = new Cube(100);
 	cube->position = { 0, 200, 900 };
+	cube->setTexture(getTexture("catTexture"));
 
 	add("spinningCube", cube);
 
@@ -29,7 +33,7 @@ void TextureTest::load() {
 	settings.albedo = 0.4;
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightFactor = 0.7;
-	settings.ambientLightVector = { 0.5, -1, 1 };
+	settings.ambientLightVector = { 0.5, -1, 0.3 };
 }
 
 void TextureTest::update(int dt, int runningTime) {

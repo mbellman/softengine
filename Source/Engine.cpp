@@ -15,6 +15,7 @@
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
+#include <Graphics/TextureBuffer.h>
 
 using namespace std;
 
@@ -97,61 +98,67 @@ void Engine::drawTriangle(Triangle& triangle) {
 			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
 		);
 	} else {
-		const Polygon* parentPolygon = triangle.polygon;
-		const Object* parentObject = parentPolygon->object;
+		const Polygon* parentPolygon = triangle.parentPolygon;
+		const Object* parentObject = parentPolygon->parentObject;
 
-		// Before rasterizing the triangle, one more pass is necessary to
-		// determine the aggregate effect of area lights on each vertex color.
-		for (int i = 0; i < 3; i++) {
-			Color aggregateLightColor = { 0, 0, 0 };
-			Vec3 worldVertex = (parentObject->position + parentPolygon->vertices[i]->vector);
-			Vertex2d* screenVertex = &triangle.vertices[i];
+		if (parentPolygon != NULL && parentObject != NULL) {
+			// Before rasterizing the triangle, one more pass is necessary to
+			// determine the aggregate effect of area lights on each vertex color.
+			for (int i = 0; i < 3; i++) {
+				Color aggregateLightColor = { 0, 0, 0 };
+				Vec3 worldVertex = (parentObject->position + parentPolygon->vertices[i]->vector);
+				Vertex2d* screenVertex = &triangle.vertices[i];
 
-			// Ambient lighting is a special distance-invariant case
-			if (settings.ambientLightFactor > 0) {
-				float dot = Vec3::dotProduct(parentPolygon->normal, settings.ambientLightVector.unit());
+				// Ambient lighting is a special distance-invariant case
+				if (settings.ambientLightFactor > 0) {
+					float dot = Vec3::dotProduct(parentPolygon->normal, settings.ambientLightVector.unit());
 
-				if (dot < 0) {
-					float incidence = cosf((1 + dot) * M_PI / 2);
+					if (dot < 0) {
+						float incidence = cosf((1 + dot) * M_PI / 2);
 
-					aggregateLightColor += settings.ambientLightColor * (incidence * settings.ambientLightFactor);
+						aggregateLightColor += settings.ambientLightColor * (incidence * settings.ambientLightFactor);
+					}
 				}
+
+				for (const auto* light : activeLevel->getLights()) {
+					if (
+						abs(light->position.x - worldVertex.x) > light->spread ||
+						abs(light->position.y - worldVertex.y) > light->spread ||
+						abs(light->position.z - worldVertex.z) > light->spread ||
+						light->power == 0
+					) {
+						// If the light source is further away along any axis than
+						// its range (or it has no power), we can ignore it.
+						continue;
+					}
+
+					Vec3 lightVector = worldVertex - light->position;
+					float lightDistance = lightVector.magnitude();
+
+					if (lightDistance < light->spread) {
+						float dot = Vec3::dotProduct(parentPolygon->normal, lightVector.unit());
+						float incidence = cosf((1 + dot) * M_PI / 2);
+						float intensity = pow(1.0f - lightDistance / light->spread, 2);
+						float luminosity = light->power * incidence * intensity;
+
+						aggregateLightColor += light->color * luminosity;
+
+						// For each incident light source, reverse any potential
+						// ambient light color diminishment on the vertex in
+						// proportion to the light's luminosity at this point
+						screenVertex->color *= (1 + (luminosity / settings.albedo));
+					}
+				}
+
+				float drawDistanceRatio = FAST_CLAMP((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
+
+				screenVertex->color += aggregateLightColor;
+				screenVertex->color = lerp(screenVertex->color, settings.backgroundColor, drawDistanceRatio);
 			}
 
-			for (const auto* light : activeLevel->getLights()) {
-				if (
-					abs(light->position.x - worldVertex.x) > light->spread ||
-					abs(light->position.y - worldVertex.y) > light->spread ||
-					abs(light->position.z - worldVertex.z) > light->spread ||
-					light->power == 0
-				) {
-					// If the light source is further away along any axis than
-					// its range (or it has no power), we can ignore it.
-					continue;
-				}
-
-				Vec3 lightVector = worldVertex - light->position;
-				float lightDistance = lightVector.magnitude();
-
-				if (lightDistance < light->spread) {
-					float dot = Vec3::dotProduct(parentPolygon->normal, lightVector.unit());
-					float incidence = cosf((1 + dot) * M_PI / 2);
-					float intensity = pow(1.0f - lightDistance / light->spread, 2);
-					float luminosity = light->power * incidence * intensity;
-
-					aggregateLightColor += light->color * luminosity;
-
-					// For each incident light source, reverse any potential
-					// ambient light color diminishment on the vertex in
-					// proportion to the light's luminosity at this point
-					screenVertex->color *= (1 + (luminosity / settings.albedo));
-				}
+			if (parentObject->texture != NULL) {
+				parentObject->texture->confirmTexture(renderer, TextureMode::SOFTWARE);
 			}
-
-			float drawDistanceRatio = FAST_CLAMP((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
-
-			screenVertex->color += aggregateLightColor;
-			screenVertex->color = lerp(screenVertex->color, settings.backgroundColor, drawDistanceRatio);
 		}
 
 		rasterizer->triangle(triangle);
@@ -208,7 +215,7 @@ void Engine::drawScene() {
 			// culling checks, we can create its Triangle projection.
 			Triangle triangle;
 
-			triangle.polygon = &polygon;
+			triangle.parentPolygon = &polygon;
 
 			for (int i = 0; i < 3; i++) {
 				Vec3& localSpaceVertex = localSpaceVertices[i];
@@ -366,15 +373,15 @@ void Engine::setActiveLevel(Level* level) {
 }
 
 void Engine::update() {
-		updateMovement();
+	updateMovement();
 
-		rasterizer->setBackgroundColor(activeLevel->getSettings().backgroundColor);
-		rasterizer->clear();
+	rasterizer->setBackgroundColor(activeLevel->getSettings().backgroundColor);
+	rasterizer->clear();
 
-		drawScene();
-		ui->draw();
+	drawScene();
+	ui->draw();
 
-		SDL_RenderPresent(renderer);
+	SDL_RenderPresent(renderer);
 }
 
 void Engine::updateMovement() {

@@ -57,6 +57,7 @@ set(SOURCE_FILES
     Library/Loaders/ObjLoader.h
     Library/Graphics/Rasterizer.h
     Library/Graphics/RasterQueue.h
+    Library/Graphics/TextureBuffer.h
 
     # -- CPP Files --
 
@@ -74,6 +75,7 @@ set(SOURCE_FILES
     Source/Loaders/ObjLoader.cpp
     Source/Graphics/Rasterizer.cpp
     Source/Graphics/RasterQueue.cpp
+    Source/Graphics/TextureBuffer.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})

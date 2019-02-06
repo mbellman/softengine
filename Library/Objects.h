@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <Types.h>
 #include <Loaders/ObjLoader.h>
+#include <Graphics/TextureBuffer.h>
 
 /**
  * Object
@@ -12,6 +13,7 @@
  */
 struct Object {
 	Vec3 position;
+	TextureBuffer* texture = NULL;
 
 	Object();
 	virtual ~Object();
@@ -22,6 +24,7 @@ struct Object {
 	void scale(float scalar);
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
+	void setTexture(TextureBuffer* textureBuffer);
 
 protected:
 	std::vector<Vertex3d> vertices;

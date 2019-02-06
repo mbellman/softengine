@@ -82,6 +82,7 @@ struct RotationMatrix {
  */
 struct Vertex2d : Colorable {
 	Coordinate coordinate;
+	Coordinate textureUV;
 	int depth;
 };
 
@@ -91,6 +92,7 @@ struct Vertex2d : Colorable {
  */
 struct Vertex3d : Colorable {
 	Vec3 vector;
+	Coordinate textureUV;
 };
 
 /**
@@ -99,7 +101,7 @@ struct Vertex3d : Colorable {
  */
 struct Triangle {
 	Vertex2d vertices[3];
-	const Polygon* polygon = NULL;
+	const Polygon* parentPolygon = NULL;
 
 	float averageDepth() const;
 	void createVertex(int index, int x, int y, int depth, const Color& color);
@@ -112,7 +114,7 @@ struct Triangle {
 struct Polygon {
 	Vertex3d* vertices[3];
 	Vec3 normal;
-	const Object* object = NULL;
+	const Object* parentObject = NULL;
 
 	void bindVertex(int index, Vertex3d* vertex);
 };

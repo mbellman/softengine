@@ -118,10 +118,6 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 	}
 }
 
-Uint32 Rasterizer::rgbToUint32(int R, int G, int B) {
-	return (255 << 24) | (R << 16) | (G << 8) | B;
-}
-
 void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 	SDL_Rect destinationRect = { 0, 0, sizeFactor * width, sizeFactor * height };
 
@@ -130,11 +126,11 @@ void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 }
 
 void Rasterizer::setBackgroundColor(const Color& color) {
-	backgroundColor = rgbToUint32(color.R, color.G, color.B);
+	backgroundColor = ARGB(color.R, color.G, color.B);
 }
 
 void Rasterizer::setColor(int R, int G, int B) {
-	color = rgbToUint32(R, G, B);
+	color = ARGB(R, G, B);
 }
 
 void Rasterizer::setColor(Color* color) {
@@ -262,9 +258,9 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 	int lerpIntervalCounter = lerpInterval;
 
 	// There is a small but appreciable performance improvement
-	// when adding a floating-point depth step on each cycle to =
-	// determine the new per-pixel depth, rather than lerping
-	// startDepth -> endDepth each time. (This technique has
+	// when incrementing a floating-point depth step on each cycle
+	// to determine the new per-pixel depth, rather than lerping
+	// startDepth -> endDepth every time. (This technique has
 	// little effect when used to update the color components,
 	// since the lerp interval reduces the number of actual color
 	// lerps by a significant degree.)
@@ -280,11 +276,11 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 		if (depthBuffer[index] > depth) {
 			if (shouldUsePerVertexColoration) {
 				if (++lerpIntervalCounter > lerpInterval || x == end) {
+					float progress = (float)(x - x1) / lineLength;
+
 					// Lerping the color components individually is more
 					// efficient than lerping startColor -> endColor and
 					// generating a new Color object each time
-					float progress = (float)(x - x1) / lineLength;
-
 					int R = lerp(startColor.R, endColor.R, progress);
 					int G = lerp(startColor.G, endColor.G, progress);
 					int B = lerp(startColor.B, endColor.B, progress);
@@ -296,7 +292,7 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 			}
 
 			// We refrain from calling setPixel() here to avoid
-			// its additional redunant calculation of the index
+			// its redunant calculation of the index
 			pixelBuffer[index] = color;
 			depthBuffer[index] = depth;
 		}
