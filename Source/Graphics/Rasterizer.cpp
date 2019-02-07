@@ -4,6 +4,8 @@
 #include <limits.h>
 #include <Helpers.h>
 #include <Graphics/Rasterizer.h>
+#include <Graphics/TextureBuffer.h>
+#include <Objects.h>
 
 using namespace std;
 
@@ -38,7 +40,7 @@ void Rasterizer::clear() {
 	fill(depthBuffer, depthBuffer + bufferLength, INT_MAX);
 }
 
-void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right) {
+void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right, TextureBuffer* texture) {
 	int isHorizontallyOffscreen = (
 		(corner.coordinate.x >= width && left.coordinate.x >= width) ||
 		(corner.coordinate.x < 0 && right.coordinate.x < 0)
@@ -65,17 +67,25 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 		Color endColor = lerp(corner.color, right.color, progress);
 		int startDepth = lerp(corner.depth, left.depth, progress);
 		int endDepth = lerp(corner.depth, right.depth, progress);
+		Vec2 startUV = lerp(corner.uv, left.uv, progress);
+		Vec2 endUV = lerp(corner.uv, right.uv, progress);
 
-		triangleScanLine(startX, y, endX - startX, startColor, endColor, startDepth, endDepth);
+		triangleScanLine(startX, y, endX - startX, startColor, endColor, startDepth, endDepth, startUV, endUV, texture);
 	}
 }
 
-void Rasterizer::flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight) {
-	flatTriangle(top, bottomLeft, bottomRight);
+void Rasterizer::flatBottomTriangle(
+	const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight,
+	TextureBuffer* texture
+) {
+	flatTriangle(top, bottomLeft, bottomRight, texture);
 }
 
-void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom) {
-	flatTriangle(bottom, topLeft, topRight);
+void Rasterizer::flatTopTriangle(
+	const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom,
+	TextureBuffer* texture
+) {
+	flatTriangle(bottom, topLeft, topRight, texture);
 }
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
@@ -129,6 +139,10 @@ void Rasterizer::setBackgroundColor(const Color& color) {
 	backgroundColor = ARGB(color.R, color.G, color.B);
 }
 
+void Rasterizer::setColor(Uint32 color) {
+	this->color = color;
+}
+
 void Rasterizer::setColor(int R, int G, int B) {
 	color = ARGB(R, G, B);
 }
@@ -158,6 +172,7 @@ void Rasterizer::triangle(Triangle& triangle) {
 	Vertex2d* top = &triangle.vertices[0];
 	Vertex2d* middle = &triangle.vertices[1];
 	Vertex2d* bottom = &triangle.vertices[2];
+	TextureBuffer* texture = triangle.parentPolygon->parentObject->texture;
 
 	if (top->coordinate.y > middle->coordinate.y) {
 		swap(top, middle);
@@ -186,14 +201,14 @@ void Rasterizer::triangle(Triangle& triangle) {
 			swap(top, middle);
 		}
 
-		flatTopTriangle(*top, *middle, *bottom);
+		flatTopTriangle(*top, *middle, *bottom, texture);
 	} else if (bottom->coordinate.y == middle->coordinate.y) {
 		// Trivial case #2: Triangle with a flat bottom edge
 		if (bottom->coordinate.x < middle->coordinate.x) {
 			swap(bottom, middle);
 		}
 
-		flatBottomTriangle(*top, *middle, *bottom);
+		flatBottomTriangle(*top, *middle, *bottom, texture);
 	} else {
 		// Nontrivial case: Triangle with neither a flat top nor
 		// flat bottom edge. These must be rasterized as two
@@ -213,6 +228,7 @@ void Rasterizer::triangle(Triangle& triangle) {
 		hypotenuseVertex.coordinate = { x, y };
 		hypotenuseVertex.depth = lerp(top->depth, bottom->depth, middleYProgress);
 		hypotenuseVertex.color = lerp(top->color, bottom->color, middleYProgress);
+		hypotenuseVertex.uv = lerp(top->uv, bottom->uv, middleYProgress);
 
 		Vertex2d* middleLeft = middle;
 		Vertex2d* middleRight = &hypotenuseVertex;
@@ -221,8 +237,8 @@ void Rasterizer::triangle(Triangle& triangle) {
 			swap(middleLeft, middleRight);
 		}
 
-		flatBottomTriangle(*top, *middleLeft, *middleRight);
-		flatTopTriangle(*middleLeft, *middleRight, *bottom);
+		flatBottomTriangle(*top, *middleLeft, *middleRight, texture);
+		flatTopTriangle(*middleLeft, *middleRight, *bottom, texture);
 	}
 }
 
@@ -233,7 +249,13 @@ void Rasterizer::triangle(Triangle& triangle) {
  * of the system, and care must be taken to ensure that it includes
  * no unnecessary work.
  */
-void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& startColor, const Color& endColor, int startDepth, int endDepth) {
+void Rasterizer::triangleScanLine(
+	int x1, int y1, int lineLength,
+	const Color& startColor, const Color& endColor,
+	int startDepth, int endDepth,
+	const Vec2& startUV, const Vec2& endUV,
+	TextureBuffer* texture
+) {
 	if (y1 >= height || y1 < 0 || lineLength == 0) {
 		// Optimize for vertically offscreen lines or zero-length
 		// lines. Most horizontally offscreen lines are automatically
@@ -274,7 +296,7 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 		f_depth += depthStep;
 
 		if (depthBuffer[index] > depth) {
-			if (shouldUsePerVertexColoration) {
+			if (texture == NULL && shouldUsePerVertexColoration) {
 				if (++lerpIntervalCounter > lerpInterval || x == end) {
 					float progress = (float)(x - x1) / lineLength;
 
@@ -289,6 +311,12 @@ void Rasterizer::triangleScanLine(int x1, int y1, int lineLength, const Color& s
 
 					lerpIntervalCounter = 0;
 				}
+			} else if (texture != NULL) {
+				float progress = (float)(x - x1) / lineLength;
+				int u = (int)(lerp(startUV.x, endUV.x, progress) * texture->width);
+				int v = (int)(lerp(startUV.y, endUV.y, progress) * texture->height);
+
+				setColor(texture->sample(u, v));
 			}
 
 			// We refrain from calling setPixel() here to avoid

@@ -183,13 +183,14 @@ float Triangle::averageDepth() const {
 	return (vertices[0].depth + vertices[1].depth + vertices[2].depth) / 3;
 }
 
-void Triangle::createVertex(int index, int x, int y, int depth, const Color& color) {
+void Triangle::createVertex(int index, int x, int y, int depth, const Color& color, const Vec2& uv) {
 	Vertex2d vertex;
 
 	vertex.coordinate.x = x;
 	vertex.coordinate.y = y;
 	vertex.depth = depth;
 	vertex.color = color;
+	vertex.uv = uv;
 
 	vertices[index] = vertex;
 }

@@ -168,8 +168,9 @@ void Engine::drawScene() {
 				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
 				int depth = (int)(localSpaceVertex.z);
 				Color color = polygon.vertices[i]->color * activeLevel->getSettings().albedo;
+				Vec2 uv = polygon.vertices[i]->uv;
 
-				triangle.createVertex(i, x, y, depth, color);
+				triangle.createVertex(i, x, y, depth, color, uv);
 			}
 
 			if (shouldRemoveOccludedSurfaces) {

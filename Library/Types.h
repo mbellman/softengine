@@ -48,8 +48,8 @@ struct Coordinate {
  * ----
  */
 struct Vec2 {
-	float x;
-	float y;
+	float x = 0.0f;
+	float y = 0.0f;
 };
 
 /**
@@ -113,7 +113,7 @@ struct Triangle {
 	const Polygon* parentPolygon = NULL;
 
 	float averageDepth() const;
-	void createVertex(int index, int x, int y, int depth, const Color& color);
+	void createVertex(int index, int x, int y, int depth, const Color& color, const Vec2& uv);
 };
 
 /**

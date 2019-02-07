@@ -62,7 +62,7 @@ struct Mesh : Object {
 struct Cube : Object {
 	Cube(float radius);
 
-	void setFaceUVCoordinates(int x1, int y1, int x2, int y2);
+	void setFaceUVCoordinates(float x1, float y1, float x2, float y2);
 
 private:
 	static Vec3 vertexPositions[24];

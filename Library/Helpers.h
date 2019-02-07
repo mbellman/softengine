@@ -15,10 +15,21 @@ inline int lerp(int v1, int v2, float ratio) {
 	return v1 + (int)(v2 - v1) * ratio;
 }
 
+inline float lerp(float v1, float v2, float ratio) {
+	return v1 + (v2 - v1) * ratio;
+}
+
 inline Color lerp(const Color& c1, const Color& c2, float ratio) {
 	return {
 		lerp(c1.R, c2.R, ratio),
 		lerp(c1.G, c2.G, ratio),
 		lerp(c1.B, c2.B, ratio)
+	};
+}
+
+inline Vec2 lerp(const Vec2& v1, const Vec2& v2, float ratio) {
+	return {
+		lerp(v1.x, v2.x, ratio),
+		lerp(v1.y, v2.y, ratio)
 	};
 }

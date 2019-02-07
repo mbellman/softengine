@@ -191,7 +191,7 @@ Cube::Cube(float radius) {
 		Vec3& position = Cube::vertexPositions[i];
 
 		vector.x = position.x * radius;
-		vector.y = position.y * radius;
+		vector.y = -position.y * radius;
 		vector.z = position.z * radius;
 
 		addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
@@ -216,7 +216,7 @@ Cube::Cube(float radius) {
  *   |  --_____--  |
  *   |      1      |
  *   |             |
- *   |    __7__    |              y-
+ *   |    __7__    |              y+
  *   |__--     --__|              |
  *   4__         __6              |
  *      --__ __--         z+__    |    __x+
@@ -224,37 +224,37 @@ Cube::Cube(float radius) {
  */
 Vec3 Cube::vertexPositions[24] = {
 	// Side faces
-	{ -1.0f, -1.0f, 1.0f },   // 0
-	{ -1.0f, -1.0f, -1.0f },  // 1
-	{ -1.0f, 1.0f, 1.0f },  // 4
-	{ -1.0f, 1.0f, -1.0f }, // 5
+	{ -1.0f, 1.0f, 1.0f },     // 0
+	{ -1.0f, 1.0f, -1.0f },    // 1
+	{ -1.0f, -1.0f, 1.0f },    // 4
+	{ -1.0f, -1.0f, -1.0f },   // 5
 
-	{ -1.0f, -1.0f, -1.0f },  // 1
-	{ 1.0f, -1.0f, -1.0f },   // 2
-	{ -1.0f, 1.0f, -1.0f }, // 5
-	{ 1.0f, 1.0f, -1.0f },  // 6
+	{ -1.0f, 1.0f, -1.0f },    // 1
+	{ 1.0f, 1.0f, -1.0f },     // 2
+	{ -1.0f, -1.0f, -1.0f },   // 5
+	{ 1.0f, -1.0f, -1.0f },    // 6
 
-	{ 1.0f, -1.0f, -1.0f },   // 2
-	{ 1.0f, -1.0f, 1.0f },    // 3
-	{ 1.0f, 1.0f, -1.0f },  // 6
-	{ 1.0f, 1.0f, 1.0f },   // 7
+	{ 1.0f, 1.0f, -1.0f },     // 2
+	{ 1.0f, 1.0f, 1.0f },      // 3
+	{ 1.0f, -1.0f, -1.0f },    // 6
+	{ 1.0f, -1.0f, 1.0f },     // 7
 
-	{ 1.0f, -1.0f, 1.0f },    // 3
-	{ -1.0f, -1.0f, 1.0f },   // 0
-	{ 1.0f, 1.0f, 1.0f },   // 7
-	{ -1.0f, 1.0f, 1.0f },  // 4
+	{ 1.0f, 1.0f, 1.0f },      // 3
+	{ -1.0f, 1.0f, 1.0f },     // 0
+	{ 1.0f, -1.0f, 1.0f },     // 7
+	{ -1.0f, -1.0f, 1.0f },    // 4
 
 	// Top face
-	{ -1.0f, -1.0f, 1.0f },   // 0
-	{ 1.0f, -1.0f, 1.0f },    // 3
-	{ -1.0f, -1.0f, -1.0f },  // 1
-	{ 1.0f, -1.0f, -1.0f },   // 2
+	{ -1.0f, 1.0f, 1.0f },     // 0
+	{ 1.0f, 1.0f, 1.0f },      // 3
+	{ -1.0f, 1.0f, -1.0f },    // 1
+	{ 1.0f, 1.0f, -1.0f },     // 2
 
 	// Bottom face
-	{ -1.0f, 1.0f, -1.0f }, // 5
-	{ 1.0f, 1.0f, -1.0f },  // 6
-	{ -1.0f, 1.0f, 1.0f },  // 4
-	{ 1.0f, 1.0f, 1.0f },   // 7
+	{ -1.0f, -1.0f, -1.0f },   // 5
+	{ 1.0f, -1.0f, -1.0f },    // 6
+	{ -1.0f, -1.0f, 1.0f },    // 4
+	{ 1.0f, -1.0f, 1.0f },     // 7
 };
 
 int Cube::polygonVertices[12][3] = {
@@ -275,8 +275,19 @@ int Cube::polygonVertices[12][3] = {
 	{ 22, 23, 21 }
 };
 
-void Cube::setFaceUVCoordinates(int x1, int y1, int x2, int y2) {
+void Cube::setFaceUVCoordinates(float x1, float y1, float x2, float y2) {
+	for (int face = 0; face < 6; face++) {
+		int vertexOffset = face * 4;
+		Vertex3d* v1 = &vertices.at(vertexOffset);
+		Vertex3d* v2 = &vertices.at(vertexOffset + 1);
+		Vertex3d* v3 = &vertices.at(vertexOffset + 2);
+		Vertex3d* v4 = &vertices.at(vertexOffset + 3);
 
+		v3->uv = { x1, y1 };
+		v4->uv = { x2, y1 };
+		v1->uv = { x1, y2 };
+		v2->uv = { x2, y2 };
+	}
 }
 
 /**

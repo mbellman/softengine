@@ -21,14 +21,6 @@ TextureBuffer::~TextureBuffer() {
 	}
 }
 
-const Uint32* TextureBuffer::getSoftwareTexture() {
-	return pixels;
-}
-
-const SDL_Texture* TextureBuffer::getHardwareTexture() {
-	return texture;
-}
-
 void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 	if (!isConfirmed) {
 		isConfirmed = true;
@@ -38,6 +30,11 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 		if (image == NULL) {
 			return;
 		}
+
+		// Cache texture width and height information so
+		// UV coordinates can be mapped to a pixel index
+		width = image->w;
+		height = image->h;
 
 		if (mode == TextureMode::HARDWARE) {
 			texture = SDL_CreateTextureFromSurface(renderer, image);
@@ -56,6 +53,10 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 
 		SDL_FreeSurface(image);
 	}
+}
+
+Uint32 TextureBuffer::sample(int u, int v) {
+	return pixels != NULL ? pixels[v * width + u] : 0;
 }
 
 void TextureBuffer::savePixel(SDL_Surface* surface, int index) {

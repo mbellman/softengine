@@ -15,7 +15,6 @@ void LightTest::load() {
 	Mesh* leftWall = new Mesh(70, 10, 50);
 	Mesh* rightWall = new Mesh(70, 10, 50);
 
-
 	floorMesh->position = { -500, 0, 0 };
 	leftWall->position = { -500, 500, 0 };
 	leftWall->rotate({ 0, 0, 1.5 * M_PI });
