@@ -3,8 +3,8 @@
 #include <map>
 #include <vector>
 #include <limits.h>
-#include <Objects.h>
-#include <Types.h>
+#include <System/Objects.h>
+#include <Graphics/TextureBuffer.h>
 
 enum State {
 	ACTIVE,
@@ -37,11 +37,13 @@ public:
 protected:
 	Settings settings;
 
-	void add(const char* key, Object* object);
 	void add(Object* object);
+	void add(const char* key, Object* object);
 	void add(const char* key, ObjLoader* objLoader);
+	void add(const char* key, TextureBuffer* textureBuffer);
 	Object* getObject(const char* key);
-	ObjLoader* getLoader(const char* key);
+	ObjLoader* getObjLoader(const char* key);
+	TextureBuffer* getTexture(const char* key);
 	void remove(const char* key);
 
 private:
@@ -49,7 +51,14 @@ private:
 	std::vector<Light*> lights;
 	std::map<const char*, int> objectMap;
 	std::map<const char*, ObjLoader*> objLoaderMap;
+	std::map<const char*, TextureBuffer*> textureBufferMap;
 	State state = State::ACTIVE;
 
+	template<class T>
+	T* getMapItem(std::map<const char*, T*> map, const char* key);
+
 	void removeLight(Light* light);
+
+	template<class T>
+	void removeMapItem(std::map<const char*, T*> map, const char* key);
 };

@@ -1,8 +1,9 @@
+#include <System/Level.h>
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <Level.h>
-#include <Objects.h>
+#include <System/Objects.h>
+#include <Graphics/TextureBuffer.h>
 
 /**
  * Level
@@ -26,11 +27,34 @@ void Level::add(const char* key, ObjLoader* objLoader) {
 	objLoaderMap.emplace(key, objLoader);
 }
 
+void Level::add(const char* key, TextureBuffer* textureBuffer) {
+	textureBufferMap.emplace(key, textureBuffer);
+}
+
 Object* Level::getObject(const char* key) {
 	auto it = objectMap.find(key);
 
 	if (it != objectMap.end()) {
 		return objects.at(it->second);
+	}
+
+	return NULL;
+}
+
+ObjLoader* Level::getObjLoader(const char* key) {
+	return getMapItem(objLoaderMap, key);
+}
+
+TextureBuffer* Level::getTexture(const char* key) {
+	return getMapItem(textureBufferMap, key);
+}
+
+template<class T>
+T* Level::getMapItem(std::map<const char*, T*> map, const char* key) {
+	try {
+		return map.at(key);
+	} catch (const std::out_of_range& error) {
+		printf("Level: Could not find item '%s'\n", key);
 	}
 
 	return NULL;
@@ -61,10 +85,15 @@ void Level::quit() {
 		delete objLoader;
 	}
 
+	for (auto& [key, textureBuffer] : textureBufferMap) {
+		delete textureBuffer;
+	}
+
 	objects.clear();
 	lights.clear();
 	objectMap.clear();
 	objLoaderMap.clear();
+	textureBufferMap.clear();
 
 	state = State::INACTIVE;
 }
@@ -72,6 +101,9 @@ void Level::quit() {
 void Level::remove(const char* key) {
 	auto it = objectMap.find(key);
 
+	// If the key corresponds to an Object, we have to
+	// ensure that it's destroyed properly, since objects
+	// are stored differently than loaders or textures.
 	if (it != objectMap.end()) {
 		Object* object = objects.at(it->second);
 
@@ -84,6 +116,11 @@ void Level::remove(const char* key) {
 		objects.erase(objects.begin() + it->second);
 		objectMap.erase(key);
 	}
+
+	// Ensure that the key is removed from any additional
+	// maps, and its value freed from memory
+	removeMapItem(objLoaderMap, key);
+	removeMapItem(textureBufferMap, key);
 }
 
 void Level::removeLight(Light* light) {
@@ -95,6 +132,19 @@ void Level::removeLight(Light* light) {
 		} else {
 			index++;
 		}
+	}
+}
+
+template<class T>
+void Level::removeMapItem(std::map<const char*, T*> map, const char* key) {
+	auto it = map.find(key);
+
+	if (it != map.end()) {
+		delete map.at(key);
+
+		map.erase(key);
+
+		return;
 	}
 }
 

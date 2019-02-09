@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <Types.h>
+#include <System/Geometry.h>
 
 /**
  * Zone
@@ -19,10 +19,11 @@ typedef std::vector<Triangle> Zone;
  * are capable of occluding others behind them.
  */
 struct Cover {
+	Coordinate c0;
 	Coordinate c1;
 	Coordinate c2;
-	Coordinate c3;
 	int zone;
+	bool isClockwise;
 };
 
 /**
@@ -37,12 +38,13 @@ class RasterQueue {
 public:
 	RasterQueue(int width, int height);
 
-	void addTriangle(Triangle triangle, int zoneIndex);
+	void addTriangle(Triangle triangle);
 	Triangle* next();
 
 private:
 	constexpr static int MAX_ZONES = 50;
 	constexpr static int MIN_COVER_SIZE = 150;
+	constexpr static int ZONE_RANGE = 250;
 	int currentZoneIndex = 0;
 	int highestZoneIndex = 0;
 	int currentElementIndex = 0;
@@ -52,7 +54,8 @@ private:
 	std::vector<Cover> covers;
 
 	void addCover(const Triangle& triangle, int zone);
-	bool isPointWithinEdge(int x, int y, int ex1, int ey1, int ex2, int ey2);
+	inline bool isPointInsideEdge(int x, int y, int ex1, int ey1, int ex2, int ey2);
+	bool isTriangleClockwise(const Triangle& triangle);
 	bool isTriangleCoverable(const Triangle& triangle);
 	bool isTriangleNearby(const Triangle& triangle, const Cover& cover);
 	bool isTriangleOccluded(const Triangle& triangle, const Cover& cover);

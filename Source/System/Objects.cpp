@@ -1,5 +1,6 @@
-#include <Objects.h>
+#include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
+#include <Graphics/TextureBuffer.h>
 
 /**
  * Object
@@ -22,7 +23,6 @@ void Object::addPolygon(int v1, int v2, int v3) {
 	polygon.bindVertex(1, &vertices.at(v2));
 	polygon.bindVertex(2, &vertices.at(v3));
 	polygon.normal = Object::computePolygonNormal(polygon);
-	polygon.object = this;
 
 	polygons.push_back(polygon);
 }
@@ -50,12 +50,16 @@ void Object::computeSurfaceNormals() {
 	}
 }
 
-int Object::getPolygonCount() {
+int Object::getPolygonCount() const {
 	return polygons.size();
 }
 
-const std::vector<Polygon>& Object::getPolygons() {
+const std::vector<Polygon>& Object::getPolygons() const {
 	return polygons;
+}
+
+int Object::getVertexCount() const {
+	return vertices.size();
 }
 
 void Object::rotate(const Vec3& rotation) {
@@ -66,6 +70,12 @@ void Object::rotate(const Vec3& rotation) {
 	}
 
 	computeSurfaceNormals();
+}
+
+void Object::setTexture(TextureBuffer* textureBuffer) {
+	if (textureBuffer != NULL) {
+		this->texture = textureBuffer;
+	}
 }
 
 void Object::scale(float scalar) {
@@ -179,42 +189,109 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 Cube::Cube(float radius) {
 	float diameter = 2 * radius;
 
-	for (int i = 0; i < 2; i++) {
-		for (int j = 0; j < 4; j++) {
-			Vec3 vector;
+	for (int i = 0; i < 24; i++) {
+		Vec3 vector;
+		Vec3& position = Cube::vertexPositions[i];
 
-			vector.x = (j == 2 || j == 3 ? diameter : 0) - radius;
-			vector.y = (i * diameter) - radius;
-			vector.z = (j == 1 || j == 2 ? -diameter : 0) + radius;
+		vector.x = position.x * radius;
+		vector.y = -position.y * radius;
+		vector.z = position.z * radius;
 
-			addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
-		}
+		addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
 	}
 
 	for (int p = 0; p < 12; p++) {
-		const int (*polygonVertices)[3] = &(Cube::polygonVertices[p]);
+		const int (*vertices)[3] = &(Cube::polygonVertices[p]);
 
-		addPolygon((*polygonVertices)[0], (*polygonVertices)[1], (*polygonVertices)[2]);
+		addPolygon((*vertices)[0], (*vertices)[1], (*vertices)[2]);
 	}
 }
 
+/**
+ * Defines positions for the 24 vertices constituting
+ * a cube. Cubes need 24 vertices in order to allow each
+ * face to have uniquely defined texture coordinates at
+ * its corners; some vertices thus share positions.
+ *
+ *        __3__
+ *    __--     --__
+ *   0__         __2
+ *   |  --_____--  |
+ *   |      1      |
+ *   |             |
+ *   |    __7__    |              y+
+ *   |__--     --__|              |
+ *   4__         __6              |
+ *      --__ __--         z+__    |    __x+
+ *          5                 --__|__--
+ */
+Vec3 Cube::vertexPositions[24] = {
+	// Side faces
+	{ -1.0f, 1.0f, 1.0f },     // 0
+	{ -1.0f, 1.0f, -1.0f },    // 1
+	{ -1.0f, -1.0f, 1.0f },    // 4
+	{ -1.0f, -1.0f, -1.0f },   // 5
+
+	{ -1.0f, 1.0f, -1.0f },    // 1
+	{ 1.0f, 1.0f, -1.0f },     // 2
+	{ -1.0f, -1.0f, -1.0f },   // 5
+	{ 1.0f, -1.0f, -1.0f },    // 6
+
+	{ 1.0f, 1.0f, -1.0f },     // 2
+	{ 1.0f, 1.0f, 1.0f },      // 3
+	{ 1.0f, -1.0f, -1.0f },    // 6
+	{ 1.0f, -1.0f, 1.0f },     // 7
+
+	{ 1.0f, 1.0f, 1.0f },      // 3
+	{ -1.0f, 1.0f, 1.0f },     // 0
+	{ 1.0f, -1.0f, 1.0f },     // 7
+	{ -1.0f, -1.0f, 1.0f },    // 4
+
+	// Top face
+	{ -1.0f, 1.0f, 1.0f },     // 0
+	{ 1.0f, 1.0f, 1.0f },      // 3
+	{ -1.0f, 1.0f, -1.0f },    // 1
+	{ 1.0f, 1.0f, -1.0f },     // 2
+
+	// Bottom face
+	{ -1.0f, -1.0f, -1.0f },   // 5
+	{ 1.0f, -1.0f, -1.0f },    // 6
+	{ -1.0f, -1.0f, 1.0f },    // 4
+	{ 1.0f, -1.0f, 1.0f },     // 7
+};
+
 int Cube::polygonVertices[12][3] = {
 	// Side faces
-	{ 0, 4, 1 },
-	{ 1, 4, 5 },
-	{ 1, 5, 2 },
-	{ 2, 5, 6 },
-	{ 2, 6, 3 },
-	{ 3, 6, 7 },
-	{ 3, 7, 0 },
-	{ 0, 7, 4 },
-	// Top face
-	{ 0, 2, 3 },
-	{ 0, 1, 2 },
-	// Bottom face
+	{ 0, 2, 1 },
+	{ 1, 2, 3 },
 	{ 4, 6, 5 },
-	{ 4, 7, 6 }
+	{ 5, 6, 7 },
+	{ 8, 10, 9 },
+	{ 9, 10, 11 },
+	{ 12, 14, 13 },
+	{ 13, 14, 15 },
+	// Top face
+	{ 16, 19, 17 },
+	{ 16, 18, 19 },
+	// Bottom face
+	{ 22, 21, 20 },
+	{ 22, 23, 21 }
 };
+
+void Cube::setFaceUVCoordinates(float x1, float y1, float x2, float y2) {
+	for (int face = 0; face < 6; face++) {
+		int vertexOffset = face * 4;
+		Vertex3d* v1 = &vertices.at(vertexOffset);
+		Vertex3d* v2 = &vertices.at(vertexOffset + 1);
+		Vertex3d* v3 = &vertices.at(vertexOffset + 2);
+		Vertex3d* v4 = &vertices.at(vertexOffset + 3);
+
+		v3->uv = { x1, y1 };
+		v4->uv = { x2, y1 };
+		v1->uv = { x1, y2 };
+		v2->uv = { x2, y2 };
+	}
+}
 
 /**
  * Light

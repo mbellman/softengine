@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Texture mapping
 * On-screen debug stats
 * 2D sprite projection
 * Ambient/atmospheric effects (rain, snow, fog)

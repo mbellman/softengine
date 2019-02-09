@@ -1,19 +1,20 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <Engine.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <SDL_image.h>
 #include <stdio.h>
-#include <iostream>
 #include <stdlib.h>
 #include <math.h>
 #include <algorithm>
-#include <Objects.h>
 #include <Helpers.h>
-#include <Engine.h>
-#include <Quaternion.h>
+#include <System/Quaternion.h>
+#include <System/Objects.h>
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
+#include <Graphics/TextureBuffer.h>
 
 using namespace std;
 
@@ -27,6 +28,7 @@ RotationMatrix Camera::getRotationMatrix() {
 Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
+	IMG_Init(IMG_INIT_PNG);
 
 	window = SDL_CreateWindow(
 		"HEY ZACK",
@@ -36,8 +38,9 @@ Engine::Engine(int width, int height, Uint32 flags) {
 		SDL_WINDOW_SHOWN
 	);
 
-	int rasterWidth = flags & PIXEL_FILTER ? width / 2 : width;
-	int rasterHeight = flags & PIXEL_FILTER ? height / 2 : height;
+	bool hasPixelFilter = flags & PIXEL_FILTER;
+	int rasterWidth = hasPixelFilter ? width / 2 : width;
+	int rasterHeight = hasPixelFilter ? height / 2 : height;
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & FLAT_SHADING);
@@ -47,11 +50,15 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	this->width = width;
 	this->height = height;
 	this->flags = flags;
+
+	HALF_W = (int)(width / (hasPixelFilter ? 4 : 2));
+	HALF_H = (int)(height / (hasPixelFilter ? 4 : 2));
 }
 
 Engine::~Engine() {
-	delete rasterizer;
+	delete rasterQueue;
 	delete ui;
+	delete rasterizer;
 
 	TTF_Quit();
 
@@ -84,8 +91,6 @@ void Engine::delay(int ms) {
 }
 
 void Engine::drawTriangle(Triangle& triangle) {
-	const Settings& settings = activeLevel->getSettings();
-
 	if (flags & SHOW_WIREFRAME) {
 		rasterizer->setColor(255, 255, 255);
 
@@ -95,82 +100,31 @@ void Engine::drawTriangle(Triangle& triangle) {
 			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
 		);
 	} else {
-		const Polygon* parentPolygon = triangle.polygon;
-		const Object* parentObject = parentPolygon->object;
-
-		// Before rasterizing the triangle, one more pass is necessary to
-		// determine the aggregate effect of area lights on each vertex color.
-		for (int i = 0; i < 3; i++) {
-			Color aggregateLightColor = { 0, 0, 0 };
-			Vec3 worldVertex = (parentObject->position + parentPolygon->vertices[i]->vector);
-			Vertex2d* screenVertex = &triangle.vertices[i];
-
-			// Ambient lighting is a special distance-invariant case
-			if (settings.ambientLightFactor > 0) {
-				float dot = Vec3::dotProduct(parentPolygon->normal, settings.ambientLightVector.unit());
-
-				if (dot < 0) {
-					float incidence = cosf((1 + dot) * M_PI / 2);
-
-					aggregateLightColor += settings.ambientLightColor * (incidence * settings.ambientLightFactor);
-				}
-			}
-
-			for (auto* light : activeLevel->getLights()) {
-				if (
-					abs(light->position.x - worldVertex.x) > light->spread ||
-					abs(light->position.y - worldVertex.y) > light->spread ||
-					abs(light->position.z - worldVertex.z) > light->spread ||
-					light->power == 0
-				) {
-					// If the light source is further away along any axis than
-					// its range (or it has no power), we can ignore it.
-					continue;
-				}
-
-				Vec3 lightVector = worldVertex - light->position;
-				float lightDistance = lightVector.magnitude();
-
-				if (lightDistance < light->spread) {
-					float dot = Vec3::dotProduct(parentPolygon->normal, lightVector.unit());
-					float incidence = cosf((1 + dot) * M_PI / 2);
-					float intensity = pow(1.0f - lightDistance / light->spread, 2);
-					float luminosity = light->power * incidence * intensity;
-
-					aggregateLightColor += light->color * luminosity;
-
-					// For each incident light source, reverse any potential
-					// ambient light color diminishment on the vertex in
-					// proportion to the light's luminosity at this point
-					screenVertex->color *= (1 + (luminosity / settings.albedo));
-				}
-			}
-
-			float drawDistanceRatio = clamp((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
-
-			screenVertex->color = lerp(screenVertex->color + aggregateLightColor, settings.backgroundColor, drawDistanceRatio);
-		}
+		illuminateTriangle(triangle);
 
 		rasterizer->triangle(triangle);
 	}
+
+	totalDrawnTriangles++;
 }
 
 void Engine::drawScene() {
 	bool hasPixelFilter = flags & PIXEL_FILTER;
-	bool shouldRemoveOccludedSurfaces = flags & REMOVE_OCCLUDED_SURFACES;
+	float fovAngleRange = sinf(((float)camera.fov / 2.75) * M_PI / 180);
+	int fovScalar = (int)((hasPixelFilter ? 250 : 500) * (180 / camera.fov));
+	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 
-	float fovAngleRange = sinf((((float)camera.fov / 2)) * M_PI / 180);
-	int fovScalar = (hasPixelFilter ? 250 : 500) * (360 / camera.fov);
-	int midpointX = width / (hasPixelFilter ? 4 : 2);
-	int midpointY = height / (hasPixelFilter ? 4 : 2);
+	Vertex3d t_verts[3];
+	Vec3 w_vecs[3];
 
-	RotationMatrix rotationMatrix = camera.getRotationMatrix();
-
-	for (auto* object : activeLevel->getObjects()) {
+	for (const auto* object : activeLevel->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
-		for (auto& polygon : object->getPolygons()) {
-			// Check #1: Ensure that the polygon is facing the camera
+		if (object->texture != NULL) {
+			object->texture->confirmTexture(renderer, TextureMode::SOFTWARE);
+		}
+
+		for (const auto& polygon : object->getPolygons()) {
 			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
 			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
 
@@ -178,63 +132,106 @@ void Engine::drawScene() {
 				continue;
 			}
 
-			// Check #2: Ensure that the polygon is within the camera view frustum
-			Vec3 localSpaceVertices[3];
-			Vec3 unitVertices[3];
-			bool isWithinViewFrustum = false;
+			FrustumCuller frustumCuller;
 
+			// Build our vertex/world vector lists while we perform
+			// view frustum clipping checks on the polygon.
 			for (int i = 0; i < 3; i++) {
-				localSpaceVertices[i] = rotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
-				unitVertices[i] = localSpaceVertices[i].unit();
+				t_verts[i] = *polygon.vertices[i];
+				t_verts[i].vector = cameraRotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
+				w_vecs[i] = object->position + polygon.vertices[i]->vector;
+				Vec3 unit = t_verts[i].vector.unit();
 
-				if (
-					!isWithinViewFrustum &&
-					abs(unitVertices[i].x) < fovAngleRange &&
-					abs(unitVertices[i].y) < fovAngleRange &&
-					localSpaceVertices[i].z > 0 && localSpaceVertices[i].z < activeLevel->getSettings().drawDistance
-				) {
-					isWithinViewFrustum = true;
+				if (t_verts[i].vector.z < Engine::NEAR_Z) {
+					frustumCuller.near++;
+				} else if (t_verts[i].vector.z > activeLevel->getSettings().drawDistance) {
+					frustumCuller.far++;
 				}
+
+				if (unit.x < -fovAngleRange) frustumCuller.left++;
+				else if (unit.x > fovAngleRange) frustumCuller.right++;
+
+				if (unit.y < -fovAngleRange) frustumCuller.bottom++;
+				else if (unit.y > fovAngleRange) frustumCuller.top++;
 			}
 
-			if (!isWithinViewFrustum) {
+			if (frustumCuller.isCulled()) {
 				continue;
 			}
 
-			// Once a Polygon has passed the back-face and view frustum
-			// culling checks, we can create its Triangle projection.
-			Triangle triangle;
+			if (frustumCuller.near > 0) {
+				// Sort vertices by descending z-order
+				if (t_verts[0].vector.z < t_verts[1].vector.z) {
+					swap(t_verts[0], t_verts[1]);
+					swap(w_vecs[0], w_vecs[1]);
+				}
 
-			triangle.polygon = &polygon;
+				if (t_verts[1].vector.z < t_verts[2].vector.z) {
+					swap(t_verts[1], t_verts[2]);
+					swap(w_vecs[1], w_vecs[2]);
+				}
 
-			for (int i = 0; i < 3; i++) {
-				Vec3& localSpaceVertex = localSpaceVertices[i];
-				Vec3& unitVertex = unitVertices[i];
-				float distortionCorrectedZ = unitVertex.z * cosf(unitVertex.x);
-				int x = (int)(fovScalar * unitVertex.x / (1 + unitVertex.z) + midpointX);
-				int y = (int)(fovScalar * -unitVertex.y / (1 + distortionCorrectedZ) + midpointY);
-				int depth = (int)(localSpaceVertex.z);
-				Color color = polygon.vertices[i]->color * activeLevel->getSettings().albedo;
+				if (t_verts[0].vector.z < t_verts[1].vector.z) {
+					swap(t_verts[0], t_verts[1]);
+					swap(w_vecs[0], w_vecs[1]);
+				}
 
-				triangle.createVertex(i, x, y, depth, color);
+				if (frustumCuller.near == 2) {
+					// The polygon can be clipped into a smaller polygon
+					// at the plane boundary.
+					float deltas[3] = {
+						0.0f,
+						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[1].vector.z),
+						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z)
+					};
+
+					for (int i = 1; i < 3; i++) {
+						t_verts[i] = Vertex3d::lerp(t_verts[0], t_verts[i], deltas[i]);
+						w_vecs[i] = Vec3::lerp(w_vecs[0], w_vecs[i], deltas[i]);
+					}
+				} else if (frustumCuller.near == 1) {
+					// The polygon has to be clipped into a quad, which
+					// then has to be projected as two polygons.
+					Vertex3d quadVerts[4];
+					Vec3 w_quadVecs[4];
+
+					float v2Delta = (t_verts[1].vector.z - Engine::NEAR_Z) / (t_verts[1].vector.z - t_verts[2].vector.z);
+					float v3Delta = (t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z);
+
+					quadVerts[0] = t_verts[0];
+					quadVerts[1] = t_verts[1];
+					quadVerts[2] = Vertex3d::lerp(t_verts[1], t_verts[2], v2Delta);
+					quadVerts[3] = Vertex3d::lerp(t_verts[0], t_verts[2], v3Delta);
+
+					w_quadVecs[0] = w_vecs[0];
+					w_quadVecs[1] = w_vecs[1];
+					w_quadVecs[2] = Vec3::lerp(w_vecs[1], w_vecs[2], v2Delta);
+					w_quadVecs[3] = Vec3::lerp(w_vecs[0], w_vecs[2], v3Delta);
+
+					projectTriangle(
+						{ quadVerts[0], quadVerts[1], quadVerts[2] },
+						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
+						polygon.normal, object->texture, fovScalar
+					);
+
+					projectTriangle(
+						{ quadVerts[0], quadVerts[2], quadVerts[3] },
+						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
+						polygon.normal, object->texture, fovScalar
+					);
+
+					continue;
+				}
 			}
 
-			if (shouldRemoveOccludedSurfaces) {
-				int zone = (int)(triangle.averageDepth() / Engine::ZONE_RANGE);
-
-				rasterQueue->addTriangle(triangle, zone);
-			} else {
-				drawTriangle(triangle);
-			}
+			projectTriangle(t_verts, w_vecs, polygon.normal, object->texture, fovScalar);
 		}
 	}
 
-	if (shouldRemoveOccludedSurfaces) {
-		Triangle* triangle;
+	Triangle* triangle;
 
-		while ((triangle = rasterQueue->next()) != NULL) {
-			drawTriangle(*triangle);
-		}
+	while ((triangle = rasterQueue->next()) != NULL) {
+		drawTriangle(*triangle);
 	}
 
 	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
@@ -245,6 +242,16 @@ int Engine::getPolygonCount() {
 
 	for (auto object : activeLevel->getObjects()) {
 		total += object->getPolygonCount();
+	}
+
+	return total;
+}
+
+int Engine::getVertexCount() {
+	int total = 0;
+
+	for (auto object : activeLevel->getObjects()) {
+		total += object->getVertexCount();
 	}
 
 	return total;
@@ -299,8 +306,106 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	int yDelta = isRelativeMouseMode ? -event.yrel : 0;
 	float deltaFactor = 1.0f / 500;
 
-	camera.pitch = clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
+	camera.pitch = std::clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
 	camera.yaw += (float)xDelta * deltaFactor;
+}
+
+void Engine::illuminateTriangle(Triangle& triangle) {
+	const Settings& settings = activeLevel->getSettings();
+	int totalIncidentLights = 0;
+	float totalLuminosity = 0.0f;
+
+	triangle.intensity = settings.albedo;
+
+	// Each vertex is individually illuminated so we can determine
+	// the proper interpolated colors to shade the triangle with.
+	for (int i = 0; i < 3; i++) {
+		Color aggregateLightColor = { 0, 0, 0 };
+		Vec3 worldVertex = triangle.vertices[i].worldVector;
+		Vertex2d* screenVertex = &triangle.vertices[i];
+
+		// Ambient lighting is a special distance-invariant case
+		if (settings.ambientLightFactor > 0) {
+			float dot = Vec3::dotProduct(triangle.normal, settings.ambientLightVector.unit());
+
+			if (dot < 0) {
+				float incidence = cosf((1 + dot) * M_PI / 2);
+
+				aggregateLightColor += settings.ambientLightColor * (incidence * settings.ambientLightFactor);
+			}
+		}
+
+		for (const auto* light : activeLevel->getLights()) {
+			if (
+				abs(light->position.x - worldVertex.x) > light->spread ||
+				abs(light->position.y - worldVertex.y) > light->spread ||
+				abs(light->position.z - worldVertex.z) > light->spread ||
+				light->power == 0
+			) {
+				// If the light source is further away along any axis than
+				// its range (or it has no power), we can ignore it.
+				continue;
+			}
+
+			Vec3 lightVector = worldVertex - light->position;
+			float lightDistance = lightVector.magnitude();
+
+			if (lightDistance < light->spread) {
+				float dot = Vec3::dotProduct(triangle.normal, lightVector.unit());
+				float incidence = cosf((1 + dot) * M_PI / 2);
+				float intensity = pow(1.0f - lightDistance / light->spread, 2);
+				float luminosity = light->power * incidence * intensity;
+
+				aggregateLightColor += light->color * luminosity;
+
+				totalIncidentLights++;
+				totalLuminosity += luminosity;
+
+				// For each incident light source, reverse any potential
+				// ambient light color diminishment on the vertex in
+				// proportion to the light's luminosity at this point
+				screenVertex->color *= (1 + (luminosity / settings.albedo));
+			}
+		}
+
+		float drawDistanceRatio = FAST_CLAMP((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
+
+		screenVertex->color += aggregateLightColor;
+		screenVertex->color = Color::lerp(screenVertex->color, settings.backgroundColor, drawDistanceRatio);
+	}
+
+	if (totalIncidentLights > 0) {
+		triangle.intensity += (totalLuminosity / totalIncidentLights);
+	}
+}
+
+void Engine::projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVecs)[3], const Vec3& normal, const TextureBuffer* texture, int scale) {
+	Triangle triangle;
+	triangle.normal = normal;
+
+	if (texture != NULL) {
+		triangle.texture = texture;
+	}
+
+	for (int i = 0; i < 3; i++) {
+		const Vertex3d& vertex3d = vertexes[i];
+		const Vec3& vector = vertex3d.vector;
+		const Vec3 unit = vector.unit();
+
+		Vertex2d vertex;
+
+		vertex.coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
+		vertex.coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
+		vertex.w = 1.0f / vector.z;
+		vertex.depth = (int)vector.z;
+		vertex.color = vertex3d.color * activeLevel->getSettings().albedo;
+		vertex.uv = vertex3d.uv / vector.z;
+		vertex.worldVector = worldVecs[i];
+
+		triangle.vertices[i] = vertex;
+	}
+
+	rasterQueue->addTriangle(triangle);
 }
 
 void Engine::run() {
@@ -323,7 +428,7 @@ void Engine::run() {
 			if (delta < 17) {
 				delay(17 - delta);
 			} else {
-				std::cout << "[DRAW TIME WARNING]: " << delta << "ms\n";
+				// std::cout << "[DRAW TIME WARNING]: " << delta << "ms\n";
 			}
 		}
 
@@ -332,11 +437,13 @@ void Engine::run() {
 		activeLevel->update(fullDelta, SDL_GetTicks());
 
 		char title[100];
+
 		sprintf(
 			title,
-			"Polygons: %d, FPS: %dfps, Unlocked delta: %dms",
-			getPolygonCount(), (int)round(60 * 17 / fullDelta), delta
+			"Tris: %d, Verts: %d, Drawn tris: %d, FPS: %dfps, Unlocked delta: %dms",
+			getPolygonCount(), getVertexCount(), totalDrawnTriangles, (int)round(60 * 17 / fullDelta), delta
 		);
+
 		SDL_SetWindowTitle(window, title);
 
 		SDL_Event event;
@@ -363,15 +470,17 @@ void Engine::setActiveLevel(Level* level) {
 }
 
 void Engine::update() {
-		updateMovement();
+	updateMovement();
 
-		rasterizer->setBackgroundColor(activeLevel->getSettings().backgroundColor);
-		rasterizer->clear();
+	rasterizer->setBackgroundColor(activeLevel->getSettings().backgroundColor);
+	rasterizer->clear();
 
-		drawScene();
-		ui->draw();
+	totalDrawnTriangles = 0;
 
-		SDL_RenderPresent(renderer);
+	drawScene();
+	ui->draw();
+
+	SDL_RenderPresent(renderer);
 }
 
 void Engine::updateMovement() {

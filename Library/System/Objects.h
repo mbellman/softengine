@@ -3,8 +3,11 @@
 #include <functional>
 #include <vector>
 #include <algorithm>
-#include <Types.h>
+#include <System/Math.h>
+#include <System/Geometry.h>
+#include <Graphics/Color.h>
 #include <Loaders/ObjLoader.h>
+#include <Graphics/TextureBuffer.h>
 
 /**
  * Object
@@ -12,16 +15,19 @@
  */
 struct Object {
 	Vec3 position;
+	TextureBuffer* texture = NULL;
 
 	Object();
 	virtual ~Object();
 
-	const std::vector<Polygon>& getPolygons();
-	int getPolygonCount();
+	const std::vector<Polygon>& getPolygons() const;
+	int getPolygonCount() const;
+	int getVertexCount() const;
 	void rotate(const Vec3& rotation);
 	void scale(float scalar);
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
+	void setTexture(TextureBuffer* textureBuffer);
 
 protected:
 	std::vector<Vertex3d> vertices;
@@ -59,7 +65,10 @@ struct Mesh : Object {
 struct Cube : Object {
 	Cube(float radius);
 
+	void setFaceUVCoordinates(float x1, float y1, float x2, float y2);
+
 private:
+	static Vec3 vertexPositions[24];
 	static int polygonVertices[12][3];
 };
 

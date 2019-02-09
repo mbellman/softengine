@@ -2,7 +2,7 @@
 
 #include <System/Level.h>
 
-class LightTest : public Level {
+class TextureTest : public Level {
 public:
 	void load() override;
 	void update(int dt, int runningTime) override;

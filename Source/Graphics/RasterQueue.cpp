@@ -1,6 +1,7 @@
+#include <Graphics/RasterQueue.h>
 #include <algorithm>
 #include <Helpers.h>
-#include <Graphics/RasterQueue.h>
+#include <System/Geometry.h>
 
 /**
  * RasterQueue
@@ -16,12 +17,13 @@ void RasterQueue::addCover(const Triangle& triangle, int zone) {
 		triangle.vertices[0].coordinate,
 		triangle.vertices[1].coordinate,
 		triangle.vertices[2].coordinate,
-		zone
+		zone,
+		isTriangleClockwise(triangle)
 	});
 }
 
-void RasterQueue::addTriangle(Triangle triangle, int zoneIndex) {
-	zoneIndex = clamp(zoneIndex, 0, RasterQueue::MAX_ZONES - 1);
+void RasterQueue::addTriangle(Triangle triangle) {
+	int zoneIndex = std::clamp((int)(triangle.averageDepth() / RasterQueue::ZONE_RANGE), 0, RasterQueue::MAX_ZONES - 1);
 
 	if (zoneIndex > highestZoneIndex) {
 		highestZoneIndex = zoneIndex;
@@ -34,20 +36,28 @@ void RasterQueue::addTriangle(Triangle triangle, int zoneIndex) {
 	zones[zoneIndex].push_back(triangle);
 }
 
-bool RasterQueue::isPointWithinEdge(int x, int y, int ex1, int ey1, int ex2, int ey2) {
+inline bool RasterQueue::isPointInsideEdge(int x, int y, int ex1, int ey1, int ex2, int ey2) {
 	return ((x - ex1) * (ey2 - ey1) - (y - ey1) * (ex2 - ex1)) > 0;
 }
 
+bool RasterQueue::isTriangleClockwise(const Triangle& triangle) {
+	const Coordinate& c0 = triangle.vertices[0].coordinate;
+	const Coordinate& c1 = triangle.vertices[1].coordinate;
+	const Coordinate& c2 = triangle.vertices[2].coordinate;
+
+	return isPointInsideEdge(c2.x, c2.y, c0.x, c0.y, c1.x, c1.y);
+}
+
 bool RasterQueue::isTriangleCoverable(const Triangle& triangle) {
-	const Coordinate* c1 = &triangle.vertices[0].coordinate;
-	const Coordinate* c2 = &triangle.vertices[1].coordinate;
-	const Coordinate* c3 = &triangle.vertices[2].coordinate;
+	const Coordinate& c0 = triangle.vertices[0].coordinate;
+	const Coordinate& c1 = triangle.vertices[1].coordinate;
+	const Coordinate& c2 = triangle.vertices[2].coordinate;
 
-	int minX = std::min(c1->x, std::min(c2->x, c3->x));
-	int maxX = std::max(c1->x, std::max(c2->x, c3->x));
+	int minX = std::min(c0.x, std::min(c1.x, c2.x));
+	int maxX = std::max(c0.x, std::max(c1.x, c2.x));
 
-	int minY = std::min(c1->y, std::min(c2->y, c3->y));
-	int maxY = std::max(c1->y, std::max(c2->y, c3->y));
+	int minY = std::min(c0.y, std::min(c1.y, c2.y));
+	int maxY = std::max(c0.y, std::max(c1.y, c2.y));
 
 	return (
 		// Ensure that the triangle is over the minimum
@@ -66,22 +76,34 @@ bool RasterQueue::isTriangleCoverable(const Triangle& triangle) {
  */
 bool RasterQueue::isTriangleOccluded(const Triangle& triangle, const Cover& cover) {
 	for (int i = 0; i < 3; i++) {
-		const Coordinate* v = &triangle.vertices[i].coordinate;
+		const Coordinate& tc = triangle.vertices[i].coordinate;
 
 		// To determine whether a triangle T is completely covered by
 		// another triangle T*, we have to check T's vertices against
-		// T*'s edges. Whereas in world space polygon vertices are
-		// oriented counter-clockwise, in raster space they are oriented
-		// clockwise due to the inversion of the y-axis. In order to
-		// correctly determine which 'side' of T*'s edges T's vertices
-		// lie on, we need to check the edges along T*v1 -> T*v3,
-		// T*v3 -> T*v2, and T*v2 -> T*v1.
-		if (
-			!isPointWithinEdge(v->x, v->y, cover.c1.x, cover.c1.y, cover.c3.x, cover.c3.y) ||
-			!isPointWithinEdge(v->x, v->y, cover.c3.x, cover.c3.y, cover.c2.x, cover.c2.y) ||
-			!isPointWithinEdge(v->x, v->y, cover.c2.x, cover.c2.y, cover.c1.x, cover.c1.y)
-		) {
-			return false;
+		// T*'s edges. Clockwise/counterclockwise orientation determines
+		// the order of the edge vertices we have to compare against.
+		// Note that 'clockwise' in the context presented here means
+		// clockwise in raster space with its inverted y axis; thus
+		// vertex winding order is opposite to the apparent order
+		// displayed onscreen.
+		if (cover.isClockwise) {
+			// Compare against edges T*v0 -> T*v2, T*v2 -> T*v1, T*v1 -> T*v0
+			if (
+				isPointInsideEdge(tc.x, tc.y, cover.c0.x, cover.c0.y, cover.c2.x, cover.c2.y) ||
+				isPointInsideEdge(tc.x, tc.y, cover.c2.x, cover.c2.y, cover.c1.x, cover.c1.y) ||
+				isPointInsideEdge(tc.x, tc.y, cover.c1.x, cover.c1.y, cover.c0.x, cover.c0.y)
+			) {
+				return false;
+			}
+		} else {
+			// Compare against edges T*v1 -> T*v3, T*v3 -> T*v2, T*v2 -> T*v1
+			if (
+				isPointInsideEdge(tc.x, tc.y, cover.c0.x, cover.c0.y, cover.c1.x, cover.c1.y) ||
+				isPointInsideEdge(tc.x, tc.y, cover.c1.x, cover.c1.y, cover.c2.x, cover.c2.y) ||
+				isPointInsideEdge(tc.x, tc.y, cover.c2.x, cover.c2.y, cover.c0.x, cover.c0.y)
+			) {
+				return false;
+			}
 		}
 	}
 

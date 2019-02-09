@@ -1,6 +1,6 @@
-#include <cmath>
-#include <Types.h>
-#include <Quaternion.h>
+#include <System/Quaternion.h>
+#include <math.h>
+#include <System/Math.h>
 
 Quaternion Quaternion::fromAxisAngle(float angle, float xi, float yj, float zk) {
 	float sa = sinf(angle / 2);
