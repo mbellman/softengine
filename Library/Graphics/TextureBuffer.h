@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL.h>
+#include <Graphics/Color.h>
 
 /**
  * TextureMode
@@ -18,17 +19,19 @@ enum TextureMode {
 struct TextureBuffer {
 	int width = 0;
 	int height = 0;
+	int totalPixels = 0;
 
 	TextureBuffer(const char* file);
 	~TextureBuffer();
 
 	void confirmTexture(SDL_Renderer* renderer, TextureMode mode);
-	Uint32 sample(int u, int v);
+	const Color& sample(float u, float v) const;
 
 private:
+	constexpr static Color BLACK = { 0, 0, 0 };
 	bool isConfirmed = false;
 	const char* file;
-	Uint32* pixels = NULL;
+	Color* pixels = NULL;
 	SDL_Texture* texture = NULL;
 
 	void savePixel(SDL_Surface* surface, int index);

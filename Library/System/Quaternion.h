@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include <Types.h>
+#include <System/Math.h>
 
 struct Quaternion {
 	float w;

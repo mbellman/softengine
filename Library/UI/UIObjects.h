@@ -3,7 +3,6 @@
 #include <string>
 #include <SDL.h>
 #include <SDL_ttf.h>
-#include <Objects.h>
 
 struct UIObject {
 	~UIObject();

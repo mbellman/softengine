@@ -8,7 +8,7 @@ int width = 1200;
 int height = 720;
 
 int main(int argc, char* argv[]) {
-	Engine engine(width, height, REMOVE_OCCLUDED_SURFACES | DEBUG_DRAWTIME);
+	Engine engine(width, height, DEBUG_DRAWTIME);
 
 	TTF_Font* mono = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 

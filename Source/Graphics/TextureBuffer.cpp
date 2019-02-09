@@ -1,6 +1,7 @@
+#include <Graphics/TextureBuffer.h>
 #include <SDL.h>
 #include <SDL_image.h>
-#include <Graphics/TextureBuffer.h>
+#include <Graphics/Color.h>
 #include <Helpers.h>
 
 /**
@@ -35,16 +36,13 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 		// UV coordinates can be mapped to a pixel index
 		width = image->w;
 		height = image->h;
+		totalPixels = image->w * image->h;
 
 		if (mode == TextureMode::HARDWARE) {
 			texture = SDL_CreateTextureFromSurface(renderer, image);
 		} else if (mode == TextureMode::SOFTWARE) {
-			// In software mode, we have to convert the loaded image to
-			// a pixel data buffer compatible with the Rasterizer pixel
-			// buffer (Uint32 ARGB).
-			int totalPixels = image->w * image->h;
 			SDL_PixelFormat* format = image->format;
-			pixels = new Uint32[totalPixels];
+			pixels = new Color[totalPixels];
 
 			for (int i = 0; i < totalPixels; i++) {
 				savePixel(image, i);
@@ -55,8 +53,14 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 	}
 }
 
-Uint32 TextureBuffer::sample(int u, int v) {
-	return pixels != NULL ? pixels[v * width + u] : 0;
+const Color& TextureBuffer::sample(float u, float v) const {
+	if (pixels == NULL) {
+		return BLACK;
+	}
+
+	int index = (int)(v * height) * width + (int)(u * width);
+
+	return index >= 0 && index < totalPixels ? pixels[index] : BLACK;
 }
 
 void TextureBuffer::savePixel(SDL_Surface* surface, int index) {
@@ -75,5 +79,5 @@ void TextureBuffer::savePixel(SDL_Surface* surface, int index) {
 	int B = pixel[format->BytesPerPixel - 3];
 #endif
 
-	pixels[index] = ARGB(R, G, B);
+	pixels[index] = { R, G, B };
 }

@@ -1,81 +1,20 @@
+#include <System/Math.h>
 #include <memory>
 #include <cmath>
 #include <algorithm>
 #include <Helpers.h>
-#include <Types.h>
 
 using namespace std;
 
 /**
- * Color
- * -----
+ * Coordinate
+ * ----------
  */
-int Color::normalize(int component) {
-	return FAST_CLAMP(component, 0, 255);
-}
-
-Color Color::operator +(int illumination) const {
+Coordinate Coordinate::lerp(const Coordinate& c1, const Coordinate& c2, float r) {
 	return {
-		normalize(R + illumination),
-		normalize(G + illumination),
-		normalize(B + illumination)
+		Lerp::lerp(c1.x, c2.x, r),
+		Lerp::lerp(c1.y, c2.y, r)
 	};
-}
-
-Color Color::operator +(const Color& color) const {
-	return {
-		normalize(R + color.R),
-		normalize(G + color.G),
-		normalize(B + color.B)
-	};
-}
-
-Color Color::operator +=(const Color& color) {
-	R = normalize(R + color.R);
-	G = normalize(G + color.G);
-	B = normalize(B + color.B);
-
-	return *this;
-}
-
-Color Color::operator -(int attenuation) const {
-	return {
-		normalize(R - attenuation),
-		normalize(G - attenuation),
-		normalize(B - attenuation)
-	};
-}
-
-Color Color::operator -(const Color& color) const {
-	return {
-		normalize(R - color.R),
-		normalize(G - color.G),
-		normalize(B - color.B)
-	};
-}
-
-Color Color::operator -=(const Color& color) {
-	R = normalize(R + color.R);
-	G = normalize(G + color.G);
-	B = normalize(B + color.B);
-
-	return *this;
-}
-
-Color Color::operator *(float multiplier) const {
-	return {
-		normalize((int)(R * multiplier)),
-		normalize((int)(G * multiplier)),
-		normalize((int)(B * multiplier))
-	};
-}
-
-Color Color::operator *=(float multiplier) {
-	R = normalize((int)(R * multiplier));
-	G = normalize((int)(G * multiplier));
-	B = normalize((int)(B * multiplier));
-
-	return *this;
 }
 
 /**
@@ -114,6 +53,24 @@ Vec3 RotationMatrix::operator *(const Vec3& v) const {
 }
 
 /**
+ * Vec2
+ * ----
+ */
+Vec2 Vec2::lerp(const Vec2& v1, const Vec2& v2, float r) {
+	return {
+		Lerp::lerp(v1.x, v2.x, r),
+		Lerp::lerp(v1.y, v2.y, r)
+	};
+}
+
+Vec2 Vec2::operator /(float divisor) const {
+	return {
+		x / divisor,
+		y / divisor
+	};
+}
+
+/**
  * Vec3
  * ----
  */
@@ -135,6 +92,14 @@ Vec3 Vec3::crossProduct(const Vec3& v1, const Vec3& v2) {
 
 float Vec3::dotProduct(const Vec3& v1, const Vec3& v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+Vec3 Vec3::lerp(const Vec3& v1, const Vec3& v2, float r) {
+	return {
+		Lerp::lerp(v1.x, v2.x, r),
+		Lerp::lerp(v1.y, v2.y, r),
+		Lerp::lerp(v1.z, v2.z, r)
+	};
 }
 
 float Vec3::magnitude() const {
@@ -173,32 +138,4 @@ Vec3 Vec3::operator -(const Vec3& vector) const {
 		y - vector.y,
 		z - vector.z
 	};
-}
-
-/**
- * Triangle
- * --------
- */
-float Triangle::averageDepth() const {
-	return (vertices[0].depth + vertices[1].depth + vertices[2].depth) / 3;
-}
-
-void Triangle::createVertex(int index, int x, int y, int depth, const Color& color, const Vec2& uv) {
-	Vertex2d vertex;
-
-	vertex.coordinate.x = x;
-	vertex.coordinate.y = y;
-	vertex.depth = depth;
-	vertex.color = color;
-	vertex.uv = uv;
-
-	vertices[index] = vertex;
-}
-
-/**
- * Polygon
- * -------
- */
-void Polygon::bindVertex(int index, Vertex3d* vertex) {
-	vertices[index] = vertex;
 }

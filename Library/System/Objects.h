@@ -3,7 +3,9 @@
 #include <functional>
 #include <vector>
 #include <algorithm>
-#include <Types.h>
+#include <System/Math.h>
+#include <System/Geometry.h>
+#include <Graphics/Color.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
 
@@ -20,6 +22,7 @@ struct Object {
 
 	const std::vector<Polygon>& getPolygons() const;
 	int getPolygonCount() const;
+	int getVertexCount() const;
 	void rotate(const Vec3& rotation);
 	void scale(float scalar);
 	void setColor(int R, int G, int B);

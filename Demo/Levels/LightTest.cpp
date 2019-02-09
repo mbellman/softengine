@@ -1,7 +1,7 @@
 #include <SDL.h>
 #include <math.h>
 #include <Levels/LightTest.h>
-#include <Objects.h>
+#include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
 
 /**

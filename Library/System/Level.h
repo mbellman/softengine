@@ -3,8 +3,7 @@
 #include <map>
 #include <vector>
 #include <limits.h>
-#include <Objects.h>
-#include <Types.h>
+#include <System/Objects.h>
 #include <Graphics/TextureBuffer.h>
 
 enum State {

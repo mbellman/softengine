@@ -1,4 +1,4 @@
-#include <Objects.h>
+#include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
 
@@ -23,7 +23,6 @@ void Object::addPolygon(int v1, int v2, int v3) {
 	polygon.bindVertex(1, &vertices.at(v2));
 	polygon.bindVertex(2, &vertices.at(v3));
 	polygon.normal = Object::computePolygonNormal(polygon);
-	polygon.parentObject = this;
 
 	polygons.push_back(polygon);
 }
@@ -57,6 +56,10 @@ int Object::getPolygonCount() const {
 
 const std::vector<Polygon>& Object::getPolygons() const {
 	return polygons;
+}
+
+int Object::getVertexCount() const {
+	return vertices.size();
 }
 
 void Object::rotate(const Vec3& rotation) {
