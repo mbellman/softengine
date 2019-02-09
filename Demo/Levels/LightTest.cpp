@@ -3,6 +3,7 @@
 #include <Levels/LightTest.h>
 #include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
+#include <Graphics/TextureBuffer.h>
 
 /**
  * LightTest
@@ -40,6 +41,12 @@ void LightTest::load() {
 	cube1->rotate({ -2.4, 0, -1.2 });
 	cube2->rotate({ 0, 1.5, 0.6 });
 	cube3->rotate({ 1.5, -1.8, 1.6 });
+
+	add("cat", new TextureBuffer("./DemoAssets/cat.png"));
+	cube2->setTexture(getTexture("cat"));
+	cube2->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
+	cube3->setTexture(getTexture("cat"));
+	cube3->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
 
 	add(cube1);
 	add(cube2);

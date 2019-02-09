@@ -312,6 +312,10 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 
 void Engine::illuminateTriangle(Triangle& triangle) {
 	const Settings& settings = activeLevel->getSettings();
+	int totalIncidentLights = 0;
+	float totalLuminosity = 0.0f;
+
+	triangle.intensity = settings.albedo;
 
 	// Each vertex is individually illuminated so we can determine
 	// the proper interpolated colors to shade the triangle with.
@@ -354,6 +358,9 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 
 				aggregateLightColor += light->color * luminosity;
 
+				totalIncidentLights++;
+				totalLuminosity += luminosity;
+
 				// For each incident light source, reverse any potential
 				// ambient light color diminishment on the vertex in
 				// proportion to the light's luminosity at this point
@@ -365,6 +372,10 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 
 		screenVertex->color += aggregateLightColor;
 		screenVertex->color = Color::lerp(screenVertex->color, settings.backgroundColor, drawDistanceRatio);
+	}
+
+	if (totalIncidentLights > 0) {
+		triangle.intensity += (totalLuminosity / totalIncidentLights);
 	}
 }
 

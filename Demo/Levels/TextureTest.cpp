@@ -12,7 +12,7 @@ void TextureTest::load() {
 	add("blockTexture", new TextureBuffer("./DemoAssets/block.png"));
 
 	Cube* cube = new Cube(100);
-	cube->position = { 0, 100, 1800 };
+	cube->position = { 0, 100, 1000 };
 	cube->setTexture(getTexture("blockTexture"));
 	cube->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
 
@@ -38,6 +38,6 @@ void TextureTest::load() {
 }
 
 void TextureTest::update(int dt, int runningTime) {
-	// getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
+	getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
 }
 

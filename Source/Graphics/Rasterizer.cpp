@@ -171,6 +171,14 @@ void Rasterizer::setPixel(int x, int y, int depth) {
 	depthBuffer[index] = depth;
 }
 
+void Rasterizer::setTextureIntensity(float intensity) {
+	intensity = FAST_MIN(intensity, 1.0f);
+
+	textureColorReduction.R = (int)((1.0f - intensity) * 200.0f);
+	textureColorReduction.G = (int)((1.0f - intensity) * 200.0f);
+	textureColorReduction.B = (int)((1.0f - intensity) * 200.0f);
+}
+
 void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 	line(x1, y1, x2, y2);
 	line(x2, y2, x3, y3);
@@ -186,6 +194,10 @@ void Rasterizer::triangle(Triangle& triangle) {
 	Vertex2d* middle = &triangle.vertices[1];
 	Vertex2d* bottom = &triangle.vertices[2];
 	const TextureBuffer* texture = triangle.texture;
+
+	if (texture != NULL) {
+		setTextureIntensity(triangle.intensity);
+	}
 
 	if (top->coordinate.y > middle->coordinate.y) swap(top, middle);
 	if (middle->coordinate.y > bottom->coordinate.y) swap(middle, bottom);
@@ -284,19 +296,16 @@ void Rasterizer::triangleScanLine(
 		if (depthBuffer[index] > depth) {
 			float progress = (float)(x - x1) / lineLength;
 
-			if (shouldUsePerVertexColoration) {
-				if (++lerpIntervalCounter > lerpInterval || x == end) {
-					// Lerping the color components individually is more
-					// efficient than lerping startColor -> endColor and
-					// generating a new Color object each time
-					R = Lerp::lerp(startColor.R, endColor.R, progress);
-					G = Lerp::lerp(startColor.G, endColor.G, progress);
-					B = Lerp::lerp(startColor.B, endColor.B, progress);
+			if (++lerpIntervalCounter > lerpInterval || x == end) {
+				// Lerp color components individually rather than
+				// startColor -> endColor for performance
+				R = Lerp::lerp(startColor.R, endColor.R, progress);
+				G = Lerp::lerp(startColor.G, endColor.G, progress);
+				B = Lerp::lerp(startColor.B, endColor.B, progress);
 
-					setColor(R, G, B);
+				setColor(R, G, B);
 
-					lerpIntervalCounter = 0;
-				}
+				lerpIntervalCounter = 0;
 			}
 
 			if (texture != NULL) {
@@ -306,13 +315,11 @@ void Rasterizer::triangleScanLine(
 
 				const Color& tex = texture->sample(u, v);
 
-				setColor(tex);
+				int c_R = tex.R - textureColorReduction.R + R;
+				int c_G = tex.G - textureColorReduction.G + G;
+				int c_B = tex.B - textureColorReduction.B + B;
 
-				// int c_R = FAST_CLAMP(tex.R + R, 0, 255);
-				// int c_G = FAST_CLAMP(tex.G + G, 0, 255);
-				// int c_B = FAST_CLAMP(tex.B + B, 0, 255);
-
-				// setColor(c_R, c_G, c_B);
+				setColor(FAST_CLAMP(c_R, 0, 255), FAST_CLAMP(c_G, 0, 255), FAST_CLAMP(c_B, 0, 255));
 			}
 
 			// We refrain from calling setPixel() here to avoid

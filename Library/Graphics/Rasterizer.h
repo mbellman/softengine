@@ -22,6 +22,7 @@ public:
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
 	void setColor(Uint32 color);
+	void setTextureIntensity(float intensity);
 	void triangle(int x1, int y1, int x2, int y2, int x3, int y3);
 	void triangle(Triangle& triangle);
 
@@ -31,9 +32,10 @@ private:
 	Uint32* pixelBuffer;
 	int* depthBuffer;
 	bool shouldUsePerVertexColoration = true;
-	long int color;
+	Uint32 color;
 	int width;
 	int height;
+	Color textureColorReduction = { 0, 0, 0 };
 
 	void flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right, const TextureBuffer* texture);
 	void flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight, const TextureBuffer* texture);

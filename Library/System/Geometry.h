@@ -37,6 +37,7 @@ struct Triangle {
 	Vertex2d vertices[3];
 	Vec3 normal;
 	const TextureBuffer* texture = NULL;
+	float intensity = 1.0f;
 
 	float averageDepth() const;
 };
