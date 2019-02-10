@@ -27,6 +27,9 @@ public:
 	void triangle(Triangle& triangle);
 
 private:
+	constexpr static int MIN_COLOR_LERP_INTERVAL = 2;
+	constexpr static int MAX_TEXTURE_SAMPLE_INTERVAL = 5;
+
 	Uint32 backgroundColor = 0;
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
@@ -40,7 +43,8 @@ private:
 	void flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right, const TextureBuffer* texture);
 	void flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight, const TextureBuffer* texture);
 	void flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture);
-	float lerpUV(float c1, float c2, float progress, float z1, float z2, float i_z1, float i_z2);
+	int getColorLerpInterval(const Color& start, const Color& end, int lineLength);
+	int getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth);
 
 	void triangleScanLine(
 		int x1, int y1, int width,
@@ -51,5 +55,6 @@ private:
 		const TextureBuffer* texture
 	);
 
+	void triangleScanLineChunk(int x, int y, int width, Uint32 color, int depth, int offset);
 	void setPixel(int x, int y, int depth = 1);
 };

@@ -110,7 +110,7 @@ void Engine::drawTriangle(Triangle& triangle) {
 
 void Engine::drawScene() {
 	bool hasPixelFilter = flags & PIXEL_FILTER;
-	float fovAngleRange = sinf(((float)camera.fov / 2.75) * M_PI / 180);
+	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	int fovScalar = (int)((hasPixelFilter ? 250 : 500) * (180 / camera.fov));
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 

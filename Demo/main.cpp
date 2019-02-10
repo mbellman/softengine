@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 	text.setPosition(10, 10);
 
 	engine.addUIObject(&text);
-	engine.setActiveLevel(new TextureTest());
+	engine.setActiveLevel(new LightTest());
 	engine.run();
 
 	TTF_CloseFont(mono);
