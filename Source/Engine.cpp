@@ -43,7 +43,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	int rasterHeight = hasPixelFilter ? height / 2 : height;
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
-	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & FLAT_SHADING);
+	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight);
 	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
 
@@ -234,6 +234,7 @@ void Engine::drawScene() {
 		drawTriangle(*triangle);
 	}
 
+	rasterizer->flushScanlines();
 	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
 }
 
