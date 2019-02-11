@@ -72,6 +72,12 @@ void Object::rotate(const Vec3& rotation) {
 	computeSurfaceNormals();
 }
 
+void Object::rotateDeg(const Vec3& rotation) {
+	float TO_RAD = (float)(M_PI / 180);
+
+	rotate({ rotation.x * TO_RAD, rotation.y * TO_RAD, rotation.z * TO_RAD });
+}
+
 void Object::setTexture(TextureBuffer* textureBuffer) {
 	if (textureBuffer != NULL) {
 		this->texture = textureBuffer;
@@ -155,6 +161,9 @@ Model::Model(const ObjLoader& obj) {
  *  1     1--2
  */
 Mesh::Mesh(int rows, int columns, float tileSize) {
+	this->rows = rows;
+	this->columns = columns;
+
 	int verticesPerRow = columns + 1;
 	int verticesPerColumn = rows + 1;
 
@@ -176,6 +185,25 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 			int v3 = isLowerPolygon ? vertexBelowFirstIndex : firstVertexIndex + 1;
 
 			addPolygon(v1, v2, v3);
+		}
+	}
+}
+
+void Mesh::setTextureInterval(int rowInterval, int columnInterval) {
+	int verticesPerRow = columns + 1;
+	int verticesPerColumn = rows + 1;
+
+	for (int i = 0; i < verticesPerColumn; i++) {
+		float v = (float)i / columnInterval;
+
+		for (int j = 0; j < verticesPerRow; j++) {
+			float u = (float)j / rowInterval;
+			int index = i * verticesPerRow + j;
+
+			Vertex3d* vertex = &vertices.at(index);
+
+			vertex->uv.x = u;
+			vertex->uv.y = v;
 		}
 	}
 }

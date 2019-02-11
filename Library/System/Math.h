@@ -58,3 +58,13 @@ struct RotationMatrix {
 	RotationMatrix operator *(const RotationMatrix& rotationMatrix) const;
 	Vec3 operator *(const Vec3& vector) const;
 };
+
+/**
+ * Range
+ * -----
+ */
+template<class T>
+struct Range {
+	T start;
+	T end;
+};

@@ -13,6 +13,8 @@ struct Vertex2d : Colorable {
 	int depth;
 	float w;
 	Vec2 uv;
+	float textureLuminosity;
+	float visibility;
 	Vec3 worldVector;
 
 	static Vertex2d lerp(const Vertex2d& v1, const Vertex2d& v2, float r);
@@ -37,7 +39,6 @@ struct Triangle {
 	Vertex2d vertices[3];
 	Vec3 normal;
 	const TextureBuffer* texture = NULL;
-	float intensity = 1.0f;
 
 	float averageDepth() const;
 };

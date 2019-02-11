@@ -43,7 +43,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	int rasterHeight = hasPixelFilter ? height / 2 : height;
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
-	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight);
+	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & DISABLE_MULTITHREADING);
 	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
 
@@ -312,10 +312,6 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 
 void Engine::illuminateTriangle(Triangle& triangle) {
 	const Settings& settings = activeLevel->getSettings();
-	int totalIncidentLights = 0;
-	float totalLuminosity = 0.0f;
-
-	triangle.intensity = settings.albedo;
 
 	// Each vertex is individually illuminated so we can determine
 	// the proper interpolated colors to shade the triangle with.
@@ -323,6 +319,8 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 		Color aggregateLightColor = { 0, 0, 0 };
 		Vec3 worldVertex = triangle.vertices[i].worldVector;
 		Vertex2d* screenVertex = &triangle.vertices[i];
+
+		screenVertex->textureLuminosity = settings.albedo * settings.ambientLightFactor;
 
 		// Ambient lighting is a special distance-invariant case
 		if (settings.ambientLightFactor > 0) {
@@ -355,16 +353,11 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 				float incidence = cosf((1 + dot) * M_PI / 2);
 				float intensity = pow(1.0f - lightDistance / light->spread, 2);
 				float luminosity = light->power * incidence * intensity;
+				float luminosityScalar = settings.albedo > 0 ? (1.0f + luminosity / settings.albedo) : 1.0f;
 
 				aggregateLightColor += light->color * luminosity;
-
-				totalIncidentLights++;
-				totalLuminosity += luminosity;
-
-				// For each incident light source, reverse any potential
-				// ambient light color diminishment on the vertex in
-				// proportion to the light's luminosity at this point
-				screenVertex->color *= (1 + (luminosity / settings.albedo));
+				screenVertex->textureLuminosity *= luminosityScalar;
+				screenVertex->color *= luminosityScalar;
 			}
 		}
 
@@ -372,10 +365,7 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 
 		screenVertex->color += aggregateLightColor;
 		screenVertex->color = Color::lerp(screenVertex->color, settings.backgroundColor, drawDistanceRatio);
-	}
-
-	if (totalIncidentLights > 0) {
-		triangle.intensity += (totalLuminosity / totalIncidentLights);
+		screenVertex->visibility = (1.0f - drawDistanceRatio);
 	}
 }
 
