@@ -81,7 +81,7 @@ private:
 		const Range<Vec2>& uv,
 		const Range<float>& w,
 		const Range<float>& textureLuminosity,
-		const Range<float>& drawDistanceRatio,
+		const Range<float>& visibility,
 		const TextureBuffer* texture
 	);
 
