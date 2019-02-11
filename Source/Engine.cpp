@@ -92,7 +92,7 @@ void Engine::delay(int ms) {
 
 void Engine::drawTriangle(Triangle& triangle) {
 	if (flags & SHOW_WIREFRAME) {
-		rasterizer->setColor(255, 255, 255);
+		rasterizer->setDrawColor(255, 255, 255);
 
 		rasterizer->triangle(
 			triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
@@ -234,7 +234,6 @@ void Engine::drawScene() {
 		drawTriangle(*triangle);
 	}
 
-	rasterizer->flushScanlines();
 	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
 }
 
