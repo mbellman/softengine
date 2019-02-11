@@ -171,8 +171,8 @@ int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int l
 
 int Rasterizer::getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth) {
 	float averageDepth = (float)(startDepth + endDepth) / 2.0f;
-	float u_delta = (float)texture->width * abs(endUV.x - startUV.x) * averageDepth;
-	float v_delta = (float)texture->height * abs(endUV.y - startUV.y) * averageDepth;
+	float u_delta = (float)texture->width * abs(endUV.x - startUV.x) * averageDepth * 4;
+	float v_delta = (float)texture->height * abs(endUV.y - startUV.y) * averageDepth * 4;
 	float sampleDelta = (u_delta + v_delta) / 2;
 	int interval = (int)(1 + lineLength / sampleDelta);
 
