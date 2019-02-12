@@ -12,15 +12,26 @@
 void LightTest::load() {
 	ObjLoader icoObj("./DemoAssets/da-vinci.obj");
 
-	Mesh* floorMesh = new Mesh(70, 20, 50);
-	Mesh* leftWall = new Mesh(70, 10, 50);
-	Mesh* rightWall = new Mesh(70, 10, 50);
+	Mesh* floorMesh = new Mesh(20, 70, 50);
+	Mesh* leftWall = new Mesh(5, 35, 100);
+	Mesh* rightWall = new Mesh(5, 35, 100);
 
-	floorMesh->position = { -500, 0, 0 };
-	leftWall->position = { -500, 500, 0 };
-	leftWall->rotate({ 0, 0, 1.5 * M_PI });
-	rightWall->position = { 500, 0, 0 };
-	rightWall->rotate({ 0, 0, M_PI / 2 });
+	floorMesh->position = { 500, 0, 0 };
+	floorMesh->rotateDeg({ 0, -90, 0 });
+	leftWall->setColor(210, 210, 210);
+	leftWall->position = { -500, 0, 0 };
+	leftWall->rotateDeg({ 0, -90, 0 });
+	leftWall->rotateDeg({ 0, 0, -90 });
+	rightWall->position = { 500, 500, 0 };
+	rightWall->rotateDeg({ 0, -90, 90 });
+	rightWall->setColor(210, 210, 210);
+
+	add("wall", new TextureBuffer("./DemoAssets/wall.png"));
+
+	leftWall->setTexture(getTexture("wall"));
+	leftWall->setTextureInterval(5, 5);
+	rightWall->setTexture(getTexture("wall"));
+	rightWall->setTextureInterval(5, 5);
 
 	add(floorMesh);
 	add(leftWall);
@@ -43,6 +54,9 @@ void LightTest::load() {
 	cube3->rotate({ 1.5, -1.8, 1.6 });
 
 	add("cat", new TextureBuffer("./DemoAssets/cat.png"));
+	add("opossum", new TextureBuffer("./DemoAssets/opossum.png"));
+	cube1->setTexture(getTexture("opossum"));
+	cube1->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
 	cube2->setTexture(getTexture("cat"));
 	cube2->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
 	cube3->setTexture(getTexture("cat"));

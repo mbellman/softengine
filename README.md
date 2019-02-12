@@ -9,7 +9,6 @@ A software 3D rendering engine, written as an educational exercise.
 * 2D sprite projection
 * Ambient/atmospheric effects (rain, snow, fog)
 * OpenGL/hardware mode
-* Parallelization
 
 **Maybe:**
 

@@ -14,28 +14,60 @@ using namespace std;
  * Rasterizer
  * ----------
  */
-Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldUsePerVertexColoration) {
+Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldAllowMultithreading) {
 	this->width = width;
 	this->height = height;
-	this->shouldUsePerVertexColoration = shouldUsePerVertexColoration;
 
 	screenTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
 	pixelBuffer = new Uint32[width * height];
 	depthBuffer = new int[width * height];
+	scanlines = new Scanline[width * height];
 
-	setColor(255, 255, 255);
 	clear();
+
+	if (shouldAllowMultithreading) {
+		createScanlineThreads();
+	}
 }
 
 Rasterizer::~Rasterizer() {
+	isDone = true;
+
+	for (int i = 0; i < scanlineThreads.size(); i++) {
+		SDL_WaitThread(scanlineThreads.at(i), NULL);
+	}
+
 	SDL_DestroyTexture(screenTexture);
 
 	delete[] pixelBuffer;
 	delete[] depthBuffer;
+	delete[] scanlines;
+}
+
+void Rasterizer::createScanlineThreads() {
+	int totalThreads = std::min(Rasterizer::MAX_THREADS, SDL_GetCPUCount());
+
+	if (totalThreads < 2) {
+		return;
+	}
+
+	scanlineThreadManagers = new ScanlineThreadManager[totalThreads];
+
+	for (int i = 0; i < totalThreads; i++) {
+		ScanlineThreadManager* manager = &scanlineThreadManagers[i];
+
+		manager->rasterizer = this;
+		manager->section = i;
+
+		SDL_Thread* thread = SDL_CreateThread(manageScanlineThread, NULL, manager);
+		scanlineThreads.push_back(thread);
+	}
 }
 
 void Rasterizer::clear() {
 	int bufferLength = width * height;
+
+	totalBufferedScanlines = 0;
 
 	fill(pixelBuffer, pixelBuffer + bufferLength, backgroundColor);
 	fill(depthBuffer, depthBuffer + bufferLength, INT_MAX);
@@ -57,38 +89,47 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 	int end = FAST_MIN(topY + triangleHeight, height);
 	bool hasFlatTop = corner.coordinate.y > left.coordinate.y;
 
-	Color startColor, endColor;
-	Vec2 startUV, endUV;
-	float startW = 0.0f, endW = 0.0f;
-
 	for (int y = start; y < end; y++) {
 		int step = hasFlatTop ? (triangleHeight - (y - topY)) : (y - topY);
 		float progress = (float)step / triangleHeight;
 		int startX = Lerp::lerp(corner.coordinate.x, left.coordinate.x, progress);
 		int endX = Lerp::lerp(corner.coordinate.x, right.coordinate.x, progress);
-		int startDepth = Lerp::lerp(corner.depth, left.depth, progress);
-		int endDepth = Lerp::lerp(corner.depth, right.depth, progress);
-		int lineLength = endX - startX;
+		int length = endX - startX;
 
-		// Lerp color components individually instead of Color::lerp
-		// for a small performance gain
-		startColor.R = Lerp::lerp(corner.color.R, left.color.R, progress);
-		startColor.G = Lerp::lerp(corner.color.G, left.color.G, progress);
-		startColor.B = Lerp::lerp(corner.color.B, left.color.B, progress);
-
-		endColor.R = Lerp::lerp(corner.color.R, right.color.R, progress);
-		endColor.G = Lerp::lerp(corner.color.G, right.color.G, progress);
-		endColor.B = Lerp::lerp(corner.color.B, right.color.B, progress);
-
-		if (texture != NULL) {
-			startUV = Vec2::lerp(corner.uv, left.uv, progress);
-			endUV = Vec2::lerp(corner.uv, right.uv, progress);
-			startW = Lerp::lerp(corner.w, left.w, progress);
-			endW = Lerp::lerp(corner.w, right.w, progress);
+		if (length == 0) {
+			continue;
 		}
 
-		if (lineLength > 0) {
-			triangleScanLine(startX, y, lineLength, startColor, endColor, startDepth, endDepth, startUV, endUV, startW, endW, texture);
+		Scanline* scanline = &scanlines[totalBufferedScanlines++];
+
+		scanline->x = startX;
+		scanline->y = y;
+		scanline->length = length;
+		scanline->depth.start = Lerp::lerp(corner.depth, left.depth, progress);
+		scanline->depth.end = Lerp::lerp(corner.depth, right.depth, progress);
+
+		scanline->color.start.R = Lerp::lerp(corner.color.R, left.color.R, progress);
+		scanline->color.start.G = Lerp::lerp(corner.color.G, left.color.G, progress);
+		scanline->color.start.B = Lerp::lerp(corner.color.B, left.color.B, progress);
+
+		scanline->color.end.R = Lerp::lerp(corner.color.R, right.color.R, progress);
+		scanline->color.end.G = Lerp::lerp(corner.color.G, right.color.G, progress);
+		scanline->color.end.B = Lerp::lerp(corner.color.B, right.color.B, progress);
+
+		scanline->texture = texture;
+
+		if (texture != NULL) {
+			scanline->uv.start = Vec2::lerp(corner.uv, left.uv, progress);
+			scanline->uv.end = Vec2::lerp(corner.uv, right.uv, progress);
+
+			scanline->w.start = Lerp::lerp(corner.w, left.w, progress);
+			scanline->w.end = Lerp::lerp(corner.w, right.w, progress);
+
+			scanline->textureLuminosity.start = Lerp::lerp(corner.textureLuminosity, left.textureLuminosity, progress);
+			scanline->textureLuminosity.end = Lerp::lerp(corner.textureLuminosity, right.textureLuminosity, progress);
+
+			scanline->visibility.start = Lerp::lerp(corner.visibility, left.visibility, progress);
+			scanline->visibility.end = Lerp::lerp(corner.visibility, right.visibility, progress);
 		}
 	}
 }
@@ -99,6 +140,70 @@ void Rasterizer::flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomL
 
 void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture) {
 	flatTriangle(bottom, topLeft, topRight, texture);
+}
+
+void Rasterizer::flushScanlines() {
+	if (scanlineThreads.size() == 0) {
+		for (int i = 0; i < totalBufferedScanlines; i++) {
+			triangleScanline(&scanlines[i]);
+		}
+	} else {
+		for (int i = 0; i < scanlineThreads.size(); i++) {
+			scanlineThreadManagers[i].isDone = false;
+		}
+
+		for (int i = 0; i < scanlineThreads.size(); i++) {
+			while (!scanlineThreadManagers[i].isDone) {
+				SDL_Delay(1);
+			}
+		}
+	}
+}
+
+int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int lineLength) {
+	int r_delta = abs(end.R - start.R);
+	int g_delta = abs(end.G - start.G);
+	int b_delta = abs(end.B - start.B);
+	float colorDelta = (r_delta + g_delta + b_delta) / 3;
+
+	return colorDelta > 0 ? FAST_MAX(Rasterizer::MIN_COLOR_LERP_INTERVAL, (int)(lineLength / colorDelta)) : lineLength;
+}
+
+int Rasterizer::getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth) {
+	float averageDepth = (float)(startDepth + endDepth) / 2.0f;
+	float u_delta = (float)texture->width * abs(endUV.x - startUV.x) * averageDepth * 4;
+	float v_delta = (float)texture->height * abs(endUV.y - startUV.y) * averageDepth * 4;
+	float sampleDelta = (u_delta + v_delta) / 2;
+	int interval = (int)(1 + lineLength / sampleDelta);
+
+	return sampleDelta > 0 ? FAST_CLAMP(interval, 1, Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL) : lineLength;
+}
+
+int Rasterizer::manageScanlineThread(void* data) {
+	ScanlineThreadManager* manager = (ScanlineThreadManager*)data;
+	Rasterizer* rasterizer = manager->rasterizer;
+
+	while (1) {
+		if (rasterizer->isDone) {
+			break;
+		} else if (!manager->isDone) {
+			int totalSections = rasterizer->scanlineThreads.size();
+
+			for (int i = 0; i < rasterizer->totalBufferedScanlines; i++) {
+				Scanline* scanline = &rasterizer->scanlines[i];
+
+				if (scanline->y % totalSections == manager->section) {
+					rasterizer->triangleScanline(scanline);
+				}
+			}
+
+			manager->isDone = true;
+		}
+
+		SDL_Delay(1);
+	}
+
+	return 0;
 }
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
@@ -144,6 +249,7 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 	SDL_Rect destinationRect = { 0, 0, sizeFactor * width, sizeFactor * height };
 
+	flushScanlines();
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
 	SDL_RenderCopy(renderer, screenTexture, NULL, &destinationRect);
 }
@@ -152,31 +258,23 @@ void Rasterizer::setBackgroundColor(const Color& color) {
 	backgroundColor = ARGB(color.R, color.G, color.B);
 }
 
-void Rasterizer::setColor(Uint32 color) {
-	this->color = color;
+void Rasterizer::setDrawColor(Uint32 color) {
+	drawColor = color;
 }
 
-void Rasterizer::setColor(int R, int G, int B) {
-	color = ARGB(R, G, B);
+void Rasterizer::setDrawColor(int R, int G, int B) {
+	drawColor = ARGB(R, G, B);
 }
 
-void Rasterizer::setColor(const Color& color) {
-	setColor(color.R, color.G, color.B);
+void Rasterizer::setDrawColor(const Color& color) {
+	setDrawColor(color.R, color.G, color.B);
 }
 
 void Rasterizer::setPixel(int x, int y, int depth) {
 	int index = y * width + x;
 
-	pixelBuffer[index] = color;
+	pixelBuffer[index] = drawColor;
 	depthBuffer[index] = depth;
-}
-
-void Rasterizer::setTextureIntensity(float intensity) {
-	intensity = FAST_MIN(intensity, 1.0f);
-
-	textureColorReduction.R = (int)((1.0f - intensity) * 200.0f);
-	textureColorReduction.G = (int)((1.0f - intensity) * 200.0f);
-	textureColorReduction.B = (int)((1.0f - intensity) * 200.0f);
 }
 
 void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
@@ -195,10 +293,6 @@ void Rasterizer::triangle(Triangle& triangle) {
 	Vertex2d* bottom = &triangle.vertices[2];
 	const TextureBuffer* texture = triangle.texture;
 
-	if (texture != NULL) {
-		setTextureIntensity(triangle.intensity);
-	}
-
 	if (top->coordinate.y > middle->coordinate.y) swap(top, middle);
 	if (middle->coordinate.y > bottom->coordinate.y) swap(middle, bottom);
 	if (top->coordinate.y > middle->coordinate.y) swap(top, middle);
@@ -206,10 +300,6 @@ void Rasterizer::triangle(Triangle& triangle) {
 	if (top->coordinate.y >= height || bottom->coordinate.y < 0) {
 		// Optimize for vertically offscreen triangles
 		return;
-	}
-
-	if (!shouldUsePerVertexColoration) {
-		setColor(triangle.vertices[0].color);
 	}
 
 	if (top->coordinate.y == middle->coordinate.y) {
@@ -253,6 +343,19 @@ void Rasterizer::triangle(Triangle& triangle) {
 	}
 }
 
+void Rasterizer::triangleScanline(Scanline* scanline) {
+	triangleScanline(
+		scanline->x, scanline->y, scanline->length,
+		scanline->color,
+		scanline->depth,
+		scanline->uv,
+		scanline->w,
+		scanline->textureLuminosity,
+		scanline->visibility,
+		scanline->texture
+	);
+}
+
 /**
  * Rasterizes a single line across a section of a filled triangle.
  * Since this function controls the loop which operates on the level
@@ -260,72 +363,131 @@ void Rasterizer::triangle(Triangle& triangle) {
  * of the system, and care must be taken to ensure that it includes
  * no unnecessary work.
  */
-void Rasterizer::triangleScanLine(
-	int x1, int y1, int lineLength,
-	const Color& startColor, const Color& endColor,
-	int startDepth, int endDepth,
-	const Vec2& startUV, const Vec2& endUV,
-	float startW, float endW,
+void Rasterizer::triangleScanline(
+	int x1, int y1, int length,
+	const Range<Color>& color,
+	const Range<int>& depth,
+	const Range<Vec2>& uv,
+	const Range<float>& w,
+	const Range<float>& textureLuminosity,
+	const Range<float>& visibility,
 	const TextureBuffer* texture
 ) {
 	int start = FAST_MAX(x1, 0);
-	int end = FAST_MIN(x1 + lineLength, width - 1);
+	int end = FAST_MIN(x1 + length, width - 1);
 	int pixelIndexOffset = y1 * width;
 
-	// Rather than interpolating a new color value at every pixel
-	// along the line, we can derive an optimal lerp update interval
-	// based on the color change over the line and its length. The
-	// use of a counter also improves performance compared to modulo.
-	float colorDelta = (abs(endColor.R - startColor.R) + abs(endColor.G - startColor.G) + abs(endColor.B - startColor.B)) / 3;
-	int lerpInterval = colorDelta > 0 ? FAST_MAX(1, (int)(lineLength / colorDelta)) : lineLength;
-	int lerpIntervalCounter = lerpInterval;
+	int colorLerpInterval = getColorLerpInterval(color.start, color.end, length);
+	int colorLerpIntervalCounter = colorLerpInterval;
 
-	int R = startColor.R;
-	int G = startColor.G;
-	int B = startColor.B;
+	float depthStep = (float)(depth.end - depth.start) / length;
+	float f_depth = (float)depth.start + depthStep * (start - x1);
 
-	float depthStep = (float)(endDepth - startDepth) / lineLength;
-	float f_depth = (float)startDepth + depthStep * (start - x1);
+	if (texture == NULL && colorLerpInterval > 5) {
+		int max_x = end + 1;
 
-	for (int x = start; x <= end; x++) {
-		int index = pixelIndexOffset + x;
-		int depth = (int)f_depth;
+		depthStep *= colorLerpInterval;
 
-		f_depth += depthStep;
+		for (int x = start; x <= end; x += colorLerpInterval) {
+			int index = pixelIndexOffset + x;
+			float progress = (float)(x - x1) / length;
+			int x2 = FAST_MIN(x + colorLerpInterval, max_x);
 
-		if (depthBuffer[index] > depth) {
-			float progress = (float)(x - x1) / lineLength;
+			int R = Lerp::lerp(color.start.R, color.end.R, progress);
+			int G = Lerp::lerp(color.start.G, color.end.G, progress);
+			int B = Lerp::lerp(color.start.B, color.end.B, progress);
 
-			if (++lerpIntervalCounter > lerpInterval || x == end) {
-				// Lerp color components individually rather than
-				// startColor -> endColor for performance
-				R = Lerp::lerp(startColor.R, endColor.R, progress);
-				G = Lerp::lerp(startColor.G, endColor.G, progress);
-				B = Lerp::lerp(startColor.B, endColor.B, progress);
+			triangleScanlineChunk(x, x2, y1, ARGB(R, G, B), (int)f_depth, index);
 
-				setColor(R, G, B);
-
-				lerpIntervalCounter = 0;
-			}
-
-			if (texture != NULL) {
-				float w = 1 / Lerp::lerp(startW, endW, progress);
-				float u = Lerp::lerp(startUV.x, endUV.x, progress) * w;
-				float v = Lerp::lerp(startUV.y, endUV.y, progress) * w;
-
-				const Color& tex = texture->sample(u, v);
-
-				int c_R = tex.R - textureColorReduction.R + R;
-				int c_G = tex.G - textureColorReduction.G + G;
-				int c_B = tex.B - textureColorReduction.B + B;
-
-				setColor(FAST_CLAMP(c_R, 0, 255), FAST_CLAMP(c_G, 0, 255), FAST_CLAMP(c_B, 0, 255));
-			}
-
-			// We refrain from calling setPixel() here to avoid
-			// its redunant calculation of the index
-			pixelBuffer[index] = color;
-			depthBuffer[index] = depth;
+			f_depth += depthStep;
 		}
+	} else if (texture == NULL) {
+		Uint32 currentColor = 0;
+
+		for (int x = start; x <= end; x++) {
+			int index = pixelIndexOffset + x;
+			int depth = (int)f_depth;
+
+			f_depth += depthStep;
+
+			if (depthBuffer[index] > depth) {
+				float progress = (float)(x - x1) / length;
+
+				if (++colorLerpIntervalCounter > colorLerpInterval || x == end) {
+					int R = Lerp::lerp(color.start.R, color.end.R, progress);
+					int G = Lerp::lerp(color.start.G, color.end.G, progress);
+					int B = Lerp::lerp(color.start.B, color.end.B, progress);
+
+					currentColor = ARGB(R, G, B);
+					colorLerpIntervalCounter = 0;
+				}
+
+				pixelBuffer[index] = currentColor;
+				depthBuffer[index] = depth;
+			}
+		}
+	} else {
+		Uint32 currentColor = 0;
+
+		int surface_R = color.start.R;
+		int surface_G = color.start.G;
+		int surface_B = color.start.B;
+
+		int textureSampleInterval = getTextureSampleInterval(texture, length, uv.start, uv.end, depth.start, depth.end);
+		int textureSampleIntervalCounter = textureSampleInterval;
+
+		for (int x = start; x <= end; x++) {
+			int index = pixelIndexOffset + x;
+			int depth = (int)f_depth;
+
+			f_depth += depthStep;
+
+			if (depthBuffer[index] > depth) {
+				float progress = (float)(x - x1) / length;
+
+				if (++colorLerpIntervalCounter > colorLerpInterval) {
+					surface_R = Lerp::lerp(color.start.R, color.end.R, progress);
+					surface_G = Lerp::lerp(color.start.G, color.end.G, progress);
+					surface_B = Lerp::lerp(color.start.B, color.end.B, progress);
+
+					colorLerpIntervalCounter = 0;
+				}
+
+				if (++textureSampleIntervalCounter > textureSampleInterval) {
+					float t_l = Lerp::lerp(textureLuminosity.start, textureLuminosity.end, progress);
+					float vis = Lerp::lerp(visibility.start, visibility.end, progress);
+
+					float i_w = 1 / Lerp::lerp(w.start, w.end, progress);
+					float u = Lerp::lerp(uv.start.x, uv.end.x, progress) * i_w;
+					float v = Lerp::lerp(uv.start.y, uv.end.y, progress) * i_w;
+					const Color& sample = texture->sample(u, v);
+
+					int tex_R = (int)((sample.R - (1.0f - t_l) * 200.0f) * vis);
+					int tex_G = (int)((sample.G - (1.0f - t_l) * 180.0f) * vis);
+					int tex_B = (int)((sample.B - (1.0f - t_l) * 150.0f) * vis);
+
+					int R = tex_R + surface_R;
+					int G = tex_G + surface_G;
+					int B = tex_B + surface_B;
+
+					currentColor = ARGB(FAST_CLAMP(R, 0, 255), FAST_CLAMP(G, 0, 255), FAST_CLAMP(B, 0, 255));
+					textureSampleIntervalCounter = 0;
+				}
+
+				pixelBuffer[index] = currentColor;
+				depthBuffer[index] = depth;
+			}
+		}
+	}
+}
+
+void Rasterizer::triangleScanlineChunk(int x1, int x2, int y, Uint32 color, int depth, int offset) {
+	for (int x = x1; x < x2; x++) {
+		if (depthBuffer[offset] > depth) {
+			pixelBuffer[offset] = color;
+			depthBuffer[offset] = depth;
+		}
+
+		offset++;
 	}
 }

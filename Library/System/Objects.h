@@ -24,6 +24,7 @@ struct Object {
 	int getPolygonCount() const;
 	int getVertexCount() const;
 	void rotate(const Vec3& rotation);
+	void rotateDeg(const Vec3& rotation);
 	void scale(float scalar);
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
@@ -56,6 +57,12 @@ struct Model : Object {
  */
 struct Mesh : Object {
 	Mesh(int rows, int columns, float tileSize);
+
+	void setTextureInterval(int rowInterval, int columnInterval);
+
+private:
+	int rows = 0;
+	int columns = 0;
 };
 
 /**

@@ -58,6 +58,12 @@ const Color& TextureBuffer::sample(float u, float v) const {
 		return BLACK;
 	}
 
+	if (u > 1.0f) u -= (int)u;
+	else if (u < 0.0f) u += (int)(-1.0f * (u - 1.0f));
+
+	if (v > 1.0f) v -= (int)v;
+	else if (v < 0.0f) v += (int)(-1.0f * (v - 1.0f));
+
 	int index = (int)(v * height) * width + (int)(u * width);
 
 	return index >= 0 && index < totalPixels ? pixels[index] : BLACK;

@@ -12,7 +12,7 @@ void TextureTest::load() {
 	add("blockTexture", new TextureBuffer("./DemoAssets/block.png"));
 
 	Cube* cube = new Cube(100);
-	cube->position = { 0, 100, 1000 };
+	cube->position = { 0, 100, 1500 };
 	cube->setTexture(getTexture("blockTexture"));
 	cube->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
 
@@ -24,7 +24,7 @@ void TextureTest::load() {
 		c->position = {
 			300.0f * (i % 2 == 0 ? -1 : 1),
 			-150,
-			500.0f + 300.0f * (int)(i / 2)
+			1000.0f + 300.0f * (int)(i / 2)
 		};
 
 		add(c);
@@ -35,6 +35,7 @@ void TextureTest::load() {
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightFactor = 0.7;
 	settings.ambientLightVector = { 0.5, -1, 0.3 };
+	settings.drawDistance = 2500;
 }
 
 void TextureTest::update(int dt, int runningTime) {
