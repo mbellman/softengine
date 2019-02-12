@@ -52,6 +52,7 @@ struct Face {
 class ObjLoader : Loader {
 public:
 	vector<Vec3> vertices;
+	vector<Vec2> textureCoordinates;
 	vector<Face> faces;
 
 	ObjLoader(const char* path);

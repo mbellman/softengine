@@ -39,6 +39,8 @@ set(SOURCE_FILES
     Demo/Levels/LightTest.h
     Demo/Levels/TextureTest.cpp
     Demo/Levels/TextureTest.h
+    Demo/Levels/Garden.cpp
+    Demo/Levels/Garden.h
 
     # -- Header files --
     Library/Graphics/Color.h

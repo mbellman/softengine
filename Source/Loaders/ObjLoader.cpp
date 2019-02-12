@@ -57,7 +57,10 @@ void ObjLoader::handleVertex() {
 }
 
 void ObjLoader::handleTextureCoordinate() {
-	// TODO for texture mapping
+	float u = stof(readNextChunk());
+	float v = stof(readNextChunk());
+
+	textureCoordinates.push_back({ u, v });
 }
 
 /**

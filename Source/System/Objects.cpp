@@ -27,11 +27,35 @@ void Object::addPolygon(int v1, int v2, int v3) {
 	polygons.push_back(polygon);
 }
 
+void Object::addVertex(const Vec3& vector) {
+	Vertex3d vertex;
+
+	vertex.vector.x = vector.x;
+	vertex.vector.y = vector.y;
+	vertex.vector.z = vector.z;
+
+	vertices.push_back(vertex);
+}
+
 void Object::addVertex(const Vec3& vector, const Color& color) {
 	Vertex3d vertex;
 
-	vertex.vector = vector;
+	vertex.vector.x = vector.x;
+	vertex.vector.y = vector.y;
+	vertex.vector.z = vector.z;
 	vertex.color = color;
+
+	vertices.push_back(vertex);
+}
+
+void Object::addVertex(const Vec3& vector, const Vec2& uv) {
+	Vertex3d vertex;
+
+	vertex.vector.x = vector.x;
+	vertex.vector.y = vector.y;
+	vertex.vector.z = vector.z;
+	vertex.uv.x = uv.x;
+	vertex.uv.y = uv.y;
 
 	vertices.push_back(vertex);
 }
@@ -111,25 +135,80 @@ void Object::setColor(const Color& color) {
  * Creates an object from ObjLoader instance data.
  */
 Model::Model(const ObjLoader& obj) {
-	for (int v = 0; v < obj.vertices.size(); v++) {
-		Vec3 vector = obj.vertices.at(v);
+	bool hasTextureData = obj.textureCoordinates.size() > 0;
 
-		// Coordinate system handedness fix (Blender uses a right-handed
-		// screen space coordinate system, whereas we use a left-handed
-		// coordinate system).
-		vector.x *= -1;
+	if (hasTextureData) {
+		// Since there may be a different number of defined vertex
+		// vectors and vertex texture coordinates (owing to the way
+		// .obj files store vertex information), we have to examine
+		// the vertex index + texture coordinate index tuples defined
+		// for each face, map these to a vertex vector and texture
+		// coordinate, create and add a single vertex per unique tuple,
+		// and finally add our polygons once all vertices are set.
 
-		addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
-	}
+		// Track unique vertex/texture coordinate pairs and their
+		// associated Object vertices
+		std::map<std::pair<int, int>, int> uniqueVertices;
 
-	for (int f = 0; f < obj.faces.size(); f++) {
-		const Face* face = &obj.faces.at(f);
+		// Track the vertices for each polygon, so we can create them
+		// after all vertices are defined
+		std::vector<std::tuple<int, int, int>> polygonVertexIndices;
 
-		int v1 = face->v1.indexes[0] - 1;
-		int v2 = face->v2.indexes[0] - 1;
-		int v3 = face->v3.indexes[0] - 1;
+		for (const Face& face : obj.faces) {
+			std::pair<int, int> v_vt_pairs[3];
+			int vertexIndices[3];
 
-		addPolygon(v1, v2, v3);
+			v_vt_pairs[0] = { face.v1.indexes[0] - 1, face.v1.indexes[1] - 1 };
+			v_vt_pairs[1] = { face.v2.indexes[0] - 1, face.v2.indexes[1] - 1 };
+			v_vt_pairs[2] = { face.v3.indexes[0] - 1, face.v3.indexes[1] - 1 };
+
+			for (int t = 0; t < 3; t++) {
+				std::pair<int, int>& pair = v_vt_pairs[t];
+				auto uniqueVertex = uniqueVertices.find(pair);
+
+				if (uniqueVertex != uniqueVertices.end()) {
+					vertexIndices[t] = uniqueVertex->second;
+				} else {
+					const Vec3& vector = obj.vertices.at(v_vt_pairs[t].first);
+					Vec2 uv = obj.textureCoordinates.at(v_vt_pairs[t].second);
+					int index = vertices.size();
+
+					vertexIndices[t] = index;
+					uv.y = 1 - uv.y;
+
+					addVertex(vector, uv);
+					uniqueVertices.emplace(pair, index);
+				}
+			}
+
+			polygonVertexIndices.push_back({ vertexIndices[0], vertexIndices[1], vertexIndices[2] });
+		}
+
+		for (const auto& vertexIndices : polygonVertexIndices) {
+			addPolygon(std::get<0>(vertexIndices), std::get<1>(vertexIndices), std::get<2>(vertexIndices));
+		}
+	} else {
+		// Since we compute normals independent of those provided
+		// by .obj files, a textureless model means vertex indices
+		// are our only consideration. We can simply loop over the
+		// ObjLoader vertices and set them on the Model, then loop
+		// over the faces and create polygons using their defined
+		// vertex indices.
+		for (int v = 0; v < obj.vertices.size(); v++) {
+			Vec3 vector = obj.vertices.at(v);
+
+			addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
+		}
+
+		for (int f = 0; f < obj.faces.size(); f++) {
+			const Face* face = &obj.faces.at(f);
+
+			int v1 = face->v1.indexes[0] - 1;
+			int v2 = face->v2.indexes[0] - 1;
+			int v3 = face->v3.indexes[0] - 1;
+
+			addPolygon(v1, v2, v3);
+		}
 	}
 }
 

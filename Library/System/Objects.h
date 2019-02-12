@@ -34,7 +34,9 @@ protected:
 	std::vector<Vertex3d> vertices;
 
 	void addPolygon(int v1, int v2, int v3);
+	void addVertex(const Vec3& vector);
 	void addVertex(const Vec3& vector, const Color& color);
+	void addVertex(const Vec3& vector, const Vec2& color);
 	void computeSurfaceNormals();
 
 private:
