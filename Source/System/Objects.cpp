@@ -146,9 +146,9 @@ Model::Model(const ObjLoader& obj) {
 		// coordinate, create and add a single vertex per unique tuple,
 		// and finally add our polygons once all vertices are set.
 
-		// Track unique vertex/texture coordinate pairs and their
-		// associated Object vertices
-		std::map<std::pair<int, int>, int> uniqueVertices;
+		// Track unique vertex/texture coordinate index pairs and their
+		// associated Object vertex index
+		std::map<std::pair<int, int>, int> uniqueVertexIndexMap;
 
 		// Track the vertices for each polygon, so we can create them
 		// after all vertices are defined
@@ -164,9 +164,9 @@ Model::Model(const ObjLoader& obj) {
 
 			for (int t = 0; t < 3; t++) {
 				std::pair<int, int>& pair = v_vt_pairs[t];
-				auto uniqueVertex = uniqueVertices.find(pair);
+				auto uniqueVertex = uniqueVertexIndexMap.find(pair);
 
-				if (uniqueVertex != uniqueVertices.end()) {
+				if (uniqueVertex != uniqueVertexIndexMap.end()) {
 					vertexIndices[t] = uniqueVertex->second;
 				} else {
 					const Vec3& vector = obj.vertices.at(v_vt_pairs[t].first);
@@ -177,7 +177,7 @@ Model::Model(const ObjLoader& obj) {
 					uv.y = 1 - uv.y;
 
 					addVertex(vector, uv);
-					uniqueVertices.emplace(pair, index);
+					uniqueVertexIndexMap.emplace(pair, index);
 				}
 			}
 

@@ -26,7 +26,7 @@ void Garden::load() {
 	for (int x = 0; x < 4; x++) {
 		Light* light = new Light();
 
-		light->setColor(255, 200, 150);
+		light->setColor(50, 100, 250);
 		light->position = { (float)(1000 - rand() % 2000), (float)(rand() % 200), (float)(3000 - rand() % 2000) };
 		light->spread = 300 + rand() % 700;
 
@@ -48,9 +48,9 @@ void Garden::load() {
 	settings.backgroundColor = { 10, 30, 50 };
 	settings.drawDistance = 2000;
 	settings.albedo = 0.1;
-	settings.ambientLightColor = { 0, 10, 40 };
+	settings.ambientLightColor = { 0, 10, 60 };
 	settings.ambientLightVector = { 0.5, -1, 0.5 };
-	settings.ambientLightFactor = 0.7;
+	settings.ambientLightFactor = 0.8;
 }
 
 void Garden::update(int dt, int runningTime) {
