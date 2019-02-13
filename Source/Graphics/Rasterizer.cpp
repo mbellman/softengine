@@ -122,9 +122,6 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 
 			scanline->textureIntensity.start = Vec3::lerp(corner.textureIntensity, left.textureIntensity, progress);
 			scanline->textureIntensity.end = Vec3::lerp(corner.textureIntensity, right.textureIntensity, progress);
-
-			scanline->visibility.start = Lerp::lerp(corner.visibility, left.visibility, progress);
-			scanline->visibility.end = Lerp::lerp(corner.visibility, right.visibility, progress);
 		} else {
 			scanline->color.start.R = Lerp::lerp(corner.color.R, left.color.R, progress);
 			scanline->color.start.G = Lerp::lerp(corner.color.G, left.color.G, progress);
@@ -286,6 +283,10 @@ void Rasterizer::setPixel(int x, int y, int depth) {
 	depthBuffer[index] = depth;
 }
 
+void Rasterizer::setVisibility(int visibility) {
+	this->visibility = visibility;
+}
+
 void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 	line(x1, y1, x2, y2);
 	line(x2, y2, x3, y3);
@@ -360,7 +361,6 @@ void Rasterizer::triangleScanline(Scanline* scanline) {
 		scanline->uv,
 		scanline->w,
 		scanline->textureIntensity,
-		scanline->visibility,
 		scanline->texture
 	);
 }
@@ -379,7 +379,6 @@ void Rasterizer::triangleScanline(
 	const Range<Vec2>& uv,
 	const Range<float>& w,
 	const Range<Vec3>& textureIntensity,
-	const Range<float>& visibility,
 	const TextureBuffer* texture
 ) {
 	int start = FAST_MAX(x1, 0);
@@ -460,11 +459,13 @@ void Rasterizer::triangleScanline(
 					float v = Lerp::lerp(uv.start.y, uv.end.y, progress) * i_w;
 					const Color& sample = texture->sample(u, v, getMipmapLevel(depth));
 
-					float vis = Lerp::lerp(visibility.start, visibility.end, progress);
+					float visibilityRatio = (float)depth / visibility;
 
-					int R = Lerp::lerp(backgroundColor.R, (int)(sample.R * intensity_R), vis);
-					int G = Lerp::lerp(backgroundColor.G, (int)(sample.G * intensity_G), vis);
-					int B = Lerp::lerp(backgroundColor.B, (int)(sample.B * intensity_B), vis);
+					if (visibilityRatio > 1.0f) visibilityRatio = 1.0f;
+
+					int R = Lerp::lerp((int)(sample.R * intensity_R), backgroundColor.R, visibilityRatio);
+					int G = Lerp::lerp((int)(sample.G * intensity_G), backgroundColor.G, visibilityRatio);
+					int B = Lerp::lerp((int)(sample.B * intensity_B), backgroundColor.B, visibilityRatio);
 
 					currentColor = ARGB(FAST_CLAMP(R, 0, 255), FAST_CLAMP(G, 0, 255), FAST_CLAMP(B, 0, 255));
 					textureSampleIntervalCounter = 0;

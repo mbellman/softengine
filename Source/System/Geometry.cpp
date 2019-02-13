@@ -17,7 +17,6 @@ Vertex2d Vertex2d::lerp(const Vertex2d& v1, const Vertex2d& v2, float r) {
 	vertex.uv = Vec2::lerp(v1.uv, v2.uv, r);
 	vertex.w = Lerp::lerp(v1.w, v2.w, r);
 	vertex.textureIntensity = Vec3::lerp(v1.textureIntensity, v2.textureIntensity, r);
-	vertex.visibility = Lerp::lerp(v1.visibility, v2.visibility, r);
 
 	return vertex;
 }

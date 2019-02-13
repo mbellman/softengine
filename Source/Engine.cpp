@@ -145,7 +145,7 @@ void Engine::drawScene() {
 
 				if (t_verts[i].vector.z < Engine::NEAR_Z) {
 					frustumCuller.near++;
-				} else if (t_verts[i].vector.z > activeLevel->getSettings().drawDistance) {
+				} else if (t_verts[i].vector.z > activeLevel->getSettings().visibility) {
 					frustumCuller.far++;
 				}
 
@@ -390,11 +390,10 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 			}
 		}
 
-		float drawDistanceRatio = FAST_CLAMP((float)screenVertex->depth / settings.drawDistance, 0.0f, 1.0f);
+		float visibilityRatio = FAST_MIN((float)screenVertex->depth / settings.visibility, 1.0f);
 
 		screenVertex->color += aggregateLightColor;
-		screenVertex->color = Color::lerp(screenVertex->color, settings.backgroundColor, drawDistanceRatio);
-		screenVertex->visibility = (1.0f - drawDistanceRatio);
+		screenVertex->color = Color::lerp(screenVertex->color, settings.backgroundColor, visibilityRatio);
 	}
 }
 
@@ -489,9 +488,12 @@ void Engine::setActiveLevel(Level* level) {
 }
 
 void Engine::update() {
+	const Settings& settings = activeLevel->getSettings();
+
 	updateMovement();
 
-	rasterizer->setBackgroundColor(activeLevel->getSettings().backgroundColor);
+	rasterizer->setBackgroundColor(settings.backgroundColor);
+	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
 
 	totalDrawnTriangles = 0;

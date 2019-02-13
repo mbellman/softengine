@@ -25,6 +25,7 @@ public:
 	void setDrawColor(int R, int G, int B);
 	void setDrawColor(const Color& color);
 	void setDrawColor(Uint32 color);
+	void setVisibility(int visibility);
 	void triangle(int x1, int y1, int x2, int y2, int x3, int y3);
 	void triangle(Triangle& triangle);
 
@@ -38,7 +39,6 @@ private:
 		Range<Vec2> uv;
 		Range<float> w;
 		Range<Vec3> textureIntensity;
-		Range<float> visibility;
 		const TextureBuffer* texture;
 	};
 
@@ -51,6 +51,7 @@ private:
 	constexpr static int MIN_COLOR_LERP_INTERVAL = 2;
 	constexpr static int MAX_TEXTURE_SAMPLE_INTERVAL = 4;
 	constexpr static int MAX_THREADS = 8;
+	constexpr static int MAX_DEPTH = INT_MAX;
 
 	Scanline* scanlines;
 	ScanlineThreadManager* scanlineThreadManagers;
@@ -58,9 +59,10 @@ private:
 	std::vector<SDL_Thread*> scanlineThreads;
 	bool isDone = false;
 
+	Uint32 flags = 0;
 	Color backgroundColor = { 0, 0, 0 };
 	Uint32 drawColor = ARGB(255, 255, 255);
-	Uint32 flags = 0;
+	int visibility = Rasterizer::MAX_DEPTH;
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
 	int* depthBuffer;
@@ -83,7 +85,6 @@ private:
 		const Range<Vec2>& uv,
 		const Range<float>& w,
 		const Range<Vec3>& textureIntensity,
-		const Range<float>& visibility,
 		const TextureBuffer* texture
 	);
 

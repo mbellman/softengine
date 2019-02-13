@@ -91,7 +91,7 @@ void LightTest::load() {
 	add(light3);
 	add(light4);
 
-	settings.drawDistance = 4000;
+	settings.visibility = 4000;
 	settings.brightness = 0.1;
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0, -0.5, 1 };

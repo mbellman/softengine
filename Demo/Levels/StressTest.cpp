@@ -41,7 +41,7 @@ void StressTest::load() {
 		add(light);
 	}
 
-	settings.drawDistance = 6000;
+	settings.visibility = 6000;
 	settings.brightness = 0.2;
 	settings.ambientLightColor = { 0, 100, 0 };
 	settings.ambientLightVector = { 0, -1, 1 };
