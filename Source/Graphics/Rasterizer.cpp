@@ -173,7 +173,7 @@ int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int l
 }
 
 inline int Rasterizer::getMipmapLevel(int depth) {
-	return (flags & DISABLE_MIPMAPPING) ? 0 : (int)(depth / 1250.0f);
+	return (flags & DISABLE_MIPMAPPING) ? 0 : (int)(depth / 1000.0f);
 }
 
 int Rasterizer::getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth) {

@@ -53,7 +53,7 @@ TextureBuffer::~TextureBuffer() {
 	}
 }
 
-void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
+void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode, bool shouldUseMipmaps) {
 	if (!isConfirmed) {
 		isConfirmed = true;
 
@@ -85,13 +85,15 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 
 			mipmaps.push_back(colorBuffer);
 
-			int totalMipMaps = getTotalMipmaps(std::min(width, height));
-			ColorBuffer* mipmap = colorBuffer;
+			if (shouldUseMipmaps) {
+				int totalMipMaps = getTotalMipmaps(std::min(width, height));
+				ColorBuffer* mipmap = colorBuffer;
 
-			for (int i = 0; i < totalMipMaps; i++) {
-				mipmap = mipmap->createDownsizedBuffer();
+				for (int i = 0; i < totalMipMaps; i++) {
+					mipmap = mipmap->createDownsizedBuffer();
 
-				mipmaps.push_back(mipmap);
+					mipmaps.push_back(mipmap);
+				}
 			}
 		}
 

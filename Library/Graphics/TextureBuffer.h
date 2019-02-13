@@ -26,7 +26,7 @@ struct TextureBuffer {
 	TextureBuffer(const char* file);
 	~TextureBuffer();
 
-	void confirmTexture(SDL_Renderer* renderer, TextureMode mode);
+	void confirmTexture(SDL_Renderer* renderer, TextureMode mode, bool shouldUseMipmaps);
 	const Color& sample(float u, float v, int level) const;
 
 private:

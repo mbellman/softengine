@@ -122,7 +122,7 @@ void Engine::drawScene() {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 
 		if (object->texture != NULL) {
-			object->texture->confirmTexture(renderer, TextureMode::SOFTWARE);
+			object->texture->confirmTexture(renderer, TextureMode::SOFTWARE, ~flags & DISABLE_MIPMAPPING);
 		}
 
 		for (const auto& polygon : object->getPolygons()) {
