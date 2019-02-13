@@ -2,6 +2,8 @@
 
 #include <SDL.h>
 #include <Graphics/Color.h>
+#include <Graphics/ColorBuffer.h>
+#include <vector>
 
 /**
  * TextureMode
@@ -25,13 +27,13 @@ struct TextureBuffer {
 	~TextureBuffer();
 
 	void confirmTexture(SDL_Renderer* renderer, TextureMode mode);
-	const Color& sample(float u, float v) const;
+	const Color& sample(float u, float v, int level) const;
 
 private:
 	constexpr static Color BLACK = { 0, 0, 0 };
 	bool isConfirmed = false;
 	const char* file;
-	Color* pixels = NULL;
+	std::vector<const ColorBuffer*> mipmaps;
 	SDL_Texture* texture = NULL;
 
 	void savePixel(SDL_Surface* surface, int index);

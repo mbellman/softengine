@@ -44,11 +44,13 @@ set(SOURCE_FILES
 
     # -- Header files --
     Library/Graphics/Color.h
+    Library/Graphics/ColorBuffer.h
     Library/Graphics/Rasterizer.h
     Library/Graphics/RasterQueue.h
     Library/Graphics/TextureBuffer.h
     Library/Loaders/Loader.h
     Library/Loaders/ObjLoader.h
+    Library/System/Flags.h
     Library/System/Geometry.h
     Library/System/Level.h
     Library/System/Math.h
@@ -61,6 +63,7 @@ set(SOURCE_FILES
 
     # -- CPP Files --
     Source/Graphics/Color.cpp
+    Source/Graphics/ColorBuffer.cpp
     Source/Graphics/Rasterizer.cpp
     Source/Graphics/RasterQueue.cpp
     Source/Graphics/TextureBuffer.cpp

@@ -14,7 +14,7 @@
  */
 class Rasterizer {
 public:
-	Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldAllowMultithreading);
+	Rasterizer(SDL_Renderer* renderer, int width, int height, Uint32 flags = 0);
 	~Rasterizer();
 
 	void clear();
@@ -60,6 +60,7 @@ private:
 
 	Color backgroundColor = { 0, 0, 0 };
 	Uint32 drawColor = ARGB(255, 255, 255);
+	Uint32 flags = 0;
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
 	int* depthBuffer;
@@ -72,6 +73,7 @@ private:
 	void flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight, const TextureBuffer* texture);
 	void flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture);
 	int getColorLerpInterval(const Color& start, const Color& end, int lineLength);
+	inline int getMipmapLevel(int depth);
 	int getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth);
 
 	void triangleScanline(

@@ -44,7 +44,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	int rasterHeight = hasPixelFilter ? height / 2 : height;
 
 	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
-	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, ~flags & DISABLE_MULTITHREADING);
+	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
 	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
 

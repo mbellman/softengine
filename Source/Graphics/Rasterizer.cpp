@@ -7,6 +7,7 @@
 #include <Graphics/TextureBuffer.h>
 #include <System/Geometry.h>
 #include <System/Objects.h>
+#include <System/Flags.h>
 
 using namespace std;
 
@@ -14,9 +15,10 @@ using namespace std;
  * Rasterizer
  * ----------
  */
-Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, bool shouldAllowMultithreading) {
+Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, Uint32 flags) {
 	this->width = width;
 	this->height = height;
+	this->flags = flags;
 
 	screenTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
 	pixelBuffer = new Uint32[width * height];
@@ -25,7 +27,7 @@ Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, bool shoul
 
 	clear();
 
-	if (shouldAllowMultithreading) {
+	if (~flags & DISABLE_MULTITHREADING) {
 		createScanlineThreads();
 	}
 }
@@ -168,6 +170,10 @@ int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int l
 	float colorDelta = (r_delta + g_delta + b_delta) / 3;
 
 	return colorDelta > 0 ? FAST_MAX(Rasterizer::MIN_COLOR_LERP_INTERVAL, (int)(lineLength / colorDelta)) : lineLength;
+}
+
+inline int Rasterizer::getMipmapLevel(int depth) {
+	return (flags & DISABLE_MIPMAPPING) ? 0 : (int)(depth / 1250.0f);
 }
 
 int Rasterizer::getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth) {
@@ -452,7 +458,7 @@ void Rasterizer::triangleScanline(
 					float i_w = 1 / Lerp::lerp(w.start, w.end, progress);
 					float u = Lerp::lerp(uv.start.x, uv.end.x, progress) * i_w;
 					float v = Lerp::lerp(uv.start.y, uv.end.y, progress) * i_w;
-					const Color& sample = texture->sample(u, v);
+					const Color& sample = texture->sample(u, v, getMipmapLevel(depth));
 
 					float vis = Lerp::lerp(visibility.start, visibility.end, progress);
 
