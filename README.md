@@ -10,6 +10,15 @@ A software 3D rendering engine, written as an educational exercise.
 * Ambient/atmospheric effects (rain, snow, fog)
 * OpenGL/hardware mode
 
+**Pending optimizations:**
+
+* Reuse unit vectors for triangle projection
+* Cache ambient light color ratios
+* Staggered perspective-correct/linear UV interpolation
+* Texture sampling distance cleanup
+* Mipmapping
+* Separate out scanline strategies
+
 **Maybe:**
 
 * Dynamic shadows
