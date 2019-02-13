@@ -38,7 +38,7 @@ void LightTest::load() {
 	add(rightWall);
 
 	Model* icosahedron = new Model(icoObj);
-	icosahedron->position = { 0, 150, 500 };
+	icosahedron->position = { 0, 250, 500 };
 	icosahedron->scale(100);
 
 	add(icosahedron);
@@ -67,23 +67,23 @@ void LightTest::load() {
 	add(cube3);
 
 	Light* light = new Light();
-	light->position = { 0, 250, 500 };
-	light->color = { 255, 220, 50 };
+	light->position = { 0, 300, 500 };
+	light->setColor(255, 220, 50);
 	light->spread = 1000;
 
 	Light* light2 = new Light();
 	light2->position = { 200, 200, 1500 };
-	light2->color = { 255, 0, 0 };
+	light2->setColor(255, 0, 0);
 	light2->spread = 700;
 
 	Light* light3 = new Light();
 	light3->position = { -200, 150, 2200 };
-	light3->color = { 0, 0, 255 };
+	light3->setColor(0, 0, 255);
 	light3->spread = 600;
 
 	Light* light4 = new Light();
 	light4->position = { 300, 150, 2900 };
-	light4->color = { 0, 255, 0 };
+	light4->setColor(0, 255, 0);
 	light4->spread = 800;
 
 	add("yellowLight", light);
@@ -92,14 +92,14 @@ void LightTest::load() {
 	add(light4);
 
 	settings.drawDistance = 4000;
-	settings.albedo = 0.1;
+	settings.brightness = 0.1;
 	settings.ambientLightColor = { 0, 0, 255 };
-	settings.ambientLightFactor = 0.1;
 	settings.ambientLightVector = { 0, -0.5, 1 };
+	settings.ambientLightFactor = 0.1;
 }
 
 void LightTest::update(int dt, int runningTime) {
 	Light* light = (Light*)getObject("yellowLight");
 
-	light->power = 1 + cosf(runningTime / 500.0f);
+	light->power = 0.5f + 0.5 * cosf(runningTime / 500.0f);
 }

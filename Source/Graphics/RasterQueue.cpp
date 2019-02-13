@@ -8,8 +8,8 @@
  * -----------
  */
 RasterQueue::RasterQueue(int width, int height) {
-	this->rasterWidth = width;
-	this->rasterHeight = height;
+	rasterWidth = width;
+	rasterHeight = height;
 }
 
 void RasterQueue::addCover(const Triangle& triangle, int zone) {
@@ -110,7 +110,25 @@ bool RasterQueue::isTriangleOccluded(const Triangle& triangle, const Cover& cove
 	return true;
 }
 
+bool RasterQueue::isTriangleOnScreen(const Triangle& triangle) {
+	const Coordinate& c0 = triangle.vertices[0].coordinate;
+	const Coordinate& c1 = triangle.vertices[1].coordinate;
+	const Coordinate& c2 = triangle.vertices[2].coordinate;
+
+	int minX = std::min(c0.x, std::min(c1.x, c2.x));
+	int maxX = std::max(c0.x, std::max(c1.x, c2.x));
+
+	int minY = std::min(c0.y, std::min(c1.y, c2.y));
+	int maxY = std::max(c0.y, std::max(c1.y, c2.y));
+
+	return (minX < rasterWidth) && (maxX > 0) && (minY < rasterHeight) && (maxY > 0);
+}
+
 bool RasterQueue::isTriangleVisible(const Triangle& triangle) {
+	if (!isTriangleOnScreen(triangle)) {
+		return false;
+	}
+
 	for (const auto &cover : covers) {
 		if (cover.zone < currentZoneIndex && isTriangleOccluded(triangle, cover)) {
 			return false;

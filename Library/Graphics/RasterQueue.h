@@ -59,6 +59,7 @@ private:
 	bool isTriangleCoverable(const Triangle& triangle);
 	bool isTriangleNearby(const Triangle& triangle, const Cover& cover);
 	bool isTriangleOccluded(const Triangle& triangle, const Cover& cover);
+	bool isTriangleOnScreen(const Triangle& triangle);
 	bool isTriangleVisible(const Triangle& triangle);
 	void reset();
 };

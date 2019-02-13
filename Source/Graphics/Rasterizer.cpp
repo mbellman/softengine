@@ -66,10 +66,11 @@ void Rasterizer::createScanlineThreads() {
 
 void Rasterizer::clear() {
 	int bufferLength = width * height;
+	Uint32 clearColor = ARGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
 
 	totalBufferedScanlines = 0;
 
-	fill(pixelBuffer, pixelBuffer + bufferLength, backgroundColor);
+	fill(pixelBuffer, pixelBuffer + bufferLength, clearColor);
 	fill(depthBuffer, depthBuffer + bufferLength, INT_MAX);
 }
 
@@ -108,14 +109,6 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 		scanline->depth.start = Lerp::lerp(corner.depth, left.depth, progress);
 		scanline->depth.end = Lerp::lerp(corner.depth, right.depth, progress);
 
-		scanline->color.start.R = Lerp::lerp(corner.color.R, left.color.R, progress);
-		scanline->color.start.G = Lerp::lerp(corner.color.G, left.color.G, progress);
-		scanline->color.start.B = Lerp::lerp(corner.color.B, left.color.B, progress);
-
-		scanline->color.end.R = Lerp::lerp(corner.color.R, right.color.R, progress);
-		scanline->color.end.G = Lerp::lerp(corner.color.G, right.color.G, progress);
-		scanline->color.end.B = Lerp::lerp(corner.color.B, right.color.B, progress);
-
 		scanline->texture = texture;
 
 		if (texture != NULL) {
@@ -125,11 +118,19 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 			scanline->w.start = Lerp::lerp(corner.w, left.w, progress);
 			scanline->w.end = Lerp::lerp(corner.w, right.w, progress);
 
-			scanline->textureLuminosity.start = Lerp::lerp(corner.textureLuminosity, left.textureLuminosity, progress);
-			scanline->textureLuminosity.end = Lerp::lerp(corner.textureLuminosity, right.textureLuminosity, progress);
+			scanline->textureIntensity.start = Vec3::lerp(corner.textureIntensity, left.textureIntensity, progress);
+			scanline->textureIntensity.end = Vec3::lerp(corner.textureIntensity, right.textureIntensity, progress);
 
 			scanline->visibility.start = Lerp::lerp(corner.visibility, left.visibility, progress);
 			scanline->visibility.end = Lerp::lerp(corner.visibility, right.visibility, progress);
+		} else {
+			scanline->color.start.R = Lerp::lerp(corner.color.R, left.color.R, progress);
+			scanline->color.start.G = Lerp::lerp(corner.color.G, left.color.G, progress);
+			scanline->color.start.B = Lerp::lerp(corner.color.B, left.color.B, progress);
+
+			scanline->color.end.R = Lerp::lerp(corner.color.R, right.color.R, progress);
+			scanline->color.end.G = Lerp::lerp(corner.color.G, right.color.G, progress);
+			scanline->color.end.B = Lerp::lerp(corner.color.B, right.color.B, progress);
 		}
 	}
 }
@@ -255,7 +256,9 @@ void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 }
 
 void Rasterizer::setBackgroundColor(const Color& color) {
-	backgroundColor = ARGB(color.R, color.G, color.B);
+	backgroundColor.R = color.R;
+	backgroundColor.G = color.G;
+	backgroundColor.B = color.B;
 }
 
 void Rasterizer::setDrawColor(Uint32 color) {
@@ -350,7 +353,7 @@ void Rasterizer::triangleScanline(Scanline* scanline) {
 		scanline->depth,
 		scanline->uv,
 		scanline->w,
-		scanline->textureLuminosity,
+		scanline->textureIntensity,
 		scanline->visibility,
 		scanline->texture
 	);
@@ -369,7 +372,7 @@ void Rasterizer::triangleScanline(
 	const Range<int>& depth,
 	const Range<Vec2>& uv,
 	const Range<float>& w,
-	const Range<float>& textureLuminosity,
+	const Range<Vec3>& textureIntensity,
 	const Range<float>& visibility,
 	const TextureBuffer* texture
 ) {
@@ -429,10 +432,6 @@ void Rasterizer::triangleScanline(
 	} else {
 		Uint32 currentColor = 0;
 
-		int surface_R = color.start.R;
-		int surface_G = color.start.G;
-		int surface_B = color.start.B;
-
 		int textureSampleInterval = getTextureSampleInterval(texture, length, uv.start, uv.end, depth.start, depth.end);
 		int textureSampleIntervalCounter = textureSampleInterval;
 
@@ -443,32 +442,23 @@ void Rasterizer::triangleScanline(
 			f_depth += depthStep;
 
 			if (depthBuffer[index] > depth) {
-				float progress = (float)(x - x1) / length;
-
-				if (++colorLerpIntervalCounter > colorLerpInterval) {
-					surface_R = Lerp::lerp(color.start.R, color.end.R, progress);
-					surface_G = Lerp::lerp(color.start.G, color.end.G, progress);
-					surface_B = Lerp::lerp(color.start.B, color.end.B, progress);
-
-					colorLerpIntervalCounter = 0;
-				}
-
 				if (++textureSampleIntervalCounter > textureSampleInterval) {
-					float t_l = Lerp::lerp(textureLuminosity.start, textureLuminosity.end, progress);
-					float vis = Lerp::lerp(visibility.start, visibility.end, progress);
+					float progress = (float)(x - x1) / length;
+
+					float intensity_R = Lerp::lerp(textureIntensity.start.x, textureIntensity.end.x, progress);
+					float intensity_G = Lerp::lerp(textureIntensity.start.y, textureIntensity.end.y, progress);
+					float intensity_B = Lerp::lerp(textureIntensity.start.z, textureIntensity.end.z, progress);
 
 					float i_w = 1 / Lerp::lerp(w.start, w.end, progress);
 					float u = Lerp::lerp(uv.start.x, uv.end.x, progress) * i_w;
 					float v = Lerp::lerp(uv.start.y, uv.end.y, progress) * i_w;
 					const Color& sample = texture->sample(u, v);
 
-					int tex_R = (int)((sample.R - (1.0f - t_l) * 200.0f) * vis);
-					int tex_G = (int)((sample.G - (1.0f - t_l) * 180.0f) * vis);
-					int tex_B = (int)((sample.B - (1.0f - t_l) * 150.0f) * vis);
+					float vis = Lerp::lerp(visibility.start, visibility.end, progress);
 
-					int R = tex_R + surface_R;
-					int G = tex_G + surface_G;
-					int B = tex_B + surface_B;
+					int R = Lerp::lerp(backgroundColor.R, (int)(sample.R * intensity_R), vis);
+					int G = Lerp::lerp(backgroundColor.G, (int)(sample.G * intensity_G), vis);
+					int B = Lerp::lerp(backgroundColor.B, (int)(sample.B * intensity_B), vis);
 
 					currentColor = ARGB(FAST_CLAMP(R, 0, 255), FAST_CLAMP(G, 0, 255), FAST_CLAMP(B, 0, 255));
 					textureSampleIntervalCounter = 0;

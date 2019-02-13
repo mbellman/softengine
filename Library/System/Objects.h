@@ -86,14 +86,17 @@ private:
  * -----
  */
 struct Light : Object {
-	Color color = { 255, 255, 255 };
-	float power = 1;
+	float power = 1.0f;
+	bool disabled = false;
 	float spread = 500;
 
 	static bool isLight(Object* object);
-	void flip();
-	void on();
-	void off();
+	const Color& getColor() const;
+	const Vec3& getColorRatios() const;
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
+
+private:
+	Color color = { 255, 255, 255 };
+	Vec3 cachedColorRatios = { 1.0f, 1.0f, 1.0f };
 };

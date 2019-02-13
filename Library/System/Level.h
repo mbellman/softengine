@@ -15,8 +15,8 @@ struct Settings {
 	Color backgroundColor = { 0, 0, 0 };
 	Color ambientLightColor = { 0, 0, 0 };
 	Vec3 ambientLightVector = { 0, -1, 0 };
-	float ambientLightFactor = 1;
-	float albedo = 1;
+	float ambientLightFactor = 0.0f;
+	float brightness = 1;
 	float drawDistance = INT_MAX;
 };
 

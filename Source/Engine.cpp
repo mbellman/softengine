@@ -11,6 +11,7 @@
 #include <Helpers.h>
 #include <System/Quaternion.h>
 #include <System/Objects.h>
+#include <System/Geometry.h>
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
@@ -110,8 +111,8 @@ void Engine::drawTriangle(Triangle& triangle) {
 
 void Engine::drawScene() {
 	bool hasPixelFilter = flags & PIXEL_FILTER;
+	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
-	int fovScalar = (int)((hasPixelFilter ? 250 : 500) * (180 / camera.fov));
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 
 	Vertex3d t_verts[3];
@@ -211,20 +212,20 @@ void Engine::drawScene() {
 					projectTriangle(
 						{ quadVerts[0], quadVerts[1], quadVerts[2] },
 						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
-						polygon.normal, object->texture, fovScalar
+						polygon.normal, object->texture, projectionScale
 					);
 
 					projectTriangle(
 						{ quadVerts[0], quadVerts[2], quadVerts[3] },
 						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
-						polygon.normal, object->texture, fovScalar
+						polygon.normal, object->texture, projectionScale
 					);
 
 					continue;
 				}
 			}
 
-			projectTriangle(t_verts, w_vecs, polygon.normal, object->texture, fovScalar);
+			projectTriangle(t_verts, w_vecs, polygon.normal, object->texture, projectionScale);
 		}
 	}
 
@@ -312,15 +313,18 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 
 void Engine::illuminateTriangle(Triangle& triangle) {
 	const Settings& settings = activeLevel->getSettings();
+	bool hasTexture = triangle.texture != NULL;
 
-	// Each vertex is individually illuminated so we can determine
-	// the proper interpolated colors to shade the triangle with.
 	for (int i = 0; i < 3; i++) {
 		Color aggregateLightColor = { 0, 0, 0 };
-		Vec3 worldVertex = triangle.vertices[i].worldVector;
+		Vec3 worldVector = triangle.vertices[i].worldVector;
 		Vertex2d* screenVertex = &triangle.vertices[i];
 
-		screenVertex->textureLuminosity = settings.albedo * settings.ambientLightFactor;
+		if (hasTexture) {
+			screenVertex->textureIntensity *= settings.brightness;
+		} else {
+			screenVertex->color *= settings.brightness;
+		}
 
 		// Ambient lighting is a special distance-invariant case
 		if (settings.ambientLightFactor > 0) {
@@ -328,36 +332,61 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 
 			if (dot < 0) {
 				float incidence = cosf((1 + dot) * M_PI / 2);
+				float intensity = incidence * settings.ambientLightFactor;
 
-				aggregateLightColor += settings.ambientLightColor * (incidence * settings.ambientLightFactor);
+				if (hasTexture) {
+					if (settings.brightness > 0) {
+						const Vec3& colorRatios = settings.ambientLightColor.ratios();
+
+						screenVertex->textureIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
+						screenVertex->textureIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
+						screenVertex->textureIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+					}
+				} else {
+					float intensityMultiplier = settings.brightness > 0 ? (1.0f + intensity / settings.brightness) : 1.0f;
+
+					aggregateLightColor += settings.ambientLightColor * intensity;
+				}
 			}
 		}
 
 		for (const auto* light : activeLevel->getLights()) {
 			if (
-				abs(light->position.x - worldVertex.x) > light->spread ||
-				abs(light->position.y - worldVertex.y) > light->spread ||
-				abs(light->position.z - worldVertex.z) > light->spread ||
-				light->power == 0
+				light->disabled ||
+				light->power == 0 ||
+				abs(light->position.x - worldVector.x) > light->spread ||
+				abs(light->position.y - worldVector.y) > light->spread ||
+				abs(light->position.z - worldVector.z) > light->spread
 			) {
-				// If the light source is further away along any axis than
-				// its range (or it has no power), we can ignore it.
 				continue;
 			}
 
-			Vec3 lightVector = worldVertex - light->position;
+			Vec3 lightVector = worldVector - light->position;
 			float lightDistance = lightVector.magnitude();
 
 			if (lightDistance < light->spread) {
 				float dot = Vec3::dotProduct(triangle.normal, lightVector.unit());
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float intensity = pow(1.0f - lightDistance / light->spread, 2);
-				float luminosity = light->power * incidence * intensity;
-				float luminosityScalar = settings.albedo > 0 ? (1.0f + luminosity / settings.albedo) : 1.0f;
 
-				aggregateLightColor += light->color * luminosity;
-				screenVertex->textureLuminosity *= luminosityScalar;
-				screenVertex->color *= luminosityScalar;
+				if (dot < 0) {
+					float incidence = cosf((1 + dot) * M_PI / 2);
+					float illuminance = pow(1.0f - lightDistance / light->spread, 2);
+					float intensity = light->power * incidence * illuminance;
+
+					if (hasTexture) {
+						if (settings.brightness > 0) {
+							const Vec3& colorRatios = light->getColorRatios();
+
+							screenVertex->textureIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
+							screenVertex->textureIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
+							screenVertex->textureIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+						}
+					} else {
+						float intensityMultiplier = settings.brightness > 0 ? (1.0f + intensity / settings.brightness) : 1.0f;
+
+						aggregateLightColor += light->getColor() * intensity;
+						screenVertex->color *= intensityMultiplier;
+					}
+				}
 			}
 		}
 
@@ -369,7 +398,7 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 	}
 }
 
-void Engine::projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVecs)[3], const Vec3& normal, const TextureBuffer* texture, int scale) {
+void Engine::projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVecs)[3], const Vec3& normal, const TextureBuffer* texture, float scale) {
 	Triangle triangle;
 	triangle.normal = normal;
 
@@ -388,7 +417,7 @@ void Engine::projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVe
 		vertex.coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
 		vertex.w = 1.0f / vector.z;
 		vertex.depth = (int)vector.z;
-		vertex.color = vertex3d.color * activeLevel->getSettings().albedo;
+		vertex.color = vertex3d.color;
 		vertex.uv = vertex3d.uv / vector.z;
 		vertex.worldVector = worldVecs[i];
 

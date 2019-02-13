@@ -12,6 +12,7 @@ void Garden::load() {
 	ObjLoader teapotObj("./DemoAssets/teapot.obj");
 
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
+	add("ground-texture", new TextureBuffer("./DemoAssets/ground-texture.png"));
 
 	for (int i = 0; i < 15; i++) {
 		Model* tree = new Model(treeObj);
@@ -23,14 +24,21 @@ void Garden::load() {
 		add(tree);
 	}
 
-	for (int x = 0; x < 4; x++) {
+	for (int x = 0; x < 6; x++) {
 		Light* light = new Light();
+		Cube* cube = new Cube(10);
+		cube->setColor(255, 255, 255);
 
-		light->setColor(50, 100, 250);
+		light->setColor(255, 100, 0);
 		light->position = { (float)(1000 - rand() % 2000), (float)(rand() % 200), (float)(3000 - rand() % 2000) };
 		light->spread = 300 + rand() % 700;
 
+		cube->position.x = light->position.x;
+		cube->position.y = light->position.y;
+		cube->position.z = light->position.z;
+
 		add(light);
+		add(cube);
 	}
 
 	Model* teapot = new Model(teapotObj);
@@ -43,13 +51,15 @@ void Garden::load() {
 	Mesh* mesh = new Mesh(50, 50, 100);
 	mesh->setColor(10, 5, 0);
 	mesh->position = { -2500, -40, 0 };
+	mesh->setTexture(getTexture("ground-texture"));
+	mesh->setTextureInterval(5, 5);
 	add(mesh);
 
-	settings.backgroundColor = { 10, 30, 50 };
+	settings.backgroundColor = { 0, 0, 0 };
 	settings.drawDistance = 2000;
-	settings.albedo = 0.1;
-	settings.ambientLightColor = { 0, 10, 60 };
-	settings.ambientLightVector = { 0.5, -1, 0.5 };
+	settings.brightness = 0.1;
+	settings.ambientLightColor = { 0, 0, 255 };
+	settings.ambientLightVector = { 0, -0.1, 1 };
 	settings.ambientLightFactor = 0.8;
 }
 

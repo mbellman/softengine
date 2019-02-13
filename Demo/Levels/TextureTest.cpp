@@ -31,10 +31,10 @@ void TextureTest::load() {
 	}
 
 	settings.backgroundColor = { 0, 0, 50 };
-	settings.albedo = 0.2;
+	settings.brightness = 0.2;
 	settings.ambientLightColor = { 0, 0, 255 };
-	settings.ambientLightFactor = 0.7;
 	settings.ambientLightVector = { 0.5, -1, 0.3 };
+	settings.ambientLightFactor = 0.7;
 	settings.drawDistance = 2500;
 }
 

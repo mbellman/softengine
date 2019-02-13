@@ -82,6 +82,12 @@ Vec3::Vec3(float x, float y, float z) {
 	this->z = z;
 }
 
+void Vec3::clamp(float low, float high) {
+	x = FAST_CLAMP(x, low, high);
+	y = FAST_CLAMP(y, low, high);
+	z = FAST_CLAMP(z, low, high);
+}
+
 Vec3 Vec3::crossProduct(const Vec3& v1, const Vec3& v2) {
 	return {
 		v1.y * v2.z - v1.z * v2.y,
@@ -138,4 +144,20 @@ Vec3 Vec3::operator -(const Vec3& vector) const {
 		y - vector.y,
 		z - vector.z
 	};
+}
+
+Vec3 Vec3::operator *(float scalar) const {
+	return {
+		x * scalar,
+		y * scalar,
+		z * scalar
+	};
+}
+
+Vec3 Vec3::operator *=(float scalar) {
+	x *= scalar;
+	y *= scalar;
+	z *= scalar;
+
+	return *this;
 }

@@ -1,12 +1,17 @@
 #include <Graphics/Color.h>
+#include <System/Math.h>
 #include <Helpers.h>
 
 /**
  * Color
  * -----
  */
-int Color::normalize(int component) {
-	return FAST_CLAMP(component, 0, 255);
+Vec3 Color::ratios() const {
+	return {
+		(float)R / 255.0f,
+		(float)G / 255.0f,
+		(float)B / 255.0f
+	};
 }
 
 Color Color::lerp(const Color& c1, const Color& c2, float r) {
@@ -15,6 +20,10 @@ Color Color::lerp(const Color& c1, const Color& c2, float r) {
 		Lerp::lerp(c1.G, c2.G, r),
 		Lerp::lerp(c1.B, c2.B, r)
 	};
+}
+
+int Color::normalize(int component) {
+	return FAST_CLAMP(component, 0, 255);
 }
 
 Color Color::operator +(int illumination) const {

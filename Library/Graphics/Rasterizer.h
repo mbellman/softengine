@@ -37,7 +37,7 @@ private:
 		Range<int> depth;
 		Range<Vec2> uv;
 		Range<float> w;
-		Range<float> textureLuminosity;
+		Range<Vec3> textureIntensity;
 		Range<float> visibility;
 		const TextureBuffer* texture;
 	};
@@ -58,7 +58,7 @@ private:
 	std::vector<SDL_Thread*> scanlineThreads;
 	bool isDone = false;
 
-	Uint32 backgroundColor = 0;
+	Color backgroundColor = { 0, 0, 0 };
 	Uint32 drawColor = ARGB(255, 255, 255);
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
@@ -80,7 +80,7 @@ private:
 		const Range<int>& depth,
 		const Range<Vec2>& uv,
 		const Range<float>& w,
-		const Range<float>& textureLuminosity,
+		const Range<Vec3>& textureIntensity,
 		const Range<float>& visibility,
 		const TextureBuffer* texture
 	);

@@ -13,7 +13,7 @@ struct Vertex2d : Colorable {
 	int depth;
 	float w;
 	Vec2 uv;
-	float textureLuminosity;
+	Vec3 textureIntensity = { 1.0f, 1.0f, 1.0f };
 	float visibility;
 	Vec3 worldVector;
 

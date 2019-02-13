@@ -27,7 +27,7 @@ void Default::load() {
 	ObjLoader icosahedronObj("./DemoAssets/da-vinci.obj");
 	Model* icosahedron = new Model(icosahedronObj);
 
-	icosahedron->position = { 0, 50, 2000 };
+	icosahedron->position = { 0, 220, 2000 };
 	icosahedron->scale(200);
 
 	add(mesh);
@@ -38,14 +38,14 @@ void Default::load() {
 	add("oscillatingCube", oscillatingCube);
 
 	Light* light = new Light();
-	light->color = { 0, 0, 255 };
+	light->setColor(0, 0, 255);
 	light->position = { 0, 100, 2000 };
 	light->spread = 1000;
 
 	add("light", light);
 
 	settings.backgroundColor = { 25, 0, 50 };
-	settings.albedo = 0.2;
+	settings.brightness = 0.2;
 	settings.ambientLightColor = { 255, 0, 100 };
 	settings.ambientLightVector = { 0, -1, 1 };
 	settings.ambientLightFactor = 0.3;

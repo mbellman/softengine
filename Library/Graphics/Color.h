@@ -1,5 +1,7 @@
 #pragma once
 
+#include <System/Math.h>
+
 /**
  * Color
  * -----
@@ -10,6 +12,7 @@ struct Color {
 	int B = 255;
 
 	static Color lerp(const Color& c1, const Color& c2, float r);
+	Vec3 ratios() const;
 	Color operator +(int attenuation) const;
 	Color operator +(const Color& color) const;
 	Color operator +=(const Color& color);

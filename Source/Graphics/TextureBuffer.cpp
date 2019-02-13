@@ -3,6 +3,7 @@
 #include <SDL_image.h>
 #include <Graphics/Color.h>
 #include <Helpers.h>
+#include <stdio.h>
 
 /**
  * TextureBuffer
@@ -64,7 +65,7 @@ const Color& TextureBuffer::sample(float u, float v) const {
 	if (v > 1.0f) v -= (int)v;
 	else if (v < 0.0f) v += (int)(-1.0f * (v - 1.0f));
 
-	int index = (int)(v * height) * width + (int)(u * width);
+	int index = (int)(v * (height - 1)) * width + (int)(u * width);
 
 	return index >= 0 && index < totalPixels ? pixels[index] : BLACK;
 }

@@ -18,7 +18,7 @@ void StressTest::load() {
 		Model* icosahedron = new Model(icosahedronObj);
 		Cube* cube = new Cube(100);
 
-		icosahedron->position = { -1000, 50, 500.0f + (i * 1000) };
+		icosahedron->position = { -1000, 250, 500.0f + (i * 1000) };
 		icosahedron->scale(200);
 
 		cube->position = { 500, 180, 500.0f + (i * 500) };
@@ -35,14 +35,14 @@ void StressTest::load() {
 		float z = i * 1200;
 
 		light->position = { x, y, z };
-		light->color = { 255, 0, 0 };
+		light->setColor(255, 0, 0);
 		light->spread = 900;
 
 		add(light);
 	}
 
 	settings.drawDistance = 6000;
-	settings.albedo = 0.2;
+	settings.brightness = 0.2;
 	settings.ambientLightColor = { 0, 100, 0 };
 	settings.ambientLightVector = { 0, -1, 1 };
 	settings.ambientLightFactor = 0.2;

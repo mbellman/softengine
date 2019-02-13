@@ -106,6 +106,8 @@ void Object::setTexture(TextureBuffer* textureBuffer) {
 	if (textureBuffer != NULL) {
 		this->texture = textureBuffer;
 	}
+
+	setColor(0, 0, 0);
 }
 
 void Object::scale(float scalar) {
@@ -404,24 +406,29 @@ void Cube::setFaceUVCoordinates(float x1, float y1, float x2, float y2) {
  * Light
  * -----
  */
-void Light::flip() {
-	power = 0 - (power - 1);
+const Color& Light::getColor() const {
+	return color;
+}
+
+/**
+ * Since every vertex of every visible triangle within range
+ * of a light needs to check the light's color ratios, we cache
+ * the values for performance.
+ */
+const Vec3& Light::getColorRatios() const {
+	return cachedColorRatios;
 }
 
 bool Light::isLight(Object* object) {
 	return dynamic_cast<Light*>(object) != NULL;
 }
 
-void Light::on() {
-	power = 1;
-}
-
-void Light::off() {
-	power = 0;
-}
-
 void Light::setColor(int R, int G, int B) {
-	this->color = { R, G, B };
+	color.R = R;
+	color.G = G;
+	color.B = B;
+
+	cachedColorRatios = color.ratios();
 }
 
 void Light::setColor(const Color& color) {
