@@ -56,8 +56,8 @@ void Garden::load() {
 	add(mesh);
 
 	settings.backgroundColor = { 0, 0, 0 };
-	settings.visibility = 4000;
-	settings.brightness = 0.2;
+	// settings.visibility = 4000;
+	settings.brightness = 1;
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0, -0.1, 1 };
 	settings.ambientLightFactor = 0.8;

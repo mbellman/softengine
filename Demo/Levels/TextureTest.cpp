@@ -35,10 +35,10 @@ void TextureTest::load() {
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0.5, -1, 0.3 };
 	settings.ambientLightFactor = 0.7;
-	settings.visibility = 2500;
+	// settings.visibility = 2500;
 }
 
 void TextureTest::update(int dt, int runningTime) {
-	getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
+	// getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
 }
 

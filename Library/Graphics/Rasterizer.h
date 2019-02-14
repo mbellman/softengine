@@ -18,7 +18,6 @@ public:
 	~Rasterizer();
 
 	void clear();
-	void flushScanlines();
 	void line(int x1, int y1, int x2, int y2);
 	void render(SDL_Renderer* renderer, int sizeFactor);
 	void setBackgroundColor(const Color& color);
@@ -51,7 +50,23 @@ private:
 	constexpr static int MIN_COLOR_LERP_INTERVAL = 2;
 	constexpr static int MAX_TEXTURE_SAMPLE_INTERVAL = 4;
 	constexpr static int MAX_THREADS = 8;
-	constexpr static int MAX_DEPTH = INT_MAX;
+	constexpr static int MAX_VISIBILITY = INT_MAX;
+	constexpr static float MIPMAP_RANGE = 800.0f;
+
+	constexpr static int LOG2_TABLE[12][2] = {
+		{ 0, 0 },
+		{ 1, 0 },
+		{ 2, 1 },
+		{ 4, 2 },
+		{ 8, 3 },
+		{ 16, 4 },
+		{ 32, 5 },
+		{ 64, 6 },
+		{ 128, 7 },
+		{ 256, 8 },
+		{ 512, 9 },
+		{ 1024, 10 }
+	};
 
 	Scanline* scanlines;
 	ScanlineThreadManager* scanlineThreadManagers;
@@ -62,7 +77,7 @@ private:
 	Uint32 flags = 0;
 	Color backgroundColor = { 0, 0, 0 };
 	Uint32 drawColor = ARGB(255, 255, 255);
-	int visibility = Rasterizer::MAX_DEPTH;
+	int visibility = Rasterizer::MAX_VISIBILITY;
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
 	int* depthBuffer;
@@ -74,9 +89,12 @@ private:
 	void flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right, const TextureBuffer* texture);
 	void flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight, const TextureBuffer* texture);
 	void flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture);
+	void flushScanlines();
 	int getColorLerpInterval(const Color& start, const Color& end, int lineLength);
-	inline int getMipmapLevel(int depth);
-	int getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth);
+	inline int getMipmapLevel(const Range<int>& depth);
+	int getTextureSampleInterval(int tex_w, int tex_h, int lineLength, const Range<int>& depth, const Range<Vec2>& uv);
+	void setPixel(int x, int y, int depth = 1);
+	void triangleScanline(Scanline* scanline);
 
 	void triangleScanline(
 		int x1, int y1, int length,
@@ -87,8 +105,4 @@ private:
 		const Range<Vec3>& textureIntensity,
 		const TextureBuffer* texture
 	);
-
-	void triangleScanline(Scanline* scanline);
-	void triangleScanlineChunk(int x, int y, int length, Uint32 color, int depth, int offset);
-	void setPixel(int x, int y, int depth = 1);
 };

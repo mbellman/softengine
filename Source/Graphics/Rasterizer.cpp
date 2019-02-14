@@ -164,21 +164,33 @@ int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int l
 	int r_delta = abs(end.R - start.R);
 	int g_delta = abs(end.G - start.G);
 	int b_delta = abs(end.B - start.B);
-	float colorDelta = (r_delta + g_delta + b_delta) / 3;
+	float colorDelta = (float)(r_delta + g_delta + b_delta) / 3.0f;
 
 	return colorDelta > 0 ? FAST_MAX(Rasterizer::MIN_COLOR_LERP_INTERVAL, (int)(lineLength / colorDelta)) : lineLength;
 }
 
-inline int Rasterizer::getMipmapLevel(int depth) {
-	return (flags & DISABLE_MIPMAPPING) ? 0 : (int)(depth / 1000.0f);
+inline int Rasterizer::getMipmapLevel(const Range<int>& depth) {
+	if (flags & DISABLE_MIPMAPPING) {
+		return 0;
+	}
+
+	float depthMultiple = (float)((depth.start + depth.end) / (2 * Rasterizer::MIPMAP_RANGE));
+
+	for (int i = 0; i < 12; i++) {
+		if (depthMultiple < LOG2_TABLE[i][0]) {
+			return LOG2_TABLE[i - 1][1];
+		}
+	}
+
+	return 11;
 }
 
-int Rasterizer::getTextureSampleInterval(const TextureBuffer* texture, int lineLength, const Vec2& startUV, const Vec2& endUV, int startDepth, int endDepth) {
-	float averageDepth = (float)(startDepth + endDepth) / 2.0f;
-	float u_delta = (float)texture->width * abs(endUV.x - startUV.x) * averageDepth * 4;
-	float v_delta = (float)texture->height * abs(endUV.y - startUV.y) * averageDepth * 4;
-	float sampleDelta = (u_delta + v_delta) / 2;
-	int interval = (int)(1 + lineLength / sampleDelta);
+int Rasterizer::getTextureSampleInterval(int tex_w, int tex_h, int lineLength, const Range<int>& depth, const Range<Vec2>& uv) {
+	float averageDepth = (float)((depth.start + depth.end) >> 1);
+	float u_delta = (float)tex_w * abs(uv.end.x - uv.start.x) * averageDepth;
+	float v_delta = (float)tex_h * abs(uv.end.y - uv.end.y) * averageDepth;
+	float sampleDelta = (u_delta + v_delta) / 2.0f;
+	int interval = (int)(lineLength / sampleDelta);
 
 	return sampleDelta > 0 ? FAST_CLAMP(interval, 1, Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL) : lineLength;
 }
@@ -385,71 +397,27 @@ void Rasterizer::triangleScanline(
 	int end = FAST_MIN(x1 + length, width - 1);
 	int pixelIndexOffset = y1 * width;
 
-	int colorLerpInterval = getColorLerpInterval(color.start, color.end, length);
-	int colorLerpIntervalCounter = colorLerpInterval;
-
 	float depthStep = (float)(depth.end - depth.start) / length;
 	float f_depth = (float)depth.start + depthStep * (start - x1);
 
-	if (texture == NULL && colorLerpInterval > 5) {
-		int max_x = end + 1;
+	float progressStep = 1.0f / length;
+	float progress = (float)(start - x1) * progressStep;
 
-		depthStep *= colorLerpInterval;
-
-		for (int x = start; x <= end; x += colorLerpInterval) {
-			int index = pixelIndexOffset + x;
-			float progress = (float)(x - x1) / length;
-			int x2 = FAST_MIN(x + colorLerpInterval, max_x);
-
-			int R = Lerp::lerp(color.start.R, color.end.R, progress);
-			int G = Lerp::lerp(color.start.G, color.end.G, progress);
-			int B = Lerp::lerp(color.start.B, color.end.B, progress);
-
-			triangleScanlineChunk(x, x2, y1, ARGB(R, G, B), (int)f_depth, index);
-
-			f_depth += depthStep;
-		}
-	} else if (texture == NULL) {
+	if (texture != NULL) {
 		Uint32 currentColor = 0;
 
-		for (int x = start; x <= end; x++) {
-			int index = pixelIndexOffset + x;
-			int depth = (int)f_depth;
-
-			f_depth += depthStep;
-
-			if (depthBuffer[index] > depth) {
-				float progress = (float)(x - x1) / length;
-
-				if (++colorLerpIntervalCounter > colorLerpInterval || x == end) {
-					int R = Lerp::lerp(color.start.R, color.end.R, progress);
-					int G = Lerp::lerp(color.start.G, color.end.G, progress);
-					int B = Lerp::lerp(color.start.B, color.end.B, progress);
-
-					currentColor = ARGB(R, G, B);
-					colorLerpIntervalCounter = 0;
-				}
-
-				pixelBuffer[index] = currentColor;
-				depthBuffer[index] = depth;
-			}
-		}
-	} else {
-		Uint32 currentColor = 0;
-
-		int textureSampleInterval = getTextureSampleInterval(texture, length, uv.start, uv.end, depth.start, depth.end);
+		int mipmapLevel = getMipmapLevel(depth);
+		int tex_w = texture->mipmapWidth(mipmapLevel);
+		int tex_h = texture->mipmapHeight(mipmapLevel);
+		int textureSampleInterval = getTextureSampleInterval(tex_w, tex_h, length, depth, uv);
 		int textureSampleIntervalCounter = textureSampleInterval;
 
 		for (int x = start; x <= end; x++) {
 			int index = pixelIndexOffset + x;
-			int depth = (int)f_depth;
+			int i_depth = (int)f_depth;
 
-			f_depth += depthStep;
-
-			if (depthBuffer[index] > depth) {
+			if (depthBuffer[index] > i_depth) {
 				if (++textureSampleIntervalCounter > textureSampleInterval) {
-					float progress = (float)(x - x1) / length;
-
 					float intensity_R = Lerp::lerp(textureIntensity.start.x, textureIntensity.end.x, progress);
 					float intensity_G = Lerp::lerp(textureIntensity.start.y, textureIntensity.end.y, progress);
 					float intensity_B = Lerp::lerp(textureIntensity.start.z, textureIntensity.end.z, progress);
@@ -457,9 +425,9 @@ void Rasterizer::triangleScanline(
 					float i_w = 1 / Lerp::lerp(w.start, w.end, progress);
 					float u = Lerp::lerp(uv.start.x, uv.end.x, progress) * i_w;
 					float v = Lerp::lerp(uv.start.y, uv.end.y, progress) * i_w;
-					const Color& sample = texture->sample(u, v, getMipmapLevel(depth));
+					const Color& sample = texture->sample(u, v, mipmapLevel);
 
-					float visibilityRatio = (float)depth / visibility;
+					float visibilityRatio = (float)i_depth / visibility;
 
 					if (visibilityRatio > 1.0f) visibilityRatio = 1.0f;
 
@@ -472,19 +440,70 @@ void Rasterizer::triangleScanline(
 				}
 
 				pixelBuffer[index] = currentColor;
-				depthBuffer[index] = depth;
+				depthBuffer[index] = i_depth;
+			}
+
+			f_depth += depthStep;
+			progress += progressStep;
+		}
+	} else {
+		int colorLerpInterval = getColorLerpInterval(color.start, color.end, length);
+		int colorLerpIntervalCounter = colorLerpInterval;
+
+		if (colorLerpInterval > 5) {
+			int chunkXLimit = end + 1;
+
+			depthStep *= colorLerpInterval;
+			progressStep *= colorLerpInterval;
+
+			for (int x = start; x <= end; x += colorLerpInterval) {
+				int index = pixelIndexOffset + x;
+
+				int R = Lerp::lerp(color.start.R, color.end.R, progress);
+				int G = Lerp::lerp(color.start.G, color.end.G, progress);
+				int B = Lerp::lerp(color.start.B, color.end.B, progress);
+
+				int cx2 = FAST_MIN(x + colorLerpInterval, chunkXLimit);
+				int cidx = index;
+				int i_depth = (float)f_depth;
+				Uint32 color = ARGB(R, G, B);
+
+				for (int cx = x; cx < cx2; cx++) {
+					if (depthBuffer[cidx] > i_depth) {
+						pixelBuffer[cidx] = color;
+						depthBuffer[cidx] = i_depth;
+					}
+
+					cidx++;
+				}
+
+				f_depth += depthStep;
+				progress += progressStep;
+			}
+		} else {
+			Uint32 currentColor = 0;
+
+			for (int x = start; x <= end; x++) {
+				int index = pixelIndexOffset + x;
+				int i_depth = (int)f_depth;
+
+				if (depthBuffer[index] > i_depth) {
+					if (++colorLerpIntervalCounter > colorLerpInterval || x == end) {
+						int R = Lerp::lerp(color.start.R, color.end.R, progress);
+						int G = Lerp::lerp(color.start.G, color.end.G, progress);
+						int B = Lerp::lerp(color.start.B, color.end.B, progress);
+
+						currentColor = ARGB(R, G, B);
+						colorLerpIntervalCounter = 0;
+					}
+
+					pixelBuffer[index] = currentColor;
+					depthBuffer[index] = i_depth;
+				}
+
+				f_depth += depthStep;
+				progress += progressStep;
 			}
 		}
-	}
-}
-
-void Rasterizer::triangleScanlineChunk(int x1, int x2, int y, Uint32 color, int depth, int offset) {
-	for (int x = x1; x < x2; x++) {
-		if (depthBuffer[offset] > depth) {
-			pixelBuffer[offset] = color;
-			depthBuffer[offset] = depth;
-		}
-
-		offset++;
 	}
 }

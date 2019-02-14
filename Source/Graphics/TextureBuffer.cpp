@@ -101,6 +101,14 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode, boo
 	}
 }
 
+int TextureBuffer::mipmapWidth(int level) const {
+	return level >= mipmaps.size() ? mipmaps.back()->width : mipmaps.at(level)->width;
+}
+
+int TextureBuffer::mipmapHeight(int level) const {
+	return level >= mipmaps.size() ? mipmaps.back()->height : mipmaps.at(level)->height;
+}
+
 const Color& TextureBuffer::sample(float u, float v, int level) const {
 	int totalMipmaps = mipmaps.size();
 
