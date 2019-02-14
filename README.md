@@ -12,7 +12,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
-* Reuse unit vectors for triangle projection
 * Cache ambient light color ratios
 * Separate illumination & rasterization steps/consider options for parallel illumination
 * Skip texture sampling on surfaces with insufficient illumination

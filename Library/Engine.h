@@ -113,7 +113,16 @@ private:
 	void handleKeyUp(const SDL_Keycode& code);
 	void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
 	void illuminateTriangle(Triangle& triangle);
-	void projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVecs)[3], const Vec3& normal, const TextureBuffer* texture, float scale);
+
+	void projectTriangle(
+		const Vertex3d (&vertexes)[3],
+		const Vec3 (&unitVecs)[3],
+		const Vec3 (&worldVecs)[3],
+		const Vec3& normal,
+		const TextureBuffer* texture,
+		float scale
+	);
+
 	void update();
 	void updateMovement();
 

@@ -15,24 +15,26 @@ void Garden::load() {
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
 	add("ground-texture", new TextureBuffer("./DemoAssets/ground-texture.png"));
 
-	for (int i = 0; i < 15; i++) {
+	for (int i = 0; i < 30; i++) {
 		Model* tree = new Model(treeObj);
 
-		tree->position = { (float)(1000 - rand() % 2000), -10.0f, (float)(3000 - rand() % 2000) };
+		tree->position = { (float)(2000 - rand() % 4000), -10.0f, (float)(5000 - rand() % 4000) };
 		tree->setTexture(getTexture("tree-texture"));
 		tree->scale(100);
+		tree->rotateDeg({ 0, (float)(rand() % 360), 0 });
 
 		add(tree);
 	}
 
-	for (int x = 0; x < 6; x++) {
+	for (int x = 0; x < 10; x++) {
 		Light* light = new Light();
 		Cube* cube = new Cube(10);
 		cube->setColor(255, 255, 255);
 
 		light->setColor(255, 50, 0);
-		light->position = { (float)(1000 - rand() % 2000), (float)(rand() % 200), (float)(3000 - rand() % 2000) };
-		light->spread = 300 + rand() % 700;
+		light->position = { (float)(2000 - rand() % 4000), 50 + (float)(rand() % 200), (float)(5000 - rand() % 4000) };
+		light->spread = 500 + rand() % 700;
+		light->power = 1.5f;
 
 		cube->position.x = light->position.x;
 		cube->position.y = light->position.y;
@@ -52,7 +54,7 @@ void Garden::load() {
 
 	Model* teapot = new Model(teapotObj);
 	teapot->setColor(255, 255, 255);
-	teapot->position = { 500, 0, 2000 };
+	teapot->position = { 0, 10, 2000 };
 	teapot->scale(50);
 
 	add(teapot);
@@ -75,7 +77,7 @@ void Garden::load() {
 void Garden::update(int dt, int runningTime) {
 	Light* movingLight = (Light*)getObject("movingLight");
 
-	movingLight->position.x = 800.0f * sinf(runningTime / 900.0f);
-	movingLight->position.z = 2000.0f + 800.0f * cosf(runningTime / 900.0f);
+	movingLight->position.x = 1500.0f * sinf(runningTime / 900.0f);
+	movingLight->position.z = 2000.0f + 1500.0f * cosf(runningTime / 900.0f);
 	movingLight->position.y = 300.0f + 150.0f * sinf(runningTime / 500.0f);
 }

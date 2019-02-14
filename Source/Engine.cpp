@@ -128,7 +128,10 @@ void Engine::drawScene() {
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 
+	// Allocate reusable vertex/vector objects up front to
+	// be overwritten/projected with each subsequent polygon
 	Vertex3d t_verts[3];
+	Vec3 u_vecs[3];
 	Vec3 w_vecs[3];
 
 	for (const auto* object : activeLevel->getObjects()) {
@@ -148,25 +151,28 @@ void Engine::drawScene() {
 
 			FrustumCuller frustumCuller;
 
-			// Build our vertex/world vector lists while we perform
-			// view frustum clipping checks on the polygon.
+			// Build our vertex/unit + world vector lists while we perform
+			// view frustum clipping checks on the polygon
 			for (int i = 0; i < 3; i++) {
 				t_verts[i] = *polygon.vertices[i];
 				t_verts[i].vector = cameraRotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
+				u_vecs[i] = t_verts[i].vector.unit();
 				w_vecs[i] = object->position + polygon.vertices[i]->vector;
-				Vec3 unit = t_verts[i].vector.unit();
 
-				if (t_verts[i].vector.z < Engine::NEAR_Z) {
+				if (t_verts[i].vector.z < Engine::NEAR_Z)
 					frustumCuller.near++;
-				} else if (t_verts[i].vector.z > activeLevel->getSettings().visibility) {
+				else if (t_verts[i].vector.z > activeLevel->getSettings().visibility)
 					frustumCuller.far++;
-				}
 
-				if (unit.x < -fovAngleRange) frustumCuller.left++;
-				else if (unit.x > fovAngleRange) frustumCuller.right++;
+				if (u_vecs[i].x < -fovAngleRange)
+					frustumCuller.left++;
+				else if (u_vecs[i].x > fovAngleRange)
+					frustumCuller.right++;
 
-				if (unit.y < -fovAngleRange) frustumCuller.bottom++;
-				else if (unit.y > fovAngleRange) frustumCuller.top++;
+				if (u_vecs[i].y < -fovAngleRange)
+					frustumCuller.bottom++;
+				else if (u_vecs[i].y > fovAngleRange)
+					frustumCuller.top++;
 			}
 
 			if (frustumCuller.isCulled()) {
@@ -174,62 +180,91 @@ void Engine::drawScene() {
 			}
 
 			if (frustumCuller.near > 0) {
-				// Sort vertices by descending z-order
+				// If any vertices are behind the near plane, we have to
+				// clip them against it. This is necessary to prevent
+				// erroneous screen projections at coordinates <= 0.
+
+				// Sort vertices by descending z-order so we can determine
+				// where to interpolate the clipped vertices
 				if (t_verts[0].vector.z < t_verts[1].vector.z) {
 					swap(t_verts[0], t_verts[1]);
+					swap(u_vecs[0], u_vecs[1]);
 					swap(w_vecs[0], w_vecs[1]);
 				}
 
 				if (t_verts[1].vector.z < t_verts[2].vector.z) {
 					swap(t_verts[1], t_verts[2]);
+					swap(u_vecs[1], u_vecs[2]);
 					swap(w_vecs[1], w_vecs[2]);
 				}
 
 				if (t_verts[0].vector.z < t_verts[1].vector.z) {
 					swap(t_verts[0], t_verts[1]);
+					swap(u_vecs[0], u_vecs[1]);
 					swap(w_vecs[0], w_vecs[1]);
 				}
 
 				if (frustumCuller.near == 2) {
-					// The polygon can be clipped into a smaller polygon
-					// at the plane boundary.
+					// When two of the polygon's vertices are behind the near
+					// plane, it can be clipped into a smaller polygon at the
+					// plane boundary.
+
+					// Determine interpolation deltas for each new vertex
+					// (the first need not be interpolated at all)
 					float deltas[3] = {
 						0.0f,
 						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[1].vector.z),
 						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z)
 					};
 
+					// Generate new vertices and unit/world vectors for the clipped polygon
 					for (int i = 1; i < 3; i++) {
 						t_verts[i] = Vertex3d::lerp(t_verts[0], t_verts[i], deltas[i]);
+						u_vecs[i] = t_verts[i].vector.unit();
 						w_vecs[i] = Vec3::lerp(w_vecs[0], w_vecs[i], deltas[i]);
 					}
 				} else if (frustumCuller.near == 1) {
-					// The polygon has to be clipped into a quad, which
-					// then has to be projected as two polygons.
+					// If only one of the polygon's vertices is behind the
+					// near plane, we need to clip it into a quad, which then
+					// needs to be clipped into two polygons. The first and
+					// second vertices can be preserved, whereas the latter
+					// two will have to be interpolated between the second and
+					// third, and first and third original vertices.
 					Vertex3d quadVerts[4];
+					Vec3 u_quadVecs[4];
 					Vec3 w_quadVecs[4];
 
+					// Determine interpolation deltas for third and fourth vertices
 					float v2Delta = (t_verts[1].vector.z - Engine::NEAR_Z) / (t_verts[1].vector.z - t_verts[2].vector.z);
 					float v3Delta = (t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z);
 
+					// Define new vertices/unit + world vectors for the quad
 					quadVerts[0] = t_verts[0];
 					quadVerts[1] = t_verts[1];
 					quadVerts[2] = Vertex3d::lerp(t_verts[1], t_verts[2], v2Delta);
 					quadVerts[3] = Vertex3d::lerp(t_verts[0], t_verts[2], v3Delta);
+
+					u_quadVecs[0] = quadVerts[0].vector.unit();
+					u_quadVecs[1] = quadVerts[1].vector.unit();
+					u_quadVecs[2] = quadVerts[2].vector.unit();
+					u_quadVecs[3] = quadVerts[3].vector.unit();
 
 					w_quadVecs[0] = w_vecs[0];
 					w_quadVecs[1] = w_vecs[1];
 					w_quadVecs[2] = Vec3::lerp(w_vecs[1], w_vecs[2], v2Delta);
 					w_quadVecs[3] = Vec3::lerp(w_vecs[0], w_vecs[2], v3Delta);
 
+					// Project the quad's two polygons individually
 					projectTriangle(
 						{ quadVerts[0], quadVerts[1], quadVerts[2] },
+						{ u_quadVecs[0], u_quadVecs[1], u_quadVecs[2] },
 						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
 						polygon.normal, object->texture, projectionScale
 					);
 
 					projectTriangle(
 						{ quadVerts[0], quadVerts[2], quadVerts[3] },
+						{ u_quadVecs[0], u_quadVecs[2], u_quadVecs[3] },
 						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
 						polygon.normal, object->texture, projectionScale
 					);
@@ -238,7 +273,7 @@ void Engine::drawScene() {
 				}
 			}
 
-			projectTriangle(t_verts, w_vecs, polygon.normal, object->texture, projectionScale);
+			projectTriangle(t_verts, u_vecs, w_vecs, polygon.normal, object->texture, projectionScale);
 		}
 	}
 
@@ -394,7 +429,22 @@ void Engine::illuminateTriangle(Triangle& triangle) {
 	}
 }
 
-void Engine::projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVecs)[3], const Vec3& normal, const TextureBuffer* texture, float scale) {
+/**
+ * Projects and adds a new triangle to the raster queue using
+ * a set of three vertices, three unit vectors, and three
+ * world vectors representing to the original location of the
+ * source polygon. Normal, texture, and projection scale values
+ * must also be provided. For efficiency we forward the arguments
+ * from drawScene(), which has already calculated them.
+ */
+void Engine::projectTriangle(
+	const Vertex3d (&vertexes)[3],
+	const Vec3 (&unitVecs)[3],
+	const Vec3 (&worldVecs)[3],
+	const Vec3& normal,
+	const TextureBuffer* texture,
+	float scale
+) {
 	Triangle triangle;
 	triangle.normal = normal;
 
@@ -405,7 +455,7 @@ void Engine::projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVe
 	for (int i = 0; i < 3; i++) {
 		const Vertex3d& vertex3d = vertexes[i];
 		const Vec3& vector = vertex3d.vector;
-		const Vec3 unit = vector.unit();
+		const Vec3& unit = unitVecs[i];
 
 		Vertex2d vertex;
 
