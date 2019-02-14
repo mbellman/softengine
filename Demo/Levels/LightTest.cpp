@@ -75,16 +75,19 @@ void LightTest::load() {
 	light2->position = { 200, 200, 1500 };
 	light2->setColor(255, 0, 0);
 	light2->spread = 700;
+	light2->power = 1.5f;
 
 	Light* light3 = new Light();
 	light3->position = { -200, 150, 2200 };
 	light3->setColor(0, 0, 255);
 	light3->spread = 600;
+	light3->power = 1.5f;
 
 	Light* light4 = new Light();
 	light4->position = { 300, 150, 2900 };
 	light4->setColor(0, 255, 0);
 	light4->spread = 800;
+	light4->power = 1.5f;
 
 	add("yellowLight", light);
 	add(light2);
@@ -95,7 +98,7 @@ void LightTest::load() {
 	settings.brightness = 0.1;
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0, -0.5, 1 };
-	settings.ambientLightFactor = 0.1;
+	settings.ambientLightFactor = 0.2;
 }
 
 void LightTest::update(int dt, int runningTime) {

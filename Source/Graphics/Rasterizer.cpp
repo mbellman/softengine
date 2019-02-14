@@ -182,7 +182,7 @@ inline int Rasterizer::getMipmapLevel(const Range<int>& depth) {
 		}
 	}
 
-	return 11;
+	return 10;
 }
 
 int Rasterizer::getTextureSampleInterval(int tex_w, int tex_h, int lineLength, const Range<int>& depth, const Range<Vec2>& uv) {
@@ -190,9 +190,14 @@ int Rasterizer::getTextureSampleInterval(int tex_w, int tex_h, int lineLength, c
 	float u_delta = (float)tex_w * abs(uv.end.x - uv.start.x) * averageDepth;
 	float v_delta = (float)tex_h * abs(uv.end.y - uv.end.y) * averageDepth;
 	float sampleDelta = (u_delta + v_delta) / 2.0f;
-	int interval = (int)(lineLength / sampleDelta);
 
-	return sampleDelta > 0 ? FAST_CLAMP(interval, 1, Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL) : lineLength;
+	if (sampleDelta > 0) {
+		int interval = (int)(lineLength / sampleDelta);
+
+		return FAST_CLAMP(interval, 1, Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL);
+	} else {
+		return Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL;
+	}
 }
 
 int Rasterizer::manageScanlineThread(void* data) {
