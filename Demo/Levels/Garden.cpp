@@ -1,6 +1,7 @@
 #include <Levels/Garden.h>
 #include <Graphics/TextureBuffer.h>
 #include <System/Objects.h>
+#include <cmath>
 
 /**
  * Garden
@@ -29,7 +30,7 @@ void Garden::load() {
 		Cube* cube = new Cube(10);
 		cube->setColor(255, 255, 255);
 
-		light->setColor(255, 100, 0);
+		light->setColor(255, 50, 0);
 		light->position = { (float)(1000 - rand() % 2000), (float)(rand() % 200), (float)(3000 - rand() % 2000) };
 		light->spread = 300 + rand() % 700;
 
@@ -41,9 +42,17 @@ void Garden::load() {
 		add(cube);
 	}
 
+	Light* movingLight = new Light();
+	movingLight->setColor({ 255, 50, 255 });
+	movingLight->spread = 750;
+	movingLight->position.y = 300;
+	movingLight->power = 1.5f;
+
+	add("movingLight", movingLight);
+
 	Model* teapot = new Model(teapotObj);
 	teapot->setColor(255, 255, 255);
-	teapot->position = { 0, 0, 2000 };
+	teapot->position = { 500, 0, 2000 };
 	teapot->scale(50);
 
 	add(teapot);
@@ -56,13 +65,17 @@ void Garden::load() {
 	add(mesh);
 
 	settings.backgroundColor = { 0, 0, 0 };
-	// settings.visibility = 4000;
-	settings.brightness = 1;
+	settings.visibility = 4000;
+	settings.brightness = 0.2;
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0, -0.1, 1 };
-	settings.ambientLightFactor = 0.8;
+	settings.ambientLightFactor = 1;
 }
 
 void Garden::update(int dt, int runningTime) {
+	Light* movingLight = (Light*)getObject("movingLight");
 
+	movingLight->position.x = 800.0f * sinf(runningTime / 900.0f);
+	movingLight->position.z = 2000.0f + 800.0f * cosf(runningTime / 900.0f);
+	movingLight->position.y = 300.0f + 150.0f * sinf(runningTime / 500.0f);
 }

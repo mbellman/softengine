@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <math.h>
 #include <vector>
 #include <System/Objects.h>
@@ -10,6 +11,8 @@
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
 #include <System/Flags.h>
+#include <System/DebugStats.h>
+#include <map>
 
 /**
  * Camera
@@ -20,7 +23,7 @@ struct Camera {
 	Vec3 position = { 0, 100, 0 };
 	float pitch = 0.0f;
 	float yaw = 0.0f;
-	int fov = 90;
+	int fov = 100;
 
 	RotationMatrix getRotationMatrix();
 };
@@ -82,6 +85,9 @@ private:
 	constexpr static float NEAR_Z = 10.0f;
 	constexpr static int MOVEMENT_SPEED = 5;
 
+	DebugStats debugStats;
+	std::map<const char*, UIText*> debugStatsTextMap;
+
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	Rasterizer* rasterizer;
@@ -97,14 +103,11 @@ private:
 	int HALF_W;
 	int height;
 	int HALF_H;
-	int totalDrawnTriangles = 0;
 
 	void clearActiveLevel();
 	void delay(int ms);
 	void drawScene();
 	void drawTriangle(Triangle& triangle);
-	int getPolygonCount();
-	int getVertexCount();
 	void handleEvent(const SDL_Event& event);
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);
@@ -113,4 +116,13 @@ private:
 	void projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVecs)[3], const Vec3& normal, const TextureBuffer* texture, float scale);
 	void update();
 	void updateMovement();
+
+	/* ----- */
+
+	TTF_Font* debugFont = NULL;
+
+	void addDebugStats();
+	void addDebugStat(const char* key);
+	void updateDebugStat(const char* key, const char* label, int debugValue);
+	void updateDebugStats();
 };

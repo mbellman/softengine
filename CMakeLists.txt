@@ -56,6 +56,7 @@ set(SOURCE_FILES
     Library/System/Math.h
     Library/System/Objects.h
     Library/System/Quaternion.h
+    Library/System/DebugStats.h
     Library/UI/UI.h
     Library/UI/UIObjects.h
     Library/Engine.h
@@ -74,6 +75,7 @@ set(SOURCE_FILES
     Source/System/Math.cpp
     Source/System/Objects.cpp
     Source/System/Quaternion.cpp
+    Source/System/DebugStats.cpp
     Source/UI/UI.cpp
     Source/UI/UIObjects.cpp
     Source/Engine.cpp

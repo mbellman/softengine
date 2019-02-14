@@ -21,6 +21,7 @@ protected:
 };
 
 struct UIText : UIObject {
+	UIText();
 	UIText(const char* value);
 
 	void draw();

@@ -1,5 +1,9 @@
 #include <UI/UIObjects.h>
 
+/**
+ * UIObject
+ * --------
+ */
 UIObject::~UIObject() {
 	if (m_texture != NULL) {
 		SDL_DestroyTexture(m_texture);
@@ -12,7 +16,7 @@ void UIObject::setPosition(int x, int y) {
 }
 
 void UIObject::setRenderer(SDL_Renderer* renderer) {
-	this->m_renderer = renderer;
+	m_renderer = renderer;
 	refresh();
 }
 
@@ -21,6 +25,12 @@ void UIObject::setTextureFromSurface(SDL_Surface* surface) {
 
 	SDL_FreeSurface(surface);
 }
+
+/**
+ * UIText
+ * ------
+ */
+UIText::UIText() {}
 
 UIText::UIText(const char* value) {
 	m_value = value;

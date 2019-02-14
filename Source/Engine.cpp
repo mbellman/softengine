@@ -16,6 +16,7 @@
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
 #include <Graphics/TextureBuffer.h>
+#include <System/DebugStats.h>
 
 using namespace std;
 
@@ -32,7 +33,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	IMG_Init(IMG_INIT_PNG);
 
 	window = SDL_CreateWindow(
-		"HEY ZACK",
+		"Engine Test",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		width, height,
@@ -43,10 +44,11 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	int rasterWidth = hasPixelFilter ? width / 2 : width;
 	int rasterHeight = hasPixelFilter ? height / 2 : height;
 
-	renderer = SDL_CreateRenderer(window, -1, flags & DEBUG_DRAWTIME ? 0 : SDL_RENDERER_PRESENTVSYNC);
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
 	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
+	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
 	this->width = width;
 	this->height = height;
@@ -61,6 +63,15 @@ Engine::~Engine() {
 	delete ui;
 	delete rasterizer;
 
+	if (flags & DEBUG_STATS) {
+		for (auto& [key, uiText] : debugStatsTextMap) {
+			delete uiText;
+		}
+
+		debugStatsTextMap.clear();
+	}
+
+	TTF_CloseFont(debugFont);
 	TTF_Quit();
 
 	SDL_DestroyRenderer(renderer);
@@ -106,10 +117,12 @@ void Engine::drawTriangle(Triangle& triangle) {
 		rasterizer->triangle(triangle);
 	}
 
-	totalDrawnTriangles++;
+	debugStats.countDrawnTriangle();
 }
 
 void Engine::drawScene() {
+	debugStats.trackScreenProjectionTime();
+
 	bool hasPixelFilter = flags & PIXEL_FILTER;
 	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
@@ -229,6 +242,9 @@ void Engine::drawScene() {
 		}
 	}
 
+	debugStats.logScreenProjectionTime();
+	debugStats.trackDrawTime();
+
 	Triangle* triangle;
 
 	while ((triangle = rasterQueue->next()) != NULL) {
@@ -236,26 +252,7 @@ void Engine::drawScene() {
 	}
 
 	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
-}
-
-int Engine::getPolygonCount() {
-	int total = 0;
-
-	for (auto object : activeLevel->getObjects()) {
-		total += object->getPolygonCount();
-	}
-
-	return total;
-}
-
-int Engine::getVertexCount() {
-	int total = 0;
-
-	for (auto object : activeLevel->getObjects()) {
-		total += object->getVertexCount();
-	}
-
-	return total;
+	debugStats.logDrawTime();
 }
 
 void Engine::handleEvent(const SDL_Event& event) {
@@ -424,11 +421,16 @@ void Engine::projectTriangle(const Vertex3d (&vertexes)[3], const Vec3 (&worldVe
 	}
 
 	rasterQueue->addTriangle(triangle);
+	debugStats.countProjectedTriangle();
 }
 
 void Engine::run() {
 	if (activeLevel == NULL) {
 		return;
+	}
+
+	if (flags & DEBUG_STATS) {
+		addDebugStats();
 	}
 
 	int lastStartTime;
@@ -442,27 +444,7 @@ void Engine::run() {
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
-		if (flags & DEBUG_DRAWTIME) {
-			if (delta < 17) {
-				delay(17 - delta);
-			} else {
-				// std::cout << "[DRAW TIME WARNING]: " << delta << "ms\n";
-			}
-		}
-
-		int fullDelta = SDL_GetTicks() - lastStartTime;
-
-		activeLevel->update(fullDelta, SDL_GetTicks());
-
-		char title[100];
-
-		sprintf(
-			title,
-			"Tris: %d, Verts: %d, Drawn tris: %d, FPS: %dfps, Unlocked delta: %dms",
-			getPolygonCount(), getVertexCount(), totalDrawnTriangles, (int)round(60 * 17 / fullDelta), delta
-		);
-
-		SDL_SetWindowTitle(window, title);
+		activeLevel->update(delta, SDL_GetTicks());
 
 		SDL_Event event;
 
@@ -496,10 +478,17 @@ void Engine::update() {
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
 
-	totalDrawnTriangles = 0;
+	debugStats.resetCounters();
+	debugStats.trackFrameTime();
 
 	drawScene();
 	ui->draw();
+
+	debugStats.logFrameTime();
+
+	if (flags & DEBUG_STATS) {
+		updateDebugStats();
+	}
 
 	SDL_RenderPresent(renderer);
 }
@@ -515,4 +504,49 @@ void Engine::updateMovement() {
 
 	camera.position.x += scalar * xDelta;
 	camera.position.z += scalar * zDelta;
+}
+
+// --------- DEBUG STATS --------- //
+
+void Engine::addDebugStats() {
+	addDebugStat("screenProjectionTime");
+	addDebugStat("drawTime");
+	addDebugStat("frameTime");
+	addDebugStat("fps");
+	addDebugStat("totalVertices");
+	addDebugStat("totalTriangles");
+	addDebugStat("totalTrianglesProjected");
+	addDebugStat("totalTrianglesDrawn");
+}
+
+void Engine::updateDebugStats() {
+	updateDebugStat("screenProjectionTime", "Screen projection time", debugStats.getScreenProjectionTime());
+	updateDebugStat("drawTime", "Draw time", debugStats.getDrawTime());
+	updateDebugStat("frameTime", "Frame time", debugStats.getFrameTime());
+	updateDebugStat("fps", "FPS", debugStats.getFPS());
+	updateDebugStat("totalVertices", "Vertices", debugStats.getTotalVertices(activeLevel->getObjects()));
+	updateDebugStat("totalTriangles", "Triangles", debugStats.getTotalPolygons(activeLevel->getObjects()));
+	updateDebugStat("totalTrianglesProjected", "Triangles projected", debugStats.getTotalProjectedTriangles());
+	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", debugStats.getTotalDrawnTriangles());
+}
+
+void Engine::addDebugStat(const char* key) {
+	UIText* text = new UIText();
+
+	text->setPosition(10, 10 + (debugStatsTextMap.size() * 25));
+	text->setRenderer(renderer);
+	text->setFont(debugFont);
+
+	debugStatsTextMap.emplace(key, text);
+}
+
+void Engine::updateDebugStat(const char* key, const char* label, int value) {
+	char statString[50];
+
+	sprintf(statString, "%s: %d", label, value);
+
+	UIText* text = debugStatsTextMap.at(key);
+
+	text->setValue(statString);
+	text->draw();
 }
