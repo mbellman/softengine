@@ -6,12 +6,10 @@
  * Color
  * -----
  */
-Vec3 Color::ratios() const {
-	return {
-		(float)R / 255.0f,
-		(float)G / 255.0f,
-		(float)B / 255.0f
-	};
+void Color::clamp() {
+	R = normalize(R);
+	G = normalize(G);
+	B = normalize(B);
 }
 
 Color Color::lerp(const Color& c1, const Color& c2, float r) {
@@ -24,6 +22,14 @@ Color Color::lerp(const Color& c1, const Color& c2, float r) {
 
 int Color::normalize(int component) {
 	return FAST_CLAMP(component, 0, 255);
+}
+
+Vec3 Color::ratios() const {
+	return {
+		(float)R / 255.0f,
+		(float)G / 255.0f,
+		(float)B / 255.0f
+	};
 }
 
 Color Color::operator +(int illumination) const {

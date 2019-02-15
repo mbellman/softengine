@@ -108,11 +108,13 @@ private:
 	void delay(int ms);
 	void drawScene();
 	void drawTriangle(Triangle& triangle);
+	Vec3 getTriangleVertexColorIntensity(const Triangle& triangle, const Vertex2d& vertex);
 	void handleEvent(const SDL_Event& event);
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);
 	void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
-	void illuminateTriangle(Triangle& triangle);
+	void illuminateColorTriangle(Triangle& triangle);
+	void illuminateTextureTriangle(Triangle& triangle);
 
 	void projectTriangle(
 		const Vertex3d (&vertexes)[3],

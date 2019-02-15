@@ -410,11 +410,6 @@ const Color& Light::getColor() const {
 	return color;
 }
 
-/**
- * Since every vertex of every visible triangle within range
- * of a light needs to check the light's color ratios, we cache
- * the values for performance.
- */
 const Vec3& Light::getColorRatios() const {
 	return cachedColorRatios;
 }
@@ -428,6 +423,9 @@ void Light::setColor(int R, int G, int B) {
 	color.G = G;
 	color.B = B;
 
+	// Since every vertex of every visible triangle within range
+	// of a light needs to check the light's color ratios, we cache
+ 	// the values for performance.
 	cachedColorRatios = color.ratios();
 }
 

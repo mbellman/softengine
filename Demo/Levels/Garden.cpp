@@ -54,7 +54,7 @@ void Garden::load() {
 
 	Model* teapot = new Model(teapotObj);
 	teapot->setColor(255, 255, 255);
-	teapot->position = { 0, 10, 2000 };
+	teapot->position = { -500, 10, 2000 };
 	teapot->scale(50);
 
 	add(teapot);
@@ -67,7 +67,7 @@ void Garden::load() {
 	add(mesh);
 
 	settings.backgroundColor = { 0, 0, 0 };
-	settings.visibility = 4000;
+	// settings.visibility = 4000;
 	settings.brightness = 0.2;
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0, -0.1, 1 };

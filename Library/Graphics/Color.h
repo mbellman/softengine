@@ -12,6 +12,8 @@ struct Color {
 	int B = 255;
 
 	static Color lerp(const Color& c1, const Color& c2, float r);
+
+	void clamp();
 	Vec3 ratios() const;
 	Color operator +(int attenuation) const;
 	Color operator +(const Color& color) const;

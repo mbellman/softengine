@@ -112,7 +112,11 @@ void Engine::drawTriangle(Triangle& triangle) {
 			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
 		);
 	} else {
-		illuminateTriangle(triangle);
+		if (triangle.texture != NULL) {
+			illuminateTextureTriangle(triangle);
+		} else {
+			illuminateColorTriangle(triangle);
+		}
 
 		rasterizer->triangle(triangle);
 	}
@@ -290,6 +294,68 @@ void Engine::drawScene() {
 	debugStats.logDrawTime();
 }
 
+/**
+ * Returns the 3-component color intensity of a given triangle
+ * vertex, using the triangle itself and a reference to one of
+ * its vertices.
+ */
+Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, const Vertex2d& vertex) {
+	const Settings& settings = activeLevel->getSettings();
+	Vec3 colorIntensity = { 1, 1, 1 };
+
+	colorIntensity *= settings.brightness;
+
+	if (settings.brightness == 0) {
+		return colorIntensity;
+	}
+
+	if (settings.ambientLightFactor > 0) {
+		float dot = Vec3::dotProduct(triangle.normal, settings.ambientLightVector.unit());
+
+		if (dot < 0) {
+			float incidence = cosf((1 + dot) * M_PI / 2);
+			float intensity = incidence * settings.ambientLightFactor;
+			const Vec3& colorRatios = settings.ambientLightColor.ratios();
+
+			colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
+			colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
+			colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+		}
+	}
+
+	for (const auto* light : activeLevel->getLights()) {
+		if (
+			light->disabled ||
+			light->power == 0 ||
+			abs(light->position.x - vertex.worldVector.x) > light->spread ||
+			abs(light->position.y - vertex.worldVector.y) > light->spread ||
+			abs(light->position.z - vertex.worldVector.z) > light->spread
+		) {
+			continue;
+		}
+
+		Vec3 lightVector = vertex.worldVector - light->position;
+		float lightDistance = lightVector.magnitude();
+
+		if (lightDistance < light->spread) {
+			float dot = Vec3::dotProduct(triangle.normal, lightVector.unit());
+
+			if (dot < 0) {
+				float incidence = cosf((1 + dot) * M_PI / 2);
+				float illuminance = pow(1.0f - lightDistance / light->spread, 2);
+				float intensity = light->power * incidence * illuminance;
+				const Vec3& colorRatios = light->getColorRatios();
+
+				colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
+				colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
+				colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+			}
+		}
+	}
+
+	return colorIntensity;
+}
+
 void Engine::handleEvent(const SDL_Event& event) {
 	switch (event.type) {
 		case SDL_KEYDOWN:
@@ -343,89 +409,30 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	camera.yaw += (float)xDelta * deltaFactor;
 }
 
-void Engine::illuminateTriangle(Triangle& triangle) {
+void Engine::illuminateColorTriangle(Triangle& triangle) {
 	const Settings& settings = activeLevel->getSettings();
-	bool hasTexture = triangle.texture != NULL;
 
 	for (int i = 0; i < 3; i++) {
-		Color aggregateLightColor = { 0, 0, 0 };
-		Vec3 worldVector = triangle.vertices[i].worldVector;
-		Vertex2d* screenVertex = &triangle.vertices[i];
+		Vertex2d* vertex = &triangle.vertices[i];
+		const Vec3 colorIntensity = getTriangleVertexColorIntensity(triangle, *vertex);
 
-		if (hasTexture) {
-			screenVertex->textureIntensity *= settings.brightness;
-		} else {
-			screenVertex->color *= settings.brightness;
-		}
+		vertex->color.R *= colorIntensity.x;
+		vertex->color.G *= colorIntensity.y;
+		vertex->color.B *= colorIntensity.z;
+		vertex->color.clamp();
 
-		// Ambient lighting is a special distance-invariant case
-		if (settings.ambientLightFactor > 0) {
-			float dot = Vec3::dotProduct(triangle.normal, settings.ambientLightVector.unit());
+		float visibilityRatio = FAST_MIN((float)vertex->depth / settings.visibility, 1.0f);
 
-			if (dot < 0) {
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float intensity = incidence * settings.ambientLightFactor;
+		vertex->color = Color::lerp(vertex->color, settings.backgroundColor, visibilityRatio);
+	}
+}
 
-				if (hasTexture) {
-					if (settings.brightness > 0) {
-						const Vec3& colorRatios = settings.ambientLightColor.ratios();
+void Engine::illuminateTextureTriangle(Triangle& triangle) {
+	const Settings& settings = activeLevel->getSettings();
 
-						screenVertex->textureIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
-						screenVertex->textureIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
-						screenVertex->textureIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
-					}
-				} else {
-					float intensityMultiplier = settings.brightness > 0 ? (1.0f + intensity / settings.brightness) : 1.0f;
-
-					aggregateLightColor += settings.ambientLightColor * intensity;
-				}
-			}
-		}
-
-		for (const auto* light : activeLevel->getLights()) {
-			if (
-				light->disabled ||
-				light->power == 0 ||
-				abs(light->position.x - worldVector.x) > light->spread ||
-				abs(light->position.y - worldVector.y) > light->spread ||
-				abs(light->position.z - worldVector.z) > light->spread
-			) {
-				continue;
-			}
-
-			Vec3 lightVector = worldVector - light->position;
-			float lightDistance = lightVector.magnitude();
-
-			if (lightDistance < light->spread) {
-				float dot = Vec3::dotProduct(triangle.normal, lightVector.unit());
-
-				if (dot < 0) {
-					float incidence = cosf((1 + dot) * M_PI / 2);
-					float illuminance = pow(1.0f - lightDistance / light->spread, 2);
-					float intensity = light->power * incidence * illuminance;
-
-					if (hasTexture) {
-						if (settings.brightness > 0) {
-							const Vec3& colorRatios = light->getColorRatios();
-
-							screenVertex->textureIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
-							screenVertex->textureIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
-							screenVertex->textureIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
-						}
-					} else {
-						float intensityMultiplier = settings.brightness > 0 ? (1.0f + intensity / settings.brightness) : 1.0f;
-
-						aggregateLightColor += light->getColor() * intensity;
-						screenVertex->color *= intensityMultiplier;
-					}
-				}
-			}
-		}
-
-		float visibilityRatio = FAST_MIN((float)screenVertex->depth / settings.visibility, 1.0f);
-
-		screenVertex->color += aggregateLightColor;
-		screenVertex->color = Color::lerp(screenVertex->color, settings.backgroundColor, visibilityRatio);
+	for (int i = 0; i < 3; i++) {
+		Vertex2d* vertex = &triangle.vertices[i];
+		vertex->textureIntensity = getTriangleVertexColorIntensity(triangle, *vertex);
 	}
 }
 
