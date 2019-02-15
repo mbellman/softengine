@@ -10,9 +10,9 @@
  */
 struct Vertex2d : Colorable {
 	Coordinate coordinate;
-	int depth;
-	float w;
-	Vec2 uv;
+	float z;
+	float inverseDepth;
+	Vec2 perspectiveUV;
 	Vec3 textureIntensity = { 1.0f, 1.0f, 1.0f };
 	Vec3 worldVector;
 
@@ -39,7 +39,7 @@ struct Triangle {
 	Vec3 normal;
 	const TextureBuffer* texture = NULL;
 
-	float averageDepth() const;
+	float averageZ() const;
 };
 
 /**

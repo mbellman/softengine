@@ -104,5 +104,5 @@ void LightTest::load() {
 void LightTest::update(int dt, int runningTime) {
 	Light* light = (Light*)getObject("yellowLight");
 
-	light->power = 0.5f + 0.5 * cosf(runningTime / 500.0f);
+	light->power = 1.0f + cosf(runningTime / 500.0f);
 }

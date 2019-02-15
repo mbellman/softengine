@@ -34,9 +34,8 @@ private:
 		int y = 0;
 		int length = 0;
 		Range<Color> color;
-		Range<int> depth;
-		Range<Vec2> uv;
-		Range<float> w;
+		Range<float> inverseDepth;
+		Range<Vec2> perspectiveUV;
 		Range<Vec3> textureIntensity;
 		const TextureBuffer* texture;
 	};
@@ -80,7 +79,7 @@ private:
 	int visibility = Rasterizer::MAX_VISIBILITY;
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
-	int* depthBuffer;
+	float* depthBuffer;
 	int width;
 	int height;
 
@@ -91,17 +90,16 @@ private:
 	void flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture);
 	void flushScanlines();
 	int getColorLerpInterval(const Color& start, const Color& end, int lineLength);
-	inline int getMipmapLevel(const Range<int>& depth);
-	int getTextureSampleInterval(int tex_w, int tex_h, int lineLength, const Range<int>& depth, const Range<Vec2>& uv);
-	void setPixel(int x, int y, int depth = 1);
+	inline int getMipmapLevel(float averageDepth);
+	int getTextureSampleInterval(int tex_w, int tex_h, int lineLength, float averageDepth, const Range<Vec2>& perspectiveUV);
+	void setPixel(int x, int y);
 	void triangleScanline(Scanline* scanline);
 
 	void triangleScanline(
 		int x1, int y1, int length,
 		const Range<Color>& color,
-		const Range<int>& depth,
-		const Range<Vec2>& uv,
-		const Range<float>& w,
+		const Range<float>& inverseDepth,
+		const Range<Vec2>& perspectiveUV,
 		const Range<Vec3>& textureIntensity,
 		const TextureBuffer* texture
 	);

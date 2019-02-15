@@ -12,7 +12,7 @@ void TextureTest::load() {
 	add("blockTexture", new TextureBuffer("./DemoAssets/block.png"));
 
 	Cube* cube = new Cube(100);
-	cube->position = { 0, 100, 1500 };
+	cube->position = { 0, 100, 2500 };
 	cube->setTexture(getTexture("blockTexture"));
 	cube->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
 

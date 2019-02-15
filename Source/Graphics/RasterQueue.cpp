@@ -23,7 +23,7 @@ void RasterQueue::addCover(const Triangle& triangle, int zone) {
 }
 
 void RasterQueue::addTriangle(Triangle triangle) {
-	int zoneIndex = std::clamp((int)(triangle.averageDepth() / RasterQueue::ZONE_RANGE), 0, RasterQueue::MAX_ZONES - 1);
+	int zoneIndex = std::clamp((int)(triangle.averageZ() / RasterQueue::ZONE_RANGE), 0, RasterQueue::MAX_ZONES - 1);
 
 	if (zoneIndex > highestZoneIndex) {
 		highestZoneIndex = zoneIndex;

@@ -421,7 +421,7 @@ void Engine::illuminateColorTriangle(Triangle& triangle) {
 		vertex->color.B *= colorIntensity.z;
 		vertex->color.clamp();
 
-		float visibilityRatio = FAST_MIN((float)vertex->depth / settings.visibility, 1.0f);
+		float visibilityRatio = FAST_MIN(vertex->z / settings.visibility, 1.0f);
 
 		vertex->color = Color::lerp(vertex->color, settings.backgroundColor, visibilityRatio);
 	}
@@ -468,10 +468,10 @@ void Engine::projectTriangle(
 
 		vertex.coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
 		vertex.coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
-		vertex.w = 1.0f / vector.z;
-		vertex.depth = (int)vector.z;
+		vertex.z = vector.z;
+		vertex.inverseDepth = 1.0f / vector.z;
+		vertex.perspectiveUV = vertex3d.uv / vector.z;
 		vertex.color = vertex3d.color;
-		vertex.uv = vertex3d.uv / vector.z;
 		vertex.worldVector = worldVecs[i];
 
 		triangle.vertices[i] = vertex;

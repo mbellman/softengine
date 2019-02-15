@@ -10,12 +10,12 @@
 Vertex2d Vertex2d::lerp(const Vertex2d& v1, const Vertex2d& v2, float r) {
 	Vertex2d vertex;
 
+	vertex.color = Color::lerp(v1.color, v2.color, r);
 	vertex.coordinate.x = Lerp::lerp(v1.coordinate.x, v2.coordinate.x, r);
 	vertex.coordinate.y = Lerp::lerp(v1.coordinate.y, v2.coordinate.y, r);
-	vertex.color = Color::lerp(v1.color, v2.color, r);
-	vertex.depth = Lerp::lerp(v1.depth, v2.depth, r);
-	vertex.uv = Vec2::lerp(v1.uv, v2.uv, r);
-	vertex.w = Lerp::lerp(v1.w, v2.w, r);
+	vertex.z = Lerp::lerp(v1.z, v2.z, r);
+	vertex.inverseDepth = Lerp::lerp(v1.inverseDepth, v2.inverseDepth, r);
+	vertex.perspectiveUV = Vec2::lerp(v1.perspectiveUV, v2.perspectiveUV, r);
 	vertex.textureIntensity = Vec3::lerp(v1.textureIntensity, v2.textureIntensity, r);
 
 	return vertex;
@@ -39,8 +39,8 @@ Vertex3d Vertex3d::lerp(const Vertex3d& v1, const Vertex3d& v2, float r) {
  * Triangle
  * --------
  */
-float Triangle::averageDepth() const {
-	return (vertices[0].depth + vertices[1].depth + vertices[2].depth) / 3;
+float Triangle::averageZ() const {
+	return (vertices[0].z + vertices[1].z + vertices[2].z) / 3.0f;
 }
 
 /**
