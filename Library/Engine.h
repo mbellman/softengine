@@ -84,6 +84,7 @@ public:
 private:
 	constexpr static float NEAR_Z = 10.0f;
 	constexpr static int MOVEMENT_SPEED = 5;
+	constexpr static int AMBIENT_LIGHT_ID = 0;
 
 	DebugStats debugStats;
 	std::map<const char*, UIText*> debugStatsTextMap;
@@ -108,7 +109,7 @@ private:
 	void delay(int ms);
 	void drawScene();
 	void drawTriangle(Triangle& triangle);
-	Vec3 getTriangleVertexColorIntensity(const Triangle& triangle, const Vertex2d& vertex);
+	Vec3 getTriangleVertexColorIntensity(const Triangle& triangle, int vertexIndex);
 	void handleEvent(const SDL_Event& event);
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);
@@ -116,13 +117,14 @@ private:
 	void illuminateColorTriangle(Triangle& triangle);
 	void illuminateTextureTriangle(Triangle& triangle);
 
-	void projectTriangle(
+	void projectAndQueueTriangle(
 		const Vertex3d (&vertexes)[3],
 		const Vec3 (&unitVecs)[3],
 		const Vec3 (&worldVecs)[3],
-		const Vec3& normal,
-		const TextureBuffer* texture,
-		float scale
+		const Object* sourceObject,
+		const Polygon* sourcePolygon,
+		float scale,
+		bool isSynthetic
 	);
 
 	void update();

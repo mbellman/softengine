@@ -48,6 +48,7 @@ struct Vec3 {
 	Vec3 operator -(const Vec3& vector) const;
 	Vec3 operator *(float scalar) const;
 	Vec3 operator *=(float scalar);
+	Vec3 operator *=(const Vec3& vector);
 };
 
 /**

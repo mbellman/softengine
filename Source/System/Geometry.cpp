@@ -47,6 +47,12 @@ float Triangle::averageZ() const {
  * Polygon
  * -------
  */
+Polygon::~Polygon() {
+	for (int i = 0; i < 3; i++) {
+		vertexLightCache[i].clear();
+	}
+}
+
 void Polygon::bindVertex(int index, Vertex3d* vertex) {
 	vertices[index] = vertex;
 }

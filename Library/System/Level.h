@@ -16,6 +16,7 @@ struct Settings {
 	Color ambientLightColor = { 0, 0, 0 };
 	Vec3 ambientLightVector = { 0, -1, 0 };
 	float ambientLightFactor = 1.0f;
+	bool hasStaticAmbientLight = false;
 	float brightness = 1.0f;
 	int visibility = INT_MAX;
 };

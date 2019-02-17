@@ -9,6 +9,7 @@ void Default::load() {
 	Mesh* mesh = new Mesh(100, 40, 50);
 
 	mesh->position = { -1000, 0, -1000 };
+	mesh->isStatic = true;
 
 	Cube* cube = new Cube(100);
 	Cube* cube2 = new Cube(50);
@@ -18,6 +19,9 @@ void Default::load() {
 	cube->position = { -200, 200, 500 };
 	cube2->position = { 50, 150, 500 };
 	cube3->position = { 200, 100, 500 };
+	cube->isStatic = true;
+	cube2->isStatic = true;
+	cube3->isStatic = true;
 	oscillatingCube->position = { 0, 0, 1500 };
 
 	cube->rotate({ 0.5, 0.5, 0.5 });
@@ -29,6 +33,7 @@ void Default::load() {
 
 	icosahedron->position = { 0, 220, 2000 };
 	icosahedron->scale(200);
+	icosahedron->isStatic = true;
 
 	add(mesh);
 	add(cube);
@@ -40,15 +45,15 @@ void Default::load() {
 	Light* light = new Light();
 	light->setColor(0, 0, 255);
 	light->position = { 0, 100, 2000 };
-	light->spread = 1000;
+	light->range = 1000;
 
 	add("light", light);
 
-	settings.backgroundColor = { 25, 0, 50 };
-	settings.brightness = 0.2;
-	settings.ambientLightColor = { 255, 0, 100 };
+	settings.backgroundColor = { 50, 0, 75 };
+	settings.brightness = 0.3;
+	settings.ambientLightColor = { 255, 0, 200 };
 	settings.ambientLightVector = { 0, -1, 1 };
-	settings.ambientLightFactor = 0.3;
+	settings.ambientLightFactor = 0.5;
 }
 
 void Default::update(int dt, int runningTime) {

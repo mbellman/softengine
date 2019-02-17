@@ -314,7 +314,7 @@ void Rasterizer::triangle(Triangle& triangle) {
 	Vertex2d* top = &triangle.vertices[0];
 	Vertex2d* middle = &triangle.vertices[1];
 	Vertex2d* bottom = &triangle.vertices[2];
-	const TextureBuffer* texture = triangle.texture;
+	const TextureBuffer* texture = triangle.sourceObject->texture;
 
 	if (top->coordinate.y > middle->coordinate.y) swap(top, middle);
 	if (middle->coordinate.y > bottom->coordinate.y) swap(middle, bottom);

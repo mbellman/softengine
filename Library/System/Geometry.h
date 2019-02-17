@@ -3,6 +3,10 @@
 #include <System/Math.h>
 #include <Graphics/Color.h>
 #include <Graphics/TextureBuffer.h>
+#include <map>
+
+struct Polygon;
+struct Object;
 
 /**
  * Vertex2d
@@ -36,8 +40,16 @@ struct Vertex3d : Colorable {
  */
 struct Triangle {
 	Vertex2d vertices[3];
-	Vec3 normal;
-	const TextureBuffer* texture = NULL;
+	Polygon* sourcePolygon = NULL;
+	const Object* sourceObject = NULL;
+
+	/**
+	 * Determines whether the triangle is the result of
+	 * a polygon clipped against the near plane. Synthetic
+	 * triangles are not subject to light caching due to
+	 * their ephemeral nature.
+	 */
+	bool isSynthetic = false;
 
 	float averageZ() const;
 };
@@ -49,6 +61,9 @@ struct Triangle {
 struct Polygon {
 	Vertex3d* vertices[3];
 	Vec3 normal;
+	std::map<int, Vec3> vertexLightCache[3];
+
+	~Polygon();
 
 	void bindVertex(int index, Vertex3d* vertex);
 };
