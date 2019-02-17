@@ -18,13 +18,18 @@ void LightTest::load() {
 
 	floorMesh->position = { 500, 0, 0 };
 	floorMesh->rotateDeg({ 0, -90, 0 });
+	floorMesh->isStatic = true;
+
 	leftWall->setColor(210, 210, 210);
 	leftWall->position = { -500, 0, 0 };
 	leftWall->rotateDeg({ 0, -90, 0 });
 	leftWall->rotateDeg({ 0, 0, -90 });
+	leftWall->isStatic = true;
+
 	rightWall->position = { 500, 500, 0 };
 	rightWall->rotateDeg({ 0, -90, 90 });
 	rightWall->setColor(210, 210, 210);
+	rightWall->isStatic = true;
 
 	add("wall", new TextureBuffer("./DemoAssets/wall.png"));
 
@@ -40,18 +45,25 @@ void LightTest::load() {
 	Model* icosahedron = new Model(icoObj);
 	icosahedron->position = { 0, 250, 500 };
 	icosahedron->scale(100);
+	icosahedron->isStatic = true;
 
 	add(icosahedron);
 
 	Cube* cube1 = new Cube(50);
 	Cube* cube2 = new Cube(70);
 	Cube* cube3 = new Cube(150);
+
 	cube1->position = { -200, 300, 1000 };
 	cube2->position = { 200, 150, 1800 };
 	cube3->position = { -150, 200, 2600 };
+
 	cube1->rotate({ -2.4, 0, -1.2 });
 	cube2->rotate({ 0, 1.5, 0.6 });
 	cube3->rotate({ 1.5, -1.8, 1.6 });
+
+	cube1->isStatic = true;
+	cube2->isStatic = true;
+	cube3->isStatic = true;
 
 	add("cat", new TextureBuffer("./DemoAssets/cat.png"));
 	add("opossum", new TextureBuffer("./DemoAssets/opossum.png"));
@@ -66,30 +78,33 @@ void LightTest::load() {
 	add(cube2);
 	add(cube3);
 
-	Light* light = new Light();
-	light->position = { 0, 300, 500 };
-	light->setColor(255, 220, 50);
-	light->spread = 1000;
+	Light* yellowLight = new Light();
+	yellowLight->position = { 0, 300, 500 };
+	yellowLight->setColor(255, 220, 50);
+	yellowLight->range = 1000;
 
 	Light* light2 = new Light();
 	light2->position = { 200, 200, 1500 };
 	light2->setColor(255, 0, 0);
-	light2->spread = 700;
+	light2->range = 700;
 	light2->power = 1.5f;
+	light2->isStatic = true;
 
 	Light* light3 = new Light();
 	light3->position = { -200, 150, 2200 };
 	light3->setColor(0, 0, 255);
-	light3->spread = 600;
+	light3->range = 600;
 	light3->power = 1.5f;
+	light3->isStatic = true;
 
 	Light* light4 = new Light();
 	light4->position = { 300, 150, 2900 };
 	light4->setColor(0, 255, 0);
-	light4->spread = 800;
+	light4->range = 800;
 	light4->power = 1.5f;
+	light4->isStatic = true;
 
-	add("yellowLight", light);
+	add("yellowLight", yellowLight);
 	add(light2);
 	add(light3);
 	add(light4);
@@ -99,6 +114,7 @@ void LightTest::load() {
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0, -0.5, 1 };
 	settings.ambientLightFactor = 0.2;
+	settings.hasStaticAmbientLight = true;
 }
 
 void LightTest::update(int dt, int runningTime) {

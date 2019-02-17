@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <map>
 #include <algorithm>
 #include <Helpers.h>
 #include <System/Quaternion.h>
@@ -112,7 +113,7 @@ void Engine::drawTriangle(Triangle& triangle) {
 			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
 		);
 	} else {
-		if (triangle.texture != NULL) {
+		if (triangle.sourceObject->texture != NULL) {
 			illuminateTextureTriangle(triangle);
 		} else {
 			illuminateColorTriangle(triangle);
@@ -227,6 +228,12 @@ void Engine::drawScene() {
 						u_vecs[i] = t_verts[i].vector.unit();
 						w_vecs[i] = Vec3::lerp(w_vecs[0], w_vecs[i], deltas[i]);
 					}
+
+					// Project the clipped polygon
+					projectAndQueueTriangle(
+						t_verts, u_vecs, w_vecs,
+						object, &polygon, projectionScale, true
+					);
 				} else if (frustumCuller.near == 1) {
 					// If only one of the polygon's vertices is behind the
 					// near plane, we need to clip it into a quad, which then
@@ -259,25 +266,27 @@ void Engine::drawScene() {
 					w_quadVecs[3] = Vec3::lerp(w_vecs[0], w_vecs[2], v3Delta);
 
 					// Project the quad's two polygons individually
-					projectTriangle(
+					projectAndQueueTriangle(
 						{ quadVerts[0], quadVerts[1], quadVerts[2] },
 						{ u_quadVecs[0], u_quadVecs[1], u_quadVecs[2] },
 						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
-						polygon.normal, object->texture, projectionScale
+						object, &polygon, projectionScale, true
 					);
 
-					projectTriangle(
+					projectAndQueueTriangle(
 						{ quadVerts[0], quadVerts[2], quadVerts[3] },
 						{ u_quadVecs[0], u_quadVecs[2], u_quadVecs[3] },
 						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
-						polygon.normal, object->texture, projectionScale
+						object, &polygon, projectionScale, true
 					);
-
-					continue;
 				}
+			} else {
+				// Project a regular, unclipped triangle
+				projectAndQueueTriangle(
+					t_verts, u_vecs, w_vecs,
+					object, &polygon, projectionScale, false
+				);
 			}
-
-			projectTriangle(t_verts, u_vecs, w_vecs, polygon.normal, object->texture, projectionScale);
 		}
 	}
 
@@ -299,9 +308,11 @@ void Engine::drawScene() {
  * vertex, using the triangle itself and a reference to one of
  * its vertices.
  */
-Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, const Vertex2d& vertex) {
+Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, int vertexIndex) {
+	const Vertex2d& vertex = triangle.vertices[vertexIndex];
 	const Settings& settings = activeLevel->getSettings();
-	Vec3 colorIntensity = { 1, 1, 1 };
+	std::map<int, Vec3>& vertexLightCache = triangle.sourcePolygon->vertexLightCache[vertexIndex];
+	Vec3 colorIntensity = { 1.0f, 1.0f, 1.0f };
 
 	colorIntensity *= settings.brightness;
 
@@ -309,27 +320,62 @@ Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, const Ver
 		return colorIntensity;
 	}
 
+	// Ambient light is a special distance-invariant light
+	// source which affects all geometry in the level
 	if (settings.ambientLightFactor > 0) {
-		float dot = Vec3::dotProduct(triangle.normal, settings.ambientLightVector.unit());
+		const auto& cachedAmbientLight = vertexLightCache.find(Engine::AMBIENT_LIGHT_ID);
+		bool isCacheableLightSource = settings.hasStaticAmbientLight && triangle.sourceObject->isStatic && !triangle.isSynthetic;
 
-		if (dot < 0) {
-			float incidence = cosf((1 + dot) * M_PI / 2);
-			float intensity = incidence * settings.ambientLightFactor;
-			const Vec3& colorRatios = settings.ambientLightColor.ratios();
+		if (isCacheableLightSource && cachedAmbientLight != vertexLightCache.end()) {
+			const Vec3& cachedAmbientLightIntensity = cachedAmbientLight->second;
 
-			colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
-			colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
-			colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+			colorIntensity *= cachedAmbientLightIntensity;
+		} else {
+			float dot = Vec3::dotProduct(triangle.sourcePolygon->normal, settings.ambientLightVector.unit());
+
+			if (dot < 0) {
+				float incidence = cosf((1 + dot) * M_PI / 2);
+				float intensity = incidence * settings.ambientLightFactor;
+				const Vec3& colorRatios = settings.ambientLightColor.ratios();
+
+				Vec3 ambientLightColorIntensity = {
+					(1.0f + (intensity * colorRatios.x) / settings.brightness),
+					(1.0f + (intensity * colorRatios.y) / settings.brightness),
+					(1.0f + (intensity * colorRatios.z) / settings.brightness)
+				};
+
+				colorIntensity *= ambientLightColorIntensity;
+
+				if (isCacheableLightSource) {
+					vertexLightCache.emplace(Engine::AMBIENT_LIGHT_ID, ambientLightColorIntensity);
+				}
+			}
 		}
 	}
 
+	// Regular light sources must be within range of a vertex
+	// to affect its color intensity
 	for (const auto* light : activeLevel->getLights()) {
+		bool isCacheableLightSource = triangle.sourceObject->isStatic && light->isStatic && !triangle.isSynthetic;
+
+		if (isCacheableLightSource) {
+			const auto& cachedLight = vertexLightCache.find(light->getId());
+
+			if (cachedLight != vertexLightCache.end()) {
+				const Vec3& cachedLightIntensity = cachedLight->second;
+
+				colorIntensity *= cachedLightIntensity;
+
+				continue;
+			}
+		}
+
 		if (
-			light->disabled ||
+			light->isDisabled ||
 			light->power == 0 ||
-			abs(light->position.x - vertex.worldVector.x) > light->spread ||
-			abs(light->position.y - vertex.worldVector.y) > light->spread ||
-			abs(light->position.z - vertex.worldVector.z) > light->spread
+			abs(light->position.x - vertex.worldVector.x) > light->range ||
+			abs(light->position.y - vertex.worldVector.y) > light->range ||
+			abs(light->position.z - vertex.worldVector.z) > light->range
 		) {
 			continue;
 		}
@@ -337,18 +383,26 @@ Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, const Ver
 		Vec3 lightVector = vertex.worldVector - light->position;
 		float lightDistance = lightVector.magnitude();
 
-		if (lightDistance < light->spread) {
-			float dot = Vec3::dotProduct(triangle.normal, lightVector.unit());
+		if (lightDistance < light->range) {
+			float dot = Vec3::dotProduct(triangle.sourcePolygon->normal, lightVector.unit());
 
 			if (dot < 0) {
 				float incidence = cosf((1 + dot) * M_PI / 2);
-				float illuminance = pow(1.0f - lightDistance / light->spread, 2);
+				float illuminance = pow(1.0f - lightDistance / light->range, 2);
 				float intensity = light->power * incidence * illuminance;
 				const Vec3& colorRatios = light->getColorRatios();
 
-				colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
-				colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
-				colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+				Vec3 lightColorIntensity = {
+					(1.0f + (intensity * colorRatios.x) / settings.brightness),
+					(1.0f + (intensity * colorRatios.y) / settings.brightness),
+					(1.0f + (intensity * colorRatios.z) / settings.brightness)
+				};
+
+				colorIntensity *= lightColorIntensity;
+
+				if (isCacheableLightSource) {
+					vertexLightCache.emplace(light->getId(), lightColorIntensity);
+				}
 			}
 		}
 	}
@@ -414,7 +468,7 @@ void Engine::illuminateColorTriangle(Triangle& triangle) {
 
 	for (int i = 0; i < 3; i++) {
 		Vertex2d* vertex = &triangle.vertices[i];
-		const Vec3 colorIntensity = getTriangleVertexColorIntensity(triangle, *vertex);
+		const Vec3 colorIntensity = getTriangleVertexColorIntensity(triangle, i);
 
 		vertex->color.R *= colorIntensity.x;
 		vertex->color.G *= colorIntensity.y;
@@ -432,7 +486,7 @@ void Engine::illuminateTextureTriangle(Triangle& triangle) {
 
 	for (int i = 0; i < 3; i++) {
 		Vertex2d* vertex = &triangle.vertices[i];
-		vertex->textureIntensity = getTriangleVertexColorIntensity(triangle, *vertex);
+		vertex->textureIntensity = getTriangleVertexColorIntensity(triangle, i);
 	}
 }
 
@@ -440,24 +494,24 @@ void Engine::illuminateTextureTriangle(Triangle& triangle) {
  * Projects and adds a new triangle to the raster queue using
  * a set of three vertices, three unit vectors, and three
  * world vectors representing to the original location of the
- * source polygon. Normal, texture, and projection scale values
- * must also be provided. For efficiency we forward the arguments
- * from drawScene(), which has already calculated them.
+ * source polygon, as well as the triangle's source object and
+ * polygon for contextual information. For efficiency we forward
+ * the arguments from drawScene(), which has already computed them.
  */
-void Engine::projectTriangle(
+void Engine::projectAndQueueTriangle(
 	const Vertex3d (&vertexes)[3],
 	const Vec3 (&unitVecs)[3],
 	const Vec3 (&worldVecs)[3],
-	const Vec3& normal,
-	const TextureBuffer* texture,
-	float scale
+	const Object* sourceObject,
+	const Polygon* sourcePolygon,
+	float scale,
+	bool isSynthetic
 ) {
 	Triangle triangle;
-	triangle.normal = normal;
 
-	if (texture != NULL) {
-		triangle.texture = texture;
-	}
+	triangle.sourcePolygon = const_cast<Polygon*>(sourcePolygon);
+	triangle.sourceObject = sourceObject;
+	triangle.isSynthetic = isSynthetic;
 
 	for (int i = 0; i < 3; i++) {
 		const Vertex3d& vertex3d = vertexes[i];

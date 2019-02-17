@@ -14,12 +14,14 @@
  * ------
  */
 struct Object {
+	bool isStatic = false;
 	Vec3 position;
 	TextureBuffer* texture = NULL;
 
 	Object();
 	virtual ~Object();
 
+	int getId() const;
 	const std::vector<Polygon>& getPolygons() const;
 	int getPolygonCount() const;
 	int getVertexCount() const;
@@ -41,6 +43,7 @@ protected:
 
 private:
 	std::vector<Polygon> polygons;
+	int id;
 
 	static Vec3 computePolygonNormal(const Polygon& polygon);
 };
@@ -87,8 +90,8 @@ private:
  */
 struct Light : Object {
 	float power = 1.0f;
-	bool disabled = false;
-	float spread = 500;
+	float range = 500;
+	bool isDisabled = false;
 
 	static bool isLight(Object* object);
 	const Color& getColor() const;

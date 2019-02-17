@@ -9,7 +9,9 @@
  * A base class used for 3D objects. Subclasses offer more
  * specialized types of Objects with custom geometry.
  */
-Object::Object() {}
+Object::Object() {
+	id = rand() % 30000;
+}
 
 Object::~Object() {
 	polygons.clear();
@@ -72,6 +74,10 @@ void Object::computeSurfaceNormals() {
 	for (auto& polygon : polygons) {
 		polygon.normal = Object::computePolygonNormal(polygon);
 	}
+}
+
+int Object::getId() const {
+	return id;
 }
 
 int Object::getPolygonCount() const {
