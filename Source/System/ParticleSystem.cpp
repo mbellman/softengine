@@ -29,21 +29,17 @@ const std::vector<Particle*>& ParticleSystem::getParticles() const {
 
 void ParticleSystem::resetParticle(Particle* particle) {
 	Vec3 newPosition = {
-		RNG::random(range[0].x, range[1].x),
-		RNG::random(range[0].y, range[1].y),
-		RNG::random(range[0].z, range[1].z)
+		RNG::random(xSpawnRange.start, xSpawnRange.end),
+		RNG::random(ySpawnRange.start, ySpawnRange.end),
+		RNG::random(zSpawnRange.start, zSpawnRange.end)
 	};
 
 	particle->position = newPosition;
 	particle->shouldReset = false;
 }
 
-void ParticleSystem::setBehavior(std::function<void(Particle*, int)> handler) {
+void ParticleSystem::setParticleBehavior(std::function<void(Particle*, int)> handler) {
 	behaviorHandler = handler;
-}
-
-void ParticleSystem::setLocation(const Vec3 location) {
-	setRange(location, location);
 }
 
 void ParticleSystem::setParticleColor(const Color& color) {
@@ -64,9 +60,21 @@ void ParticleSystem::setParticleTexture(TextureBuffer* texture) {
 	}
 }
 
-void ParticleSystem::setRange(const Vec3 r1, const Vec3 r2) {
-	range[0] = r1;
-	range[1] = r2;
+void ParticleSystem::setSpawnLocation(const Vec3& location) {
+	xSpawnRange.start = location.x;
+	xSpawnRange.end = location.x;
+
+	ySpawnRange.start = location.y;
+	ySpawnRange.end = location.y;
+
+	zSpawnRange.start = location.z;
+	zSpawnRange.end = location.z;
+}
+
+void ParticleSystem::setSpawnRange(const Range<float> xSpawnRange, const Range<float> ySpawnRange, const Range<float> zSpawnRange) {
+	this->xSpawnRange = xSpawnRange;
+	this->ySpawnRange = ySpawnRange;
+	this->zSpawnRange = zSpawnRange;
 }
 
 void ParticleSystem::update(int dt) {

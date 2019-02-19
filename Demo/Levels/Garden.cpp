@@ -74,15 +74,16 @@ void Garden::load() {
 
 	ParticleSystem* snow = new ParticleSystem(2000);
 
-	snow->setRange(
-		{ -2500, 2000, 0 },
-		{ 2500, 0, 5000 }
+	snow->setSpawnRange(
+		{ -2500.0f, 2500.0f },
+		{ 0.0f, 2000.0f },
+		{ 0.0f, 5000.0f }
 	);
 
 	snow->setParticleColor({ 255, 255, 255 });
 	snow->setParticleSize(5, 5);
 
-	snow->setBehavior([=](Particle* particle, int dt) {
+	snow->setParticleBehavior([=](Particle* particle, int dt) {
 		particle->position.y -= (float)dt / 5.0f;
 
 		if (particle->position.y < -100) {

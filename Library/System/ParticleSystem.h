@@ -3,6 +3,7 @@
 #include <System/Objects.h>
 #include <Graphics/Color.h>
 #include <Graphics/TextureBuffer.h>
+#include <System/Math.h>
 #include <functional>
 #include <vector>
 
@@ -16,18 +17,20 @@ public:
 	~ParticleSystem();
 
 	const std::vector<Particle*>& getParticles() const;
-	void setBehavior(std::function<void(Particle*, int)> handler);
-	void setLocation(const Vec3 location);
+	void setParticleBehavior(std::function<void(Particle*, int)> handler);
 	void setParticleColor(const Color& color);
 	void setParticleSize(float width, float height);
 	void setParticleTexture(TextureBuffer* texture);
-	void setRange(const Vec3 r1, const Vec3 r2);
+	void setSpawnLocation(const Vec3& location);
+	void setSpawnRange(const Range<float> xSpawnRange, const Range<float> ySpawnRange, const Range<float> zSpawnRange);
 	void update(int dt);
 
 private:
 	std::vector<Particle*> particles;
 	std::function<void(Particle*, int)> behaviorHandler;
-	Vec3 range[2];
+	Range<float> xSpawnRange = { 0.0f, 0.0f };
+	Range<float> ySpawnRange = { 0.0f, 0.0f };
+	Range<float> zSpawnRange = { 0.0f, 0.0f };
 
 	void resetParticle(Particle* particle);
 };
