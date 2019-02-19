@@ -120,5 +120,5 @@ void Garden::onUpdate(int dt, int runningTime) {
 
 	float distance = 6.0f + (cosf(runningTime / 800.0f) * 6.0f);
 	applauseSound->setPosition({0, 0, distance});
-	std::cout << distance << std::endl;
+	std::cout << "Sound distance z: " << distance << std::endl;
 }
