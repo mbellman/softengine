@@ -1,8 +1,10 @@
+#include <cmath>
+
 #include <Levels/Garden.h>
 #include <Graphics/TextureBuffer.h>
+#include <Sound/Sound.h>
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
-#include <cmath>
 
 /**
  * Garden
@@ -93,6 +95,9 @@ void Garden::load() {
 
 	addParticleSystem("snow", snow);
 
+	auto* applause = new Sound("./DemoAssets/applause.wav");
+	applause->play();
+
 	settings.backgroundColor = { 0, 10, 20 };
 	settings.visibility = 3500;
 	settings.brightness = 0.1;
@@ -103,7 +108,7 @@ void Garden::load() {
 }
 
 void Garden::onUpdate(int dt, int runningTime) {
-	Light* movingLight = (Light*)getObject("movingLight");
+	auto* movingLight = getObject("movingLight");
 
 	movingLight->position.x = 1500.0f * sinf(runningTime / 900.0f);
 	movingLight->position.z = 2000.0f + 1500.0f * cosf(runningTime / 900.0f);

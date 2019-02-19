@@ -14,7 +14,12 @@ Sound::Sound(const char* filename) {
 }
 
 void Sound::play() {
+	std::cout << "I was played\n";
+	ALint error;
 	alSourcePlay(m_source);
+	if((error = alGetError()) != AL_NO_ERROR) {
+		std::cout << "Failed to play sound: " << alutGetErrorString(error) << std::endl;
+	}
 }
 
 bool Sound::isPlaying() {
