@@ -34,6 +34,7 @@ public:
 
 	const std::vector<Object*>& getObjects();
 	const std::vector<Light*>& getLights();
+	const std::vector<Sound*>& getSounds();
 	const Settings& getSettings();
 	bool hasQuit();
 	virtual void load() = 0;

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <System/Objects.h>
 #include <Graphics/TextureBuffer.h>
+#include <Sound/Sound.h>
 
 /**
  * Level
@@ -26,6 +27,8 @@ void Level::add(Object* object) {
 
 	if (object->isOfType<Light>()) {
 		lights.push_back((Light*)object);
+	} else if(object->isOfType<Sound>()) {
+		sounds.push_back((Sound*)object);
 	}
 }
 
@@ -88,6 +91,10 @@ const std::vector<Object*>& Level::getObjects() {
 
 const std::vector<Light*>& Level::getLights() {
 	return lights;
+}
+
+const std::vector<Sound*>& Level::getSounds() {
+	return sounds;
 }
 
 const Settings& Level::getSettings() {
