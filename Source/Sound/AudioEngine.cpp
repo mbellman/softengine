@@ -12,11 +12,28 @@
 #define NUM_ENVIRONMENTS 1
 
 bool AudioEngine::init() {
-	std::cout << "Initializing AudioEngine...\n";
+	ALuint buffer, source;
+    ALint state;
+
 	alutInit(0, NULL);
 	alGetError();
 
-	ALfloat listenerPos[]={0.0,0.0,4.0};
-	ALfloat listenerVel[]={0.0,0.0,0.0};
-	ALfloat listenerOri[]={0.0,0.0,1.0, 0.0,1.0,0.0};
+	buffer = alutCreateBufferFromFile("./DemoAssets/applause.wav");
+
+	alGenSources(1, &source);
+    alSourcei(source, AL_BUFFER, buffer);
+
+	alSourcePlay(source);
+
+    // Wait for the song to complete
+    do {
+        alGetSourcei(source, AL_SOURCE_STATE, &state);
+    } while (state == AL_PLAYING);
+
+    // Clean up sources and buffers
+    alDeleteSources(1, &source);
+    alDeleteBuffers(1, &buffer);
+
+    // Exit everything
+    alutExit();
 }
