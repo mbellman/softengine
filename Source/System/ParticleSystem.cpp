@@ -28,13 +28,13 @@ const std::vector<Particle*>& ParticleSystem::getParticles() const {
 }
 
 void ParticleSystem::resetParticle(Particle* particle) {
-	Vec3 newPosition = {
+	particle->position = {
 		RNG::random(xSpawnRange.start, xSpawnRange.end),
 		RNG::random(ySpawnRange.start, ySpawnRange.end),
 		RNG::random(zSpawnRange.start, zSpawnRange.end)
 	};
 
-	particle->position = newPosition;
+	particle->rotateDeg({ 0.0f, RNG::random(0.0f, 360.0f), 0.0f });
 	particle->shouldReset = false;
 }
 
