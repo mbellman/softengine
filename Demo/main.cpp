@@ -11,7 +11,7 @@ int height = 720;
 
 int main(int argc, char* argv[]) {
 	AudioEngine audio;
-	audio.init();
+
 
 	Engine engine(width, height, DEBUG_STATS);
 

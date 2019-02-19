@@ -2,5 +2,6 @@
 
 class AudioEngine {
 public:
-	bool init();
+	AudioEngine();
+	~AudioEngine();
 };
