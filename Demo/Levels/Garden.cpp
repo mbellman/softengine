@@ -1,6 +1,7 @@
 #include <Levels/Garden.h>
 #include <Graphics/TextureBuffer.h>
 #include <System/Objects.h>
+#include <System/ParticleSystem.h>
 #include <cmath>
 
 /**
@@ -10,7 +11,6 @@
 void Garden::load() {
 	ObjLoader treeObj("./DemoAssets/tree-model.obj");
 	ObjLoader icoObj("./DemoAssets/da-vinci.obj");
-	ObjLoader teapotObj("./DemoAssets/teapot.obj");
 
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
 	add("ground-texture", new TextureBuffer("./DemoAssets/ground-texture.png"));
@@ -55,13 +55,13 @@ void Garden::load() {
 
 	add("movingLight", movingLight);
 
-	Model* teapot = new Model(teapotObj);
-	teapot->setColor(255, 255, 255);
-	teapot->position = { -1000, 10, 2000 };
-	teapot->scale(50);
-	teapot->isStatic = true;
+	Model* icosahedron = new Model(icoObj);
+	icosahedron->setColor(255, 255, 255);
+	icosahedron->position = { 0, 150, 2500 };
+	icosahedron->scale(200);
+	icosahedron->isStatic = true;
 
-	add(teapot);
+	add(icosahedron);
 
 	Mesh* mesh = new Mesh(50, 50, 100);
 	mesh->setColor(10, 5, 0);
@@ -72,16 +72,37 @@ void Garden::load() {
 
 	add(mesh);
 
-	settings.backgroundColor = { 0, 0, 0 };
-	// settings.visibility = 4000;
-	settings.brightness = 0.2;
-	settings.ambientLightColor = { 0, 0, 255 };
-	settings.ambientLightVector = { 0, -0.1, 1 };
-	settings.ambientLightFactor = 1;
+	ParticleSystem* snow = new ParticleSystem(2000);
+
+	snow->setSpawnRange(
+		{ -2500.0f, 2500.0f },
+		{ 0.0f, 2000.0f },
+		{ 0.0f, 5000.0f }
+	);
+
+	snow->setParticleColor({ 255, 255, 255 });
+	snow->setParticleSize(5, 5);
+
+	snow->setParticleBehavior([=](Particle* particle, int dt) {
+		particle->position.y -= (float)dt / 5.0f;
+
+		if (particle->position.y < -100) {
+			particle->shouldReset = true;
+		}
+	});
+
+	addParticleSystem("snow", snow);
+
+	settings.backgroundColor = { 0, 10, 20 };
+	settings.visibility = 3500;
+	settings.brightness = 0.1;
+	settings.ambientLightColor = { 0, 0, 100 };
+	settings.ambientLightVector = { 0, -0.8f, 0.5f };
+	settings.ambientLightFactor = 0.5f;
 	settings.hasStaticAmbientLight = true;
 }
 
-void Garden::update(int dt, int runningTime) {
+void Garden::onUpdate(int dt, int runningTime) {
 	Light* movingLight = (Light*)getObject("movingLight");
 
 	movingLight->position.x = 1500.0f * sinf(runningTime / 900.0f);

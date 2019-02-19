@@ -126,6 +126,14 @@ void Object::scale(float scalar) {
 	}
 }
 
+void Object::scale(const Vec3& vector) {
+	for (auto& vertex : vertices) {
+		vertex.vector.x *= vector.x;
+		vertex.vector.y *= vector.y;
+		vertex.vector.z *= vector.z;
+	}
+}
+
 void Object::setColor(int R, int G, int B) {
 	for (int i = 0; i < vertices.size(); i++) {
 		vertices.at(i).color = { R, G, B };
@@ -134,6 +142,10 @@ void Object::setColor(int R, int G, int B) {
 
 void Object::setColor(const Color& color) {
 	setColor(color.R, color.G, color.B);
+}
+
+void Object::update(int dt) {
+
 }
 
 /**
@@ -409,6 +421,27 @@ void Cube::setFaceUVCoordinates(float x1, float y1, float x2, float y2) {
 }
 
 /**
+ * Particle
+ * --------
+ *
+ * Creates a simple flat surface used for particle effects.
+ */
+Particle::Particle() {
+	addVertex({ -1, 1, 0 });
+	addVertex({ 1, 1, 0 });
+	addVertex({ -1, -1, 0 });
+	addVertex({ 1, -1, 0 });
+
+	// 'Front' face
+	addPolygon(0, 2, 1);
+	addPolygon(1, 2, 3);
+
+	// 'Back' face
+	addPolygon(0, 1, 2);
+	addPolygon(1, 3, 2);
+}
+
+/**
  * Light
  * -----
  */
@@ -418,10 +451,6 @@ const Color& Light::getColor() const {
 
 const Vec3& Light::getColorRatios() const {
 	return cachedColorRatios;
-}
-
-bool Light::isLight(Object* object) {
-	return dynamic_cast<Light*>(object) != NULL;
 }
 
 void Light::setColor(int R, int G, int B) {

@@ -18,6 +18,7 @@ public:
 	~Rasterizer();
 
 	void clear();
+	int getTotalScanlines();
 	void line(int x1, int y1, int x2, int y2);
 	void render(SDL_Renderer* renderer, int sizeFactor);
 	void setBackgroundColor(const Color& color);

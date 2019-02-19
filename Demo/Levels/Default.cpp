@@ -56,7 +56,7 @@ void Default::load() {
 	settings.ambientLightFactor = 0.5;
 }
 
-void Default::update(int dt, int runningTime) {
+void Default::onUpdate(int dt, int runningTime) {
 	getObject("oscillatingCube")->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
 
 	Light* light = (Light*)getObject("light");
