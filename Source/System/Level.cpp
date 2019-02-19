@@ -37,6 +37,10 @@ void Level::add(const char* key, TextureBuffer* textureBuffer) {
 	textureBufferMap.emplace(key, textureBuffer);
 }
 
+void Level::add(const char* key, Sound* sound) {
+	soundMap.emplace(key, sound);
+}
+
 void Level::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
 	particleSystemMap.emplace(key, particleSystem);
 

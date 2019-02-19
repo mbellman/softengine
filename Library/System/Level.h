@@ -2,7 +2,9 @@
 
 #include <map>
 #include <vector>
-#include <limits.h>
+#include <climits>
+
+#include <Sound/Sound.h>
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
 #include <Graphics/TextureBuffer.h>
@@ -46,10 +48,12 @@ protected:
 	void add(const char* key, Object* object);
 	void add(const char* key, ObjLoader* objLoader);
 	void add(const char* key, TextureBuffer* textureBuffer);
+	void add(const char* key, Sound* sound);
 	void addParticleSystem(const char* key, ParticleSystem* particleSystem);
 	Object* getObject(const char* key);
 	ObjLoader* getObjLoader(const char* key);
 	TextureBuffer* getTexture(const char* key);
+	Sound* getSound(const char* key);
 	void remove(const char* key);
 
 private:
@@ -59,6 +63,7 @@ private:
 	std::map<const char*, ObjLoader*> objLoaderMap;
 	std::map<const char*, TextureBuffer*> textureBufferMap;
 	std::map<const char*, ParticleSystem*> particleSystemMap;
+	std::map<const char*, Sound*> soundMap;
 	LevelState state = LevelState::ACTIVE;
 
 	template<class T>
