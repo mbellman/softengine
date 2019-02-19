@@ -109,11 +109,16 @@ void Level::quit() {
 		delete textureBuffer;
 	}
 
+	for (auto& [key, particleSystem] : particleSystemMap) {
+		delete particleSystem;
+	}
+
 	objects.clear();
 	lights.clear();
 	objectMap.clear();
 	objLoaderMap.clear();
 	textureBufferMap.clear();
+	particleSystemMap.clear();
 
 	state = LevelState::INACTIVE;
 }
@@ -194,9 +199,8 @@ void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 	if (entry != particleSystemMap.end()) {
 		ParticleSystem* particleSystem = particleSystemMap.at(key);
 		const std::vector<Particle*>& particles = particleSystem->getParticles();
-		int totalParticles = particles.size();
 		Particle* firstParticle = particles.at(0);
-
+		int totalParticles = particles.size();
 		int idx = 0;
 
 		while (idx < objects.size()) {
