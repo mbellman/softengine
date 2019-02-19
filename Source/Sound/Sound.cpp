@@ -27,6 +27,16 @@ bool Sound::isPlaying() {
 	return m_state == AL_PLAYING || AL_LOOPING;
 }
 
+void Sound::setPosition(const Vec3& position) {
+	m_position = position;
+	alSource3f(m_source, AL_POSITION, position.x, position.y, position.z);
+}
+
+void Sound::setVelocity(const Vec3& velocity) {
+	m_velocity = velocity;
+	alSource3f(m_source, AL_POSITION, velocity.x, velocity.y, velocity.z);
+}
+
 Sound::~Sound() {
 	alDeleteSources(1, &m_source);
     alDeleteBuffers(1, &m_buffer);

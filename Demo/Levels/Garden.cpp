@@ -96,6 +96,7 @@ void Garden::load() {
 	addParticleSystem("snow", snow);
 
 	auto* applause = new Sound("./DemoAssets/applause.wav");
+	applause->setPosition({0, 0, 0});
 	applause->play();
 
 	settings.backgroundColor = { 0, 10, 20 };
