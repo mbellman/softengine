@@ -9,6 +9,12 @@
  * Level
  * -----
  */
+Level::~Level() {
+	if (state != LevelState::INACTIVE) {
+		quit();
+	}
+}
+
 void Level::add(const char* key, Object* object) {
 	add(object);
 
@@ -18,7 +24,7 @@ void Level::add(const char* key, Object* object) {
 void Level::add(Object* object) {
 	objects.push_back(object);
 
-	if (Light::isLight(object)) {
+	if (object->isOfType<Light>()) {
 		lights.push_back((Light*)object);
 	}
 }
@@ -29,6 +35,14 @@ void Level::add(const char* key, ObjLoader* objLoader) {
 
 void Level::add(const char* key, TextureBuffer* textureBuffer) {
 	textureBufferMap.emplace(key, textureBuffer);
+}
+
+void Level::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
+	particleSystemMap.emplace(key, particleSystem);
+
+	for (auto* particle : particleSystem->getParticles()) {
+		objects.push_back(particle);
+	}
 }
 
 Object* Level::getObject(const char* key) {
@@ -73,12 +87,18 @@ const Settings& Level::getSettings() {
 }
 
 bool Level::hasQuit() {
-	return state == State::INACTIVE;
+	return state == LevelState::INACTIVE;
 }
+
+void Level::onUpdate(int dt, int runningTime) {}
 
 void Level::quit() {
 	for (auto& object : objects) {
-		delete object;
+		if (!object->isOfType<Particle>()) {
+			// Only delete Objects other than Particles, which
+			// are managed by their source ParticleSystems
+			delete object;
+		}
 	}
 
 	for (auto& [key, objLoader] : objLoaderMap) {
@@ -95,32 +115,16 @@ void Level::quit() {
 	objLoaderMap.clear();
 	textureBufferMap.clear();
 
-	state = State::INACTIVE;
+	state = LevelState::INACTIVE;
 }
 
 void Level::remove(const char* key) {
-	auto it = objectMap.find(key);
+	safelyRemoveKeyedObject(key);
+	safelyRemoveKeyedParticleSystem(key);
 
-	// If the key corresponds to an Object, we have to
-	// ensure that it's destroyed properly, since objects
-	// are stored differently than loaders or textures.
-	if (it != objectMap.end()) {
-		Object* object = objects.at(it->second);
-
-		if (Light::isLight(object)) {
-			removeLight((Light*)object);
-		}
-
-		delete object;
-
-		objects.erase(objects.begin() + it->second);
-		objectMap.erase(key);
-	}
-
-	// Ensure that the key is removed from any additional
-	// maps, and its value freed from memory
 	removeMapItem(objLoaderMap, key);
 	removeMapItem(textureBufferMap, key);
+	removeMapItem(particleSystemMap, key);
 }
 
 void Level::removeLight(Light* light) {
@@ -137,9 +141,9 @@ void Level::removeLight(Light* light) {
 
 template<class T>
 void Level::removeMapItem(std::map<const char*, T*> map, const char* key) {
-	auto it = map.find(key);
+	auto entry = map.find(key);
 
-	if (it != map.end()) {
+	if (entry != map.end()) {
 		delete map.at(key);
 
 		map.erase(key);
@@ -148,4 +152,77 @@ void Level::removeMapItem(std::map<const char*, T*> map, const char* key) {
 	}
 }
 
-void Level::update(int dt, int runningTime) {}
+/**
+ * Removes a mapped Object if the provided key matches an entry.
+ * The Object must be deleted in the following fashion:
+ *
+ *  A) From the map
+ *  B) From the Object pointer list
+ *  C) If it is a Light, from the Lights pointer list
+ */
+void Level::safelyRemoveKeyedObject(const char* key) {
+	auto entry = objectMap.find(key);
+
+	if (entry != objectMap.end()) {
+		int idx = entry->second;
+
+		Object* object = objects.at(idx);
+
+		if (object->isOfType<Light>()) {
+			removeLight((Light*)object);
+		}
+
+		delete object;
+
+		objects.erase(objects.begin() + idx);
+		objectMap.erase(key);
+	}
+}
+
+/**
+ * Removes a mapped ParticleSystem if the provided key matches
+ * an entry. When a ParticleSystem is removed, all of its Particle
+ * Objects must be removed from the Object pointer list, and the
+ * ParticleSystem itself deleted, thus freeing the allocated
+ * Particles. Since all of a ParticleSystem's Particles are stored
+ * contiguously in the Object pointer list, we can erase all list
+ * elements from [first particle index, particle system size].
+ */
+void Level::safelyRemoveKeyedParticleSystem(const char* key) {
+	auto entry = particleSystemMap.find(key);
+
+	if (entry != particleSystemMap.end()) {
+		ParticleSystem* particleSystem = particleSystemMap.at(key);
+		const std::vector<Particle*>& particles = particleSystem->getParticles();
+		int totalParticles = particles.size();
+		Particle* firstParticle = particles.at(0);
+
+		int idx = 0;
+
+		while (idx < objects.size()) {
+			if (objects.at(idx) == firstParticle) {
+				for (int n = 0; n < totalParticles; n++) {
+					objects.erase(objects.begin() + idx);
+				}
+
+				break;
+			}
+
+			idx++;
+		}
+
+		delete particleSystem;
+
+		particleSystemMap.erase(key);
+	}
+}
+
+void Level::update(int dt) {
+	for (auto* object : objects) {
+		object->update(dt);
+	}
+
+	for (auto [key, particleSystem] : particleSystemMap) {
+		particleSystem->update(dt);
+	}
+}

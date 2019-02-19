@@ -1,5 +1,8 @@
 #pragma once
 
+#include <random>
+#include <math.h>
+
 /**
  * Preprocessors for speeding up code when built in Visual Studio.
  */
@@ -16,4 +19,8 @@ namespace Lerp {
 	inline float lerp(float v1, float v2, float ratio) {
 		return v1 + (v2 - v1) * ratio;
 	}
-}
+};
+
+namespace RNG {
+	float random(float low, float high);
+};

@@ -197,6 +197,10 @@ int Rasterizer::getTextureSampleInterval(int tex_w, int tex_h, int lineLength, f
 	}
 }
 
+int Rasterizer::getTotalScanlines() {
+	return totalBufferedScanlines;
+}
+
 int Rasterizer::manageScanlineThread(void* data) {
 	ScanlineThreadManager* manager = (ScanlineThreadManager*)data;
 	Rasterizer* rasterizer = manager->rasterizer;

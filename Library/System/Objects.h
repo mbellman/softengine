@@ -16,6 +16,7 @@
 struct Object {
 	bool isStatic = false;
 	Vec3 position;
+	Vec3 velocity;
 	TextureBuffer* texture = NULL;
 
 	Object();
@@ -25,12 +26,20 @@ struct Object {
 	const std::vector<Polygon>& getPolygons() const;
 	int getPolygonCount() const;
 	int getVertexCount() const;
+
+	template<class T>
+	bool isOfType() {
+		return dynamic_cast<T*>(this) != NULL;
+	}
+
 	void rotate(const Vec3& rotation);
 	void rotateDeg(const Vec3& rotation);
 	void scale(float scalar);
+	void scale(const Vec3& vector);
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
 	void setTexture(TextureBuffer* textureBuffer);
+	void update(int dt);
 
 protected:
 	std::vector<Vertex3d> vertices;
@@ -85,6 +94,16 @@ private:
 };
 
 /**
+ * Particle
+ * --------
+ */
+struct Particle : Object {
+	bool shouldReset = true;
+
+	Particle();
+};
+
+/**
  * Light
  * -----
  */
@@ -93,7 +112,6 @@ struct Light : Object {
 	float range = 500;
 	bool isDisabled = false;
 
-	static bool isLight(Object* object);
 	const Color& getColor() const;
 	const Vec3& getColorRatios() const;
 	void setColor(int R, int G, int B);

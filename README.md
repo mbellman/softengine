@@ -5,18 +5,15 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* 2D sprite projection
-* Ambient/atmospheric effects (rain, snow, fog)
 * Stereo/surround sound
 * OpenGL/hardware mode
 
 **Pending optimizations:**
 
 * Cache ambient light color ratios
-* Separate illumination & rasterization steps/consider options for parallel illumination
 * Skip texture sampling on surfaces with insufficient illumination
 * Staggered perspective-correct/linear UV interpolation
-* Texture sampling distance cleanup
+* Texture sampling logic cleanup
 
 **Maybe:**
 

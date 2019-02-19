@@ -50,13 +50,14 @@ set(SOURCE_FILES
     Library/Graphics/TextureBuffer.h
     Library/Loaders/Loader.h
     Library/Loaders/ObjLoader.h
+    Library/System/DebugStats.h
     Library/System/Flags.h
     Library/System/Geometry.h
     Library/System/Level.h
     Library/System/Math.h
     Library/System/Objects.h
+    Library/System/ParticleSystem.h
     Library/System/Quaternion.h
-    Library/System/DebugStats.h
     Library/UI/UI.h
     Library/UI/UIObjects.h
     Library/Engine.h
@@ -70,15 +71,17 @@ set(SOURCE_FILES
     Source/Graphics/TextureBuffer.cpp
     Source/Loaders/Loader.cpp
     Source/Loaders/ObjLoader.cpp
+    Source/System/DebugStats.cpp
     Source/System/Geometry.cpp
     Source/System/Level.cpp
     Source/System/Math.cpp
     Source/System/Objects.cpp
+    Source/System/ParticleSystem.cpp
     Source/System/Quaternion.cpp
-    Source/System/DebugStats.cpp
     Source/UI/UI.cpp
     Source/UI/UIObjects.cpp
     Source/Engine.cpp
+    Source/Helpers.cpp
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})

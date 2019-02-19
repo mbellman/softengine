@@ -82,7 +82,7 @@ public:
 	void run();
 
 private:
-	constexpr static float NEAR_Z = 10.0f;
+	constexpr static float NEAR_Z = 30.0f;
 	constexpr static int MOVEMENT_SPEED = 5;
 	constexpr static int AMBIENT_LIGHT_ID = 0;
 

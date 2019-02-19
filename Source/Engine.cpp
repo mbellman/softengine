@@ -555,7 +555,8 @@ void Engine::run() {
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
-		activeLevel->update(delta, SDL_GetTicks());
+		activeLevel->update(delta);
+		activeLevel->onUpdate(delta, SDL_GetTicks());
 
 		SDL_Event event;
 
@@ -628,6 +629,7 @@ void Engine::addDebugStats() {
 	addDebugStat("totalTriangles");
 	addDebugStat("totalTrianglesProjected");
 	addDebugStat("totalTrianglesDrawn");
+	addDebugStat("totalScanlines");
 }
 
 void Engine::updateDebugStats() {
@@ -639,6 +641,7 @@ void Engine::updateDebugStats() {
 	updateDebugStat("totalTriangles", "Triangles", debugStats.getTotalPolygons(activeLevel->getObjects()));
 	updateDebugStat("totalTrianglesProjected", "Triangles projected", debugStats.getTotalProjectedTriangles());
 	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", debugStats.getTotalDrawnTriangles());
+	updateDebugStat("totalScanlines", "Scanlines", rasterizer->getTotalScanlines());
 }
 
 void Engine::addDebugStat(const char* key) {

@@ -38,7 +38,7 @@ void TextureTest::load() {
 	// settings.visibility = 2500;
 }
 
-void TextureTest::update(int dt, int runningTime) {
+void TextureTest::onUpdate(int dt, int runningTime) {
 	// getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
 }
 
