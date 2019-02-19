@@ -11,8 +11,8 @@ public:
 	~Sound();
 
 	float volume = 0.75;
-	bool loop = false;
 
+	void loops(bool value);
 	void play();
 	bool isPlaying();
 
@@ -20,6 +20,7 @@ public:
 	void setVelocity(const Vec3& velocity);
 
 protected:
+	bool m_loop = false;
 	ALuint m_buffer, m_source;
 	ALint m_state;
 	Vec3 m_position = {0, 0, 0};

@@ -16,8 +16,11 @@ Sound::Sound(const char* filename) {
 	if((error = alGetError()) != AL_NO_ERROR) {
 		std::cout << "Failed to set source buffer: " << alutGetErrorString(error) << std::endl;
 	}
+}
 
-	if(loop) alSourcei(m_source, AL_LOOPING, 1);
+void Sound::loops(bool value) {
+	m_loop = value;
+	alSourcei(m_source, AL_LOOPING, ((value) ? AL_TRUE : AL_FALSE));
 }
 
 void Sound::play() {
@@ -41,7 +44,7 @@ void Sound::setPosition(const Vec3& position) {
 
 void Sound::setVelocity(const Vec3& velocity) {
 	m_velocity = velocity;
-	alSource3f(m_source, AL_POSITION, velocity.x, velocity.y, velocity.z);
+	alSource3f(m_source, AL_POSITION, m_velocity.x, velocity.y, velocity.z);
 }
 
 Sound::~Sound() {

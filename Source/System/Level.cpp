@@ -59,6 +59,10 @@ Object* Level::getObject(const char* key) {
 	return NULL;
 }
 
+Sound* Level::getSound(const char* key) {
+	return getMapItem(soundMap, key);
+}
+
 ObjLoader* Level::getObjLoader(const char* key) {
 	return getMapItem(objLoaderMap, key);
 }

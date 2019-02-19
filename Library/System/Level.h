@@ -59,6 +59,7 @@ protected:
 private:
 	std::vector<Object*> objects;
 	std::vector<Light*> lights;
+	std::vector<Sound*> sounds;
 	std::map<const char*, int> objectMap;
 	std::map<const char*, ObjLoader*> objLoaderMap;
 	std::map<const char*, TextureBuffer*> textureBufferMap;
