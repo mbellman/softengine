@@ -13,7 +13,6 @@ int height = 720;
 int main(int argc, char* argv[]) {
 	AudioEngine audio;
 	Sound* applause = new Sound("./DemoAssets/applause.wav");
-
 	applause->play();
 
 	Engine engine(width, height, DEBUG_STATS);

@@ -5,10 +5,9 @@
 
 #include <Sound/AudioEngine.h>
 
-
-
 AudioEngine::AudioEngine() {
 	alutInit(0, NULL);
+	// Clear error codes
 	alGetError();
 }
 
