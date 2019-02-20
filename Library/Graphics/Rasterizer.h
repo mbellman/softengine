@@ -49,7 +49,6 @@ private:
 
 	constexpr static int MIN_COLOR_LERP_INTERVAL = 2;
 	constexpr static int MAX_TEXTURE_SAMPLE_INTERVAL = 4;
-	constexpr static int MAX_THREADS = 8;
 	constexpr static int MAX_VISIBILITY = INT_MAX;
 	constexpr static float MIPMAP_RANGE = 800.0f;
 

@@ -47,7 +47,7 @@ Rasterizer::~Rasterizer() {
 }
 
 void Rasterizer::createScanlineThreads() {
-	int totalThreads = std::min(Rasterizer::MAX_THREADS, SDL_GetCPUCount());
+	int totalThreads = SDL_GetCPUCount();
 
 	if (totalThreads < 2) {
 		return;

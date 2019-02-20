@@ -63,9 +63,19 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	HALF_W = (int)(width / (hasPixelFilter ? 4 : 2));
 	HALF_H = (int)(height / (hasPixelFilter ? 4 : 2));
+
+	createIlluminationThreads();
 }
 
 Engine::~Engine() {
+	isDone = true;
+
+	for (int i = 0; i < illuminationThreads.size(); i++) {
+		SDL_WaitThread(illuminationThreads.at(i), NULL);
+	}
+
+	triangleRasterBuffer.clear();
+
 	delete rasterFilter;
 	delete ui;
 	delete rasterizer;
@@ -88,37 +98,6 @@ Engine::~Engine() {
 	SDL_Quit();
 }
 
-int Engine::manageIlluminationThread(void* data) {
-	IlluminationThreadManager* manager = (IlluminationThreadManager*)data;
-	Engine* engine = manager->engine;
-
-	while(1) {
-		if (engine->isDone) {
-			break;
-		} else if (!manager->isDone) {
-			int totalThreads = engine->illuminationThreads.size();
-
-			for (int i = 0; i < engine->triangleRasterBuffer.size(); i++) {
-				if (i % totalThreads == manager->section) {
-					Triangle* triangle = engine->triangleRasterBuffer.at(i);
-
-					if (triangle->sourceObject->texture != NULL) {
-						engine->illuminateTextureTriangle(triangle);
-					} else {
-						engine->illuminateColorTriangle(triangle);
-					}
-				}
-			}
-
-			manager->isDone = true;
-		}
-
-		SDL_Delay(1);
-	}
-
-	return 0;
-}
-
 void Engine::addUIObject(UIObject* uiObject) {
 	uiObject->setRenderer(renderer);
 	ui->addObject(uiObject);
@@ -130,6 +109,26 @@ void Engine::clearActiveLevel() {
 	}
 
 	activeLevel = NULL;
+}
+
+void Engine::createIlluminationThreads() {
+	int totalThreads = SDL_GetCPUCount();
+
+	if (totalThreads < 2) {
+		return;
+	}
+
+	illuminationThreadManagers = new IlluminationThreadManager[totalThreads];
+
+	for (int i = 0; i < totalThreads; i++) {
+		IlluminationThreadManager* manager = &illuminationThreadManagers[i];
+
+		manager->engine = this;
+		manager->section = i;
+
+		SDL_Thread* thread = SDL_CreateThread(manageIlluminationThread, NULL, manager);
+		illuminationThreads.push_back(thread);
+	}
 }
 
 void Engine::drawTriangle(Triangle* triangle) {
@@ -326,6 +325,28 @@ void Engine::illuminateColorTriangle(Triangle* triangle) {
 	}
 }
 
+void Engine::illuminateScene() {
+	if (illuminationThreads.size() == 0) {
+		for (auto* triangle : triangleRasterBuffer) {
+			if (triangle->sourceObject->texture != NULL) {
+				illuminateTextureTriangle(triangle);
+			} else {
+				illuminateColorTriangle(triangle);
+			}
+		}
+	} else {
+		for (int i = 0; i < illuminationThreads.size(); i++) {
+			illuminationThreadManagers[i].isDone = false;
+		}
+
+		for (int i = 0; i < illuminationThreads.size(); i++) {
+			while (!illuminationThreadManagers[i].isDone) {
+				SDL_Delay(1);
+			}
+		}
+	}
+}
+
 void Engine::illuminateTextureTriangle(Triangle* triangle) {
 	const Settings& settings = activeLevel->getSettings();
 
@@ -333,6 +354,37 @@ void Engine::illuminateTextureTriangle(Triangle* triangle) {
 		Vertex2d* vertex = &triangle->vertices[i];
 		vertex->textureIntensity = getTriangleVertexColorIntensity(triangle, i);
 	}
+}
+
+int Engine::manageIlluminationThread(void* data) {
+	IlluminationThreadManager* manager = (IlluminationThreadManager*)data;
+	Engine* engine = manager->engine;
+
+	while(1) {
+		if (engine->isDone) {
+			break;
+		} else if (!manager->isDone) {
+			int totalThreads = engine->illuminationThreads.size();
+
+			for (int i = 0; i < engine->triangleRasterBuffer.size(); i++) {
+				if (i % totalThreads == manager->section) {
+					Triangle* triangle = engine->triangleRasterBuffer.at(i);
+
+					if (triangle->sourceObject->texture != NULL) {
+						engine->illuminateTextureTriangle(triangle);
+					} else {
+						engine->illuminateColorTriangle(triangle);
+					}
+				}
+			}
+
+			manager->isDone = true;
+		}
+
+		SDL_Delay(1);
+	}
+
+	return 0;
 }
 
 /**
@@ -640,8 +692,6 @@ void Engine::updateScene() {
 
 	debugStats.logScreenProjectionTime();
 
-	// Take triangles out of the raster filter and buffer
-	// them for illumination and final rasterization
 	Triangle* triangle;
 
 	while ((triangle = rasterFilter->next()) != NULL) {
@@ -651,18 +701,19 @@ void Engine::updateScene() {
 	debugStats.trackIlluminationTime();
 
 	// Illumination step
-	for (auto* triangle : triangleRasterBuffer) {
-		if (triangle->sourceObject->texture != NULL) {
-			illuminateTextureTriangle(triangle);
-		} else {
-			illuminateColorTriangle(triangle);
-		}
-	}
+	illuminateScene();
+
+	// for (auto* triangle : triangleRasterBuffer) {
+	// 	if (triangle->sourceObject->texture != NULL) {
+	// 		illuminateTextureTriangle(triangle);
+	// 	} else {
+	// 		illuminateColorTriangle(triangle);
+	// 	}
+	// }
 
 	debugStats.logIlluminationTime();
 	debugStats.trackDrawTime();
 
-	// Final rasterization step
 	for (auto* triangle : triangleRasterBuffer) {
 		drawTriangle(triangle);
 	}

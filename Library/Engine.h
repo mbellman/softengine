@@ -125,6 +125,7 @@ private:
 
 	static int manageIlluminationThread(void* data);
 	void clearActiveLevel();
+	void createIlluminationThreads();
 	void drawTriangle(Triangle* triangle);
 	Vec3 getTriangleVertexColorIntensity(const Triangle* triangle, int vertexIndex);
 	void handleEvent(const SDL_Event& event);
@@ -132,6 +133,7 @@ private:
 	void handleKeyUp(const SDL_Keycode& code);
 	void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
 	void illuminateColorTriangle(Triangle* triangle);
+	void illuminateScene();
 	void illuminateTextureTriangle(Triangle* triangle);
 
 	void projectAndQueueTriangle(
