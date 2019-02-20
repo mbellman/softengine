@@ -1,152 +1,99 @@
-# - Searches for an installation of the OpenAL library.
+# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
+# file Copyright.txt or https://cmake.org/licensing for details.
+
+#[=======================================================================[.rst:
+FindOpenAL
+----------
+
+
+
+Locate OpenAL This module defines OPENAL_LIBRARY OPENAL_FOUND, if
+false, do not try to link to OpenAL OPENAL_INCLUDE_DIR, where to find
+the headers
+
+$OPENALDIR is an environment variable that would correspond to the
+./configure --prefix=$OPENALDIR used in building OpenAL.
+
+Created by Eric Wing.  This was influenced by the FindSDL.cmake
+module.
+#]=======================================================================]
+
+# This makes the presumption that you are include al.h like
+# #include "al.h"
+# and not
+# #include <AL/al.h>
+# The reason for this is that the latter is not entirely portable.
+# Windows/Creative Labs does not by default put their headers in AL/ and
+# OS X uses the convention <OpenAL/al.h>.
 #
-# This replaces the version of FindOpenAL.cmake supplied with CMake to comply with Meru requirements.
+# For Windows, Creative Labs seems to have added a registry key for their
+# OpenAL 1.1 installer. I have added that key to the list of search paths,
+# however, the key looks like it could be a little fragile depending on
+# if they decide to change the 1.00.0000 number for bug fix releases.
+# Also, they seem to have laid down groundwork for multiple library platforms
+# which puts the library in an extra subdirectory. Currently there is only
+# Win32 and I have hardcoded that here. This may need to be adjusted as
+# platforms are introduced.
+# The OpenAL 1.0 installer doesn't seem to have a useful key I can use.
+# I do not know if the Nvidia OpenAL SDK has a registry key.
 #
-# Defines:
+# For OS X, remember that OpenAL was added by Apple in 10.4 (Tiger).
+# To support the framework, I originally wrote special framework detection
+# code in this module which I have now removed with CMake's introduction
+# of native support for frameworks.
+# In addition, OpenAL is open source, and it is possible to compile on Panther.
+# Furthermore, due to bugs in the initial OpenAL release, and the
+# transition to OpenAL 1.1, it is common to need to override the built-in
+# framework.
+# Per my request, CMake should search for frameworks first in
+# the following order:
+# ~/Library/Frameworks/OpenAL.framework/Headers
+# /Library/Frameworks/OpenAL.framework/Headers
+# /System/Library/Frameworks/OpenAL.framework/Headers
 #
-#   OPENAL_FOUND          True if OpenAL was found, else false
-#   OPENAL_LIBRARY        The location of the OpenAL library (might include support libraries)
-#   OPENAL_INCLUDE_DIR    The directory containing the OpenAL header file (al.h)
-#   ALUT_FOUND            True if ALUT was found, else false
-#   ALUT_LIBRARY          The location of the ALUT library (might include support libraries)
-#   ALUT_INCLUDE_DIR      The directory containing the ALUT header file (alut.h)
-#
-# To specify an additional directory to search for OpenAL, set OPENAL_ROOT.
-# To specify an additional directory to search for ALUT, set ALUT_ROOT.
-# To skip checking for ALUT, set ALUT_SKIP to true.
-#
-# On OS X, to avoid linking to a framework, set OPENAL_NO_FRAMEWORK to true ("cmake -DOPENAL_NO_FRAMEWORK=TRUE ."):
-#
-# Author: Siddhartha Chaudhuri, 2008
-#
+# On OS X, this will prefer the Framework version (if found) over others.
+# People will have to manually change the cache values of
+# OPENAL_LIBRARY to override this selection or set the CMake environment
+# CMAKE_INCLUDE_PATH to modify the search paths.
 
-SET(OPENAL_FOUND FALSE)
+find_path(OPENAL_INCLUDE_DIR al.h
+  HINTS
+    ENV OPENALDIR
+  PATH_SUFFIXES include/AL include/OpenAL include AL OpenAL
+  PATHS
+  ~/Library/Frameworks
+  /Library/Frameworks
+  /sw # Fink
+  /opt/local # DarwinPorts
+  /opt/csw # Blastwave
+  /opt
+  "C:/Program Files (x86)/OpenAL 1.1 SDK/include"
+)
 
-# Only look for a framework in OS X if the flags are all false
-IF(NOT OPENAL_NO_FRAMEWORK)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(_OpenAL_ARCH_DIR libs/Win64)
+else()
+  set(_OpenAL_ARCH_DIR libs/Win32)
+endif()
 
-  IF(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")  # OS X
+find_library(OPENAL_LIBRARY
+  NAMES OpenAL al openal OpenAL32
+  HINTS
+    ENV OPENALDIR
+  PATH_SUFFIXES libx32 lib64 lib libs64 libs ${_OpenAL_ARCH_DIR}
+  PATHS
+  ~/Library/Frameworks
+  /Library/Frameworks
+  /sw
+  /opt/local
+  /opt/csw
+  /opt
+  "C:/Program Files (x86)/OpenAL 1.1 SDK/libs/Win32"
+)
 
-    INCLUDE(CMakeFindFrameworks)
-    CMAKE_FIND_FRAMEWORKS(OpenAL)
-    IF(OpenAL_FRAMEWORKS)
-      LIST(GET OpenAL_FRAMEWORKS 0 OPENAL_LIBRARY)
-      SET(OPENAL_INCLUDE_DIR ${OPENAL_LIBRARY}/Headers)
-      SET(OPENAL_FOUND TRUE)
-    ENDIF(OpenAL_FRAMEWORKS)
+unset(_OpenAL_ARCH_DIR)
 
-  ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(OpenAL  DEFAULT_MSG  OPENAL_LIBRARY OPENAL_INCLUDE_DIR)
 
-ENDIF(NOT OPENAL_NO_FRAMEWORK)
-
-
-# Look for a non-framework install
-IF(NOT OPENAL_FOUND)
-
-  SET(OPENAL_INCLUDE_DOC "The directory containing the OpenAL include file al.h")
-  FIND_PATH(OPENAL_INCLUDE_DIR NAMES al.h PATH_SUFFIXES "" "AL" "OpenAL"
-            PATHS ${OPENAL_ROOT} ${OPENAL_ROOT}/include DOC ${OPENAL_INCLUDE_DOC} NO_DEFAULT_PATH)
-  IF(NOT OPENAL_INCLUDE_DIR)  # now look in system locations
-    FIND_PATH(OPENAL_INCLUDE_DIR NAMES al.h PATH_SUFFIXES "" "AL" "OpenAL" DOC ${OPENAL_INCLUDE_DOC})
-  ENDIF(NOT OPENAL_INCLUDE_DIR)
-
-  INCLUDE(CheckFunctionExists)
-  MACRO(OPENAL_CHECK_LIBRARY variable)  # checks whether we have located all the required libraries
-    SET(${variable})
-
-    SET(TMP_CMAKE_REQUIRED_FLAGS        ${CMAKE_REQUIRED_FLAGS})
-    SET(TMP_CMAKE_REQUIRED_DEFINITIONS  ${CMAKE_REQUIRED_DEFINITIONS})
-    SET(TMP_CMAKE_REQUIRED_INCLUDES     ${CMAKE_REQUIRED_INCLUDES})
-    SET(TMP_CMAKE_REQUIRED_LIBRARIES    ${CMAKE_REQUIRED_LIBRARIES})
-
-    SET(CMAKE_REQUIRED_FLAGS)
-    SET(CMAKE_REQUIRED_DEFINITIONS)
-    SET(CMAKE_REQUIRED_INCLUDES)
-    SET(CMAKE_REQUIRED_LIBRARIES ${OPENAL_LIBRARY})
-
-    CHECK_FUNCTION_EXISTS(alcGetCurrentContext ${variable})
-
-    SET(CMAKE_REQUIRED_FLAGS        ${TMP_CMAKE_REQUIRED_FLAGS})
-    SET(CMAKE_REQUIRED_DEFINITIONS  ${TMP_CMAKE_REQUIRED_DEFINITIONS})
-    SET(CMAKE_REQUIRED_INCLUDES     ${TMP_CMAKE_REQUIRED_INCLUDES})
-    SET(CMAKE_REQUIRED_LIBRARIES    ${TMP_CMAKE_REQUIRED_LIBRARIES})
-  ENDMACRO(OPENAL_CHECK_LIBRARY)
-
-  IF(OPENAL_INCLUDE_DIR)
-    # First look for the OpenAL library
-    SET(OPENAL_LIBRARY_DOC "The directory containing the OpenAL library file")
-    FIND_LIBRARY(OPENAL_LIBRARY NAMES openal al OpenAL32 PATHS ${OPENAL_ROOT} ${OPENAL_ROOT}/lib ${OPENAL_ROOT}/libs
-                 DOC ${OPENAL_LIBRARY_DOC} NO_DEFAULT_PATH)
-    IF(NOT OPENAL_LIBRARY)  # now look in system locations
-      FIND_LIBRARY(OPENAL_LIBRARY NAMES openal al OpenAL32 DOC ${OPENAL_LIBRARY_DOC})
-    ENDIF(NOT OPENAL_LIBRARY)
-
-    IF(OPENAL_LIBRARY)
-      # Check if this is sufficient, or whether we need to link in SDL
-      OPENAL_CHECK_LIBRARY(OPENAL_LIBRARY_OK)
-
-      IF(OPENAL_LIBRARY_OK)
-        SET(OPENAL_FOUND TRUE)
-      ELSE(OPENAL_LIBRARY_OK)
-        # We need to additionally link in SDL
-        FIND_PACKAGE(SDL)
-
-        IF(SDL_FOUND)
-          SET(OPENAL_LIBRARY ${OPENAL_LIBRARY} ${SDL_LIBRARY})
-          OPENAL_CHECK_LIBRARY(OPENAL_SDL_LIBRARY_OK)  # CHECK_FUNCTION_EXISTS caches result, so must use different variable
-
-          IF(OPENAL_SDL_LIBRARY_OK)
-            SET(OPENAL_FOUND TRUE)
-          ENDIF(OPENAL_SDL_LIBRARY_OK)
-        ENDIF(SDL_FOUND)
-
-      ENDIF(OPENAL_LIBRARY_OK)
-    ENDIF(OPENAL_LIBRARY)
-  ENDIF(OPENAL_INCLUDE_DIR)
-
-ENDIF(NOT OPENAL_FOUND)
-
-
-# Now look for ALUT
-SET(ALUT_FOUND FALSE)
-
-IF(NOT ALUT_SKIP)
-  SET(ALUT_INCLUDE_DOC "The directory containing the ALUT include file alut.h")
-  FIND_PATH(ALUT_INCLUDE_DIR NAMES alut.h PATH_SUFFIXES "" "AL" "OpenAL" "ALUT" "alut" "ALut"
-            PATHS ${ALUT_ROOT} ${ALUT_ROOT}/include DOC ${ALUT_INCLUDE_DOC} NO_DEFAULT_PATH)
-  IF(NOT ALUT_INCLUDE_DIR)  # now look in system locations
-    FIND_PATH(ALUT_INCLUDE_DIR NAMES alut.h PATH_SUFFIXES "" "AL" "OpenAL" "ALUT" "alut" "ALut" DOC ${ALUT_INCLUDE_DOC})
-  ENDIF(NOT ALUT_INCLUDE_DIR)
-
-  IF(ALUT_INCLUDE_DIR)
-    SET(ALUT_LIBRARY_DOC "The directory containing the ALUT library file")
-    FIND_LIBRARY(ALUT_LIBRARY NAMES alut ALut ALut32 PATHS ${ALUT_ROOT} ${ALUT_ROOT}/lib ${ALUT_ROOT}/libs
-                 DOC ${ALUT_LIBRARY_DOC} NO_DEFAULT_PATH)
-    IF(NOT ALUT_LIBRARY)  # now look in system locations
-      FIND_LIBRARY(ALUT_LIBRARY NAMES alut ALut ALut32 DOC ${ALUT_LIBRARY_DOC})
-    ENDIF(NOT ALUT_LIBRARY)
-
-    IF(ALUT_LIBRARY)
-      SET(ALUT_FOUND TRUE)
-    ENDIF(ALUT_LIBRARY)
-  ENDIF(ALUT_INCLUDE_DIR)
-ENDIF(NOT ALUT_SKIP)
-
-
-IF(OPENAL_FOUND)
-  IF(NOT OPENAL_FIND_QUIETLY)
-    MESSAGE(STATUS "Found OpenAL: headers at ${OPENAL_INCLUDE_DIR}, libraries at ${OPENAL_LIBRARY}")
-  ENDIF(NOT OPENAL_FIND_QUIETLY)
-ELSE(OPENAL_FOUND)
-  IF(OPENAL_FIND_REQUIRED)
-    MESSAGE(FATAL_ERROR "OpenAL not found")
-  ENDIF(OPENAL_FIND_REQUIRED)
-ENDIF(OPENAL_FOUND)
-
-IF(NOT ALUT_SKIP)
-  IF(ALUT_FOUND)
-    IF(NOT OPENAL_FIND_QUIETLY)
-      MESSAGE(STATUS "Found ALUT: headers at ${ALUT_INCLUDE_DIR}, libraries at ${ALUT_LIBRARY}")
-    ENDIF(NOT OPENAL_FIND_QUIETLY)
-  ENDIF(ALUT_FOUND)
-ENDIF(NOT ALUT_SKIP)
+mark_as_advanced(OPENAL_LIBRARY OPENAL_INCLUDE_DIR)

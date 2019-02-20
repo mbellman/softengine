@@ -31,7 +31,6 @@ include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 # Find OpenAL dependency
 find_package(OpenAL REQUIRED)
 include_directories(${OPENAL_INCLUDE_DIR})
-include_directories(${ALUT_INCLUDE_DIR})
 
 set(SOURCE_FILES
     # -- Demo files --
@@ -56,7 +55,6 @@ set(SOURCE_FILES
     Library/Loaders/Loader.h
     Library/Loaders/ObjLoader.h
     Library/Sound/Sound.h
-    Library/Sound/AudioEngine.h
     Library/System/DebugStats.h
     Library/System/Flags.h
     Library/System/Geometry.h
@@ -78,7 +76,6 @@ set(SOURCE_FILES
     Source/Graphics/TextureBuffer.cpp
     Source/Loaders/Loader.cpp
     Source/Loaders/ObjLoader.cpp
-    Source/Sound/AudioEngine.cpp
     Source/Sound/Sound.cpp
     Source/System/DebugStats.cpp
     Source/System/Geometry.cpp
@@ -102,4 +99,3 @@ target_link_libraries(${EXECUTABLE_NAME} ${SDL2_IMAGE_LIBRARY})
 
 # Link OpenAL
 target_link_libraries(${EXECUTABLE_NAME} ${OPENAL_LIBRARY})
-target_link_libraries(${EXECUTABLE_NAME} ${ALUT_LIBRARY})

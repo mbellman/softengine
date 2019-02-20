@@ -10,7 +10,6 @@
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterQueue.h>
 #include <UI/UI.h>
-#include <Sound/AudioEngine.h>
 #include <System/Flags.h>
 #include <System/DebugStats.h>
 #include <System/Objects.h>
@@ -96,7 +95,6 @@ private:
 	SDL_Renderer* renderer;
 	Rasterizer* rasterizer;
 	RasterQueue* rasterQueue;
-	AudioEngine* audio;
 	UI* ui;
 	Level* activeLevel = NULL;
 	Camera camera;

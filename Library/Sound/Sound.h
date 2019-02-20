@@ -1,8 +1,7 @@
 #pragma once
 
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alut.h>
+#include <al.h>
+#include <alc.h>
 #include <System/Geometry.h>
 
 class Sound {

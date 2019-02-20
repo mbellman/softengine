@@ -52,7 +52,6 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
 	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
-	audio = new AudioEngine();
 
 	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
@@ -68,7 +67,6 @@ Engine::~Engine() {
 	delete rasterQueue;
 	delete ui;
 	delete rasterizer;
-	delete audio;
 
 	if (flags & DEBUG_STATS) {
 		for (auto& [key, uiText] : debugStatsTextMap) {

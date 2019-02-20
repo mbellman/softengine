@@ -96,10 +96,10 @@ void Garden::load() {
 
 	addParticleSystem("snow", snow);
 
-	auto* applauseSound = new Sound("./DemoAssets/applause.wav");
-	applauseSound->loops(true);
-	add("applause", applauseSound);
-	applauseSound->play();
+	// auto* applauseSound = new Sound("./DemoAssets/applause.wav");
+	// applauseSound->loops(true);
+	// add("applause", applauseSound);
+	// applauseSound->play();
 
 	settings.backgroundColor = { 0, 10, 20 };
 	settings.visibility = 3500;
@@ -118,7 +118,7 @@ void Garden::onUpdate(int dt, int runningTime) {
 	movingLight->position.z = 2000.0f + 1500.0f * cosf(runningTime / 900.0f);
 	movingLight->position.y = 300.0f + 150.0f * sinf(runningTime / 500.0f);
 
-	float distance = 6.0f + (cosf(runningTime / 800.0f) * 6.0f);
-	applauseSound->setPosition({0, 0, distance});
-	std::cout << "Sound distance z: " << distance << std::endl;
+	// float distance = 6.0f + (cosf(runningTime / 800.0f) * 6.0f);
+	// applauseSound->setPosition({0, 0, distance});
+	// std::cout << "Sound distance z: " << distance << std::endl;
 }

@@ -1,21 +1,19 @@
+#include <Sound/Sound.h>
 #include <iostream>
 
-#include <Sound/AudioEngine.h>
-#include <Sound/Sound.h>
-
 Sound::Sound(const char* filename) {
-	ALint error;
-	m_buffer = alutCreateBufferFromFile(filename);
+	// ALint error;
+	// m_buffer = alutCreateBufferFromFile(filename);
 
-	alGenSources(1, &m_source);
-	if((error = alGetError()) != AL_NO_ERROR) {
-		std::cout << "Failed to generate source: " << alutGetErrorString(error) << std::endl;
-	}
+	// alGenSources(1, &m_source);
+	// if((error = alGetError()) != AL_NO_ERROR) {
+	// 	std::cout << "Failed to generate source: " << alutGetErrorString(error) << std::endl;
+	// }
 
-	alSourcei(m_source, AL_BUFFER, m_buffer);
-	if((error = alGetError()) != AL_NO_ERROR) {
-		std::cout << "Failed to set source buffer: " << alutGetErrorString(error) << std::endl;
-	}
+	// alSourcei(m_source, AL_BUFFER, m_buffer);
+	// if((error = alGetError()) != AL_NO_ERROR) {
+	// 	std::cout << "Failed to set source buffer: " << alutGetErrorString(error) << std::endl;
+	// }
 }
 
 void Sound::loops(bool value) {
@@ -24,12 +22,12 @@ void Sound::loops(bool value) {
 }
 
 void Sound::play() {
-	ALint error;
+	// ALint error;
 
-	alSourcePlay(m_source);
-	if((error = alGetError()) != AL_NO_ERROR) {
-		std::cout << "Failed to play sound: " << alutGetErrorString(error) << std::endl;
-	}
+	// alSourcePlay(m_source);
+	// if((error = alGetError()) != AL_NO_ERROR) {
+	// 	std::cout << "Failed to play sound: " << alutGetErrorString(error) << std::endl;
+	// }
 }
 
 bool Sound::isPlaying() {
