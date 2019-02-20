@@ -145,7 +145,7 @@ void Level::quit() {
 	textureBufferMap.clear();
 	particleSystemMap.clear();
 
-	Sound::clearSoundCache();
+	Sound::clearMixChunkCache();
 
 	state = LevelState::INACTIVE;
 }

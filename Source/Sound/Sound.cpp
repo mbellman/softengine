@@ -11,9 +11,9 @@
  */
 Sound::Sound(const char* filename) {
 	Mix_Chunk* chunk;
-	auto cachedChunk = Sound::soundCache.find(filename);
+	auto cachedChunk = Sound::mixChunkCache.find(filename);
 
-	if (cachedChunk == soundCache.end()) {
+	if (cachedChunk == mixChunkCache.end()) {
 		chunk = Mix_LoadWAV(filename);
 
 		if (!chunk) {
@@ -22,7 +22,7 @@ Sound::Sound(const char* filename) {
 			exit(0);
 		}
 
-		soundCache.emplace(filename, chunk);
+		mixChunkCache.emplace(filename, chunk);
 	} else {
 		chunk = cachedChunk->second;
 	}
@@ -47,14 +47,14 @@ Sound::~Sound() {
     alDeleteBuffers(1, &alAudioBuffer);
 }
 
-std::map<const char*, Mix_Chunk*> Sound::soundCache;
+std::map<const char*, Mix_Chunk*> Sound::mixChunkCache;
 
-void Sound::clearSoundCache() {
-	for (auto& [key, mixChunk] : soundCache) {
+void Sound::clearMixChunkCache() {
+	for (auto& [key, mixChunk] : mixChunkCache) {
 		delete mixChunk;
 	}
 
-	Sound::soundCache.clear();
+	Sound::mixChunkCache.clear();
 }
 
 void Sound::loop() {

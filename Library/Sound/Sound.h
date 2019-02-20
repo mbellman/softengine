@@ -13,7 +13,7 @@ public:
 	Sound(const char* filename);
 	~Sound();
 
-	static void clearSoundCache();
+	static void clearMixChunkCache();
 
 	void loop();
 	void play();
@@ -22,7 +22,7 @@ public:
 	void stop();
 
 private:
-	static std::map<const char*, Mix_Chunk*> soundCache;
+	static std::map<const char*, Mix_Chunk*> mixChunkCache;
 
 	ALuint alAudioBuffer;
 	ALuint alAudioSource;
