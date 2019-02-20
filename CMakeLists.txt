@@ -52,8 +52,8 @@ set(SOURCE_FILES
     # -- Header files --
     Library/Graphics/Color.h
     Library/Graphics/ColorBuffer.h
+    Library/Graphics/RasterFilter.h
     Library/Graphics/Rasterizer.h
-    Library/Graphics/RasterQueue.h
     Library/Graphics/TextureBuffer.h
     Library/Loaders/Loader.h
     Library/Loaders/ObjLoader.h
@@ -75,8 +75,8 @@ set(SOURCE_FILES
     # -- CPP Files --
     Source/Graphics/Color.cpp
     Source/Graphics/ColorBuffer.cpp
+    Source/Graphics/RasterFilter.cpp
     Source/Graphics/Rasterizer.cpp
-    Source/Graphics/RasterQueue.cpp
     Source/Graphics/TextureBuffer.cpp
     Source/Loaders/Loader.cpp
     Source/Loaders/ObjLoader.cpp

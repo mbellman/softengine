@@ -9,7 +9,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
-* Triangle buffer + parallel illumination
 * Cache ambient light color ratios
 * Skip texture sampling on surfaces with insufficient illumination
 * Staggered perspective-correct/linear UV interpolation

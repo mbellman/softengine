@@ -18,7 +18,7 @@
 #include <System/Geometry.h>
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
-#include <Graphics/RasterQueue.h>
+#include <Graphics/RasterFilter.h>
 #include <Graphics/TextureBuffer.h>
 #include <System/DebugStats.h>
 
@@ -50,9 +50,10 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
-	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
+	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
 	ui = new UI();
 	audioEngine = new AudioEngine();
+	triangles = new Triangle[250000];
 
 	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
@@ -65,10 +66,11 @@ Engine::Engine(int width, int height, Uint32 flags) {
 }
 
 Engine::~Engine() {
-	delete rasterQueue;
+	delete rasterFilter;
 	delete ui;
 	delete rasterizer;
 	delete audioEngine;
+	delete[] triangles;
 
 	if (flags & DEBUG_STATS) {
 		for (auto& [key, uiText] : debugStatsTextMap) {
@@ -86,6 +88,37 @@ Engine::~Engine() {
 	SDL_Quit();
 }
 
+int Engine::manageIlluminationThread(void* data) {
+	IlluminationThreadManager* manager = (IlluminationThreadManager*)data;
+	Engine* engine = manager->engine;
+
+	while(1) {
+		if (engine->isDone) {
+			break;
+		} else if (!manager->isDone) {
+			int totalThreads = engine->illuminationThreads.size();
+
+			for (int i = 0; i < engine->triangleRasterBuffer.size(); i++) {
+				if (i % totalThreads == manager->section) {
+					Triangle* triangle = engine->triangleRasterBuffer.at(i);
+
+					if (triangle->sourceObject->texture != NULL) {
+						engine->illuminateTextureTriangle(triangle);
+					} else {
+						engine->illuminateColorTriangle(triangle);
+					}
+				}
+			}
+
+			manager->isDone = true;
+		}
+
+		SDL_Delay(1);
+	}
+
+	return 0;
+}
+
 void Engine::addUIObject(UIObject* uiObject) {
 	uiObject->setRenderer(renderer);
 	ui->addObject(uiObject);
@@ -99,33 +132,17 @@ void Engine::clearActiveLevel() {
 	activeLevel = NULL;
 }
 
-void Engine::delay(int ms) {
-	int startTime = SDL_GetTicks();
-
-	if (ms > 0) {
-		while ((SDL_GetTicks() - startTime) < ms) {
-			SDL_Delay(1);
-		}
-	}
-}
-
-void Engine::drawTriangle(Triangle& triangle) {
+void Engine::drawTriangle(Triangle* triangle) {
 	if (flags & SHOW_WIREFRAME) {
 		rasterizer->setDrawColor(255, 255, 255);
 
 		rasterizer->triangle(
-			triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
-			triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
-			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
+			triangle->vertices[0].coordinate.x, triangle->vertices[0].coordinate.y,
+			triangle->vertices[1].coordinate.x, triangle->vertices[1].coordinate.y,
+			triangle->vertices[2].coordinate.x, triangle->vertices[2].coordinate.y
 		);
 	} else {
-		if (triangle.sourceObject->texture != NULL) {
-			illuminateTextureTriangle(triangle);
-		} else {
-			illuminateColorTriangle(triangle);
-		}
-
-		rasterizer->triangle(triangle);
+		rasterizer->triangle(*triangle);
 	}
 
 	debugStats.countDrawnTriangle();
@@ -136,10 +153,10 @@ void Engine::drawTriangle(Triangle& triangle) {
  * vertex, using the triangle itself and a reference to one of
  * its vertices.
  */
-Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, int vertexIndex) {
-	const Vertex2d& vertex = triangle.vertices[vertexIndex];
+Vec3 Engine::getTriangleVertexColorIntensity(const Triangle* triangle, int vertexIndex) {
+	const Vertex2d& vertex = triangle->vertices[vertexIndex];
 	const Settings& settings = activeLevel->getSettings();
-	std::map<int, Vec3>& vertexLightCache = triangle.sourcePolygon->vertexLightCache[vertexIndex];
+	std::map<int, Vec3>& vertexLightCache = triangle->sourcePolygon->vertexLightCache[vertexIndex];
 	Vec3 colorIntensity = { 1.0f, 1.0f, 1.0f };
 
 	colorIntensity *= settings.brightness;
@@ -152,14 +169,14 @@ Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, int verte
 	// source which affects all geometry in the level
 	if (settings.ambientLightFactor > 0) {
 		const auto& cachedAmbientLight = vertexLightCache.find(Engine::AMBIENT_LIGHT_ID);
-		bool isCacheableLightSource = settings.hasStaticAmbientLight && triangle.sourceObject->isStatic && !triangle.isSynthetic;
+		bool isCacheableLightSource = settings.hasStaticAmbientLight && triangle->sourceObject->isStatic && !triangle->isSynthetic;
 
 		if (isCacheableLightSource && cachedAmbientLight != vertexLightCache.end()) {
 			const Vec3& cachedAmbientLightIntensity = cachedAmbientLight->second;
 
 			colorIntensity *= cachedAmbientLightIntensity;
 		} else {
-			float dot = Vec3::dotProduct(triangle.sourcePolygon->normal, settings.ambientLightVector.unit());
+			float dot = Vec3::dotProduct(triangle->sourcePolygon->normal, settings.ambientLightVector.unit());
 
 			if (dot < 0) {
 				float incidence = cosf((1 + dot) * M_PI / 2);
@@ -184,7 +201,7 @@ Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, int verte
 	// Regular light sources must be within range of a vertex
 	// to affect its color intensity
 	for (const auto* light : activeLevel->getLights()) {
-		bool isCacheableLightSource = triangle.sourceObject->isStatic && light->isStatic && !triangle.isSynthetic;
+		bool isCacheableLightSource = light->isStatic && triangle->sourceObject->isStatic && !triangle->isSynthetic;
 
 		if (isCacheableLightSource) {
 			const auto& cachedLight = vertexLightCache.find(light->getId());
@@ -212,7 +229,7 @@ Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, int verte
 		float lightDistance = lightVector.magnitude();
 
 		if (lightDistance < light->range) {
-			float dot = Vec3::dotProduct(triangle.sourcePolygon->normal, lightVector.unit());
+			float dot = Vec3::dotProduct(triangle->sourcePolygon->normal, lightVector.unit());
 
 			if (dot < 0) {
 				float incidence = cosf((1 + dot) * M_PI / 2);
@@ -291,11 +308,11 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	camera.yaw += (float)xDelta * deltaFactor;
 }
 
-void Engine::illuminateColorTriangle(Triangle& triangle) {
+void Engine::illuminateColorTriangle(Triangle* triangle) {
 	const Settings& settings = activeLevel->getSettings();
 
 	for (int i = 0; i < 3; i++) {
-		Vertex2d* vertex = &triangle.vertices[i];
+		Vertex2d* vertex = &triangle->vertices[i];
 		const Vec3 colorIntensity = getTriangleVertexColorIntensity(triangle, i);
 
 		vertex->color.R *= colorIntensity.x;
@@ -309,22 +326,22 @@ void Engine::illuminateColorTriangle(Triangle& triangle) {
 	}
 }
 
-void Engine::illuminateTextureTriangle(Triangle& triangle) {
+void Engine::illuminateTextureTriangle(Triangle* triangle) {
 	const Settings& settings = activeLevel->getSettings();
 
 	for (int i = 0; i < 3; i++) {
-		Vertex2d* vertex = &triangle.vertices[i];
+		Vertex2d* vertex = &triangle->vertices[i];
 		vertex->textureIntensity = getTriangleVertexColorIntensity(triangle, i);
 	}
 }
 
 /**
- * Projects and adds a new triangle to the raster queue using
- * a set of three vertices, three unit vectors, and three
- * world vectors representing to the original location of the
- * source polygon, as well as the triangle's source object and
- * polygon for contextual information. For efficiency we forward
- * the arguments from drawScene(), which has already computed them.
+ * Projects and queues a triangle into the raster filter using
+ * a set of three vertices, three unit vectors, and three world
+ * vectors representing to the original location of the source
+ * polygon, as well as the triangle's source object and polygon for
+ * contextual information. For efficiency we forward the arguments
+ * from drawScene(), which has already computed them.
  */
 void Engine::projectAndQueueTriangle(
 	const Vertex3d (&vertexes)[3],
@@ -335,31 +352,29 @@ void Engine::projectAndQueueTriangle(
 	float scale,
 	bool isSynthetic
 ) {
-	Triangle triangle;
+	Triangle* triangle = &triangles[totalProjectedTriangles++];
 
-	triangle.sourcePolygon = const_cast<Polygon*>(sourcePolygon);
-	triangle.sourceObject = sourceObject;
-	triangle.isSynthetic = isSynthetic;
+	triangle->sourcePolygon = const_cast<Polygon*>(sourcePolygon);
+	triangle->sourceObject = sourceObject;
+	triangle->isSynthetic = isSynthetic;
 
 	for (int i = 0; i < 3; i++) {
 		const Vertex3d& vertex3d = vertexes[i];
 		const Vec3& vector = vertex3d.vector;
 		const Vec3& unit = unitVecs[i];
 
-		Vertex2d vertex;
+		Vertex2d* vertex = &triangle->vertices[i];
 
-		vertex.coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
-		vertex.coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
-		vertex.z = vector.z;
-		vertex.inverseDepth = 1.0f / vector.z;
-		vertex.perspectiveUV = vertex3d.uv / vector.z;
-		vertex.color = vertex3d.color;
-		vertex.worldVector = worldVecs[i];
-
-		triangle.vertices[i] = vertex;
+		vertex->coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
+		vertex->coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
+		vertex->z = vector.z;
+		vertex->inverseDepth = 1.0f / vector.z;
+		vertex->perspectiveUV = vertex3d.uv / vector.z;
+		vertex->color = vertex3d.color;
+		vertex->worldVector = worldVecs[i];
 	}
 
-	rasterQueue->addTriangle(triangle);
+	rasterFilter->addTriangle(triangle);
 	debugStats.countProjectedTriangle();
 }
 
@@ -421,8 +436,6 @@ void Engine::setActiveLevel(Level* level) {
 void Engine::update() {
 	const Settings& settings = activeLevel->getSettings();
 
-	updateMovement();
-
 	rasterizer->setBackgroundColor(settings.backgroundColor);
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
@@ -430,9 +443,9 @@ void Engine::update() {
 	debugStats.resetCounters();
 	debugStats.trackFrameTime();
 
+	updateMovement();
 	updateScene();
 	updateSounds();
-
 	ui->draw();
 
 	debugStats.logFrameTime();
@@ -442,6 +455,9 @@ void Engine::update() {
 	}
 
 	SDL_RenderPresent(renderer);
+
+	totalProjectedTriangles = 0;
+	triangleRasterBuffer.clear();
 }
 
 void Engine::updateMovement() {
@@ -623,12 +639,32 @@ void Engine::updateScene() {
 	}
 
 	debugStats.logScreenProjectionTime();
-	debugStats.trackDrawTime();
 
+	// Take triangles out of the raster filter and buffer
+	// them for illumination and final rasterization
 	Triangle* triangle;
 
-	while ((triangle = rasterQueue->next()) != NULL) {
-		drawTriangle(*triangle);
+	while ((triangle = rasterFilter->next()) != NULL) {
+		triangleRasterBuffer.push_back(triangle);
+	}
+
+	debugStats.trackIlluminationTime();
+
+	// Illumination step
+	for (auto* triangle : triangleRasterBuffer) {
+		if (triangle->sourceObject->texture != NULL) {
+			illuminateTextureTriangle(triangle);
+		} else {
+			illuminateColorTriangle(triangle);
+		}
+	}
+
+	debugStats.logIlluminationTime();
+	debugStats.trackDrawTime();
+
+	// Final rasterization step
+	for (auto* triangle : triangleRasterBuffer) {
+		drawTriangle(triangle);
 	}
 
 	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
@@ -649,6 +685,7 @@ void Engine::updateSounds() {
 
 void Engine::addDebugStats() {
 	addDebugStat("screenProjectionTime");
+	addDebugStat("illuminationTime");
 	addDebugStat("drawTime");
 	addDebugStat("frameTime");
 	addDebugStat("fps");
@@ -661,12 +698,13 @@ void Engine::addDebugStats() {
 
 void Engine::updateDebugStats() {
 	updateDebugStat("screenProjectionTime", "Screen projection time", debugStats.getScreenProjectionTime());
+	updateDebugStat("illuminationTime", "Illumination time", debugStats.getIlluminationTime());
 	updateDebugStat("drawTime", "Draw time", debugStats.getDrawTime());
 	updateDebugStat("frameTime", "Frame time", debugStats.getFrameTime());
 	updateDebugStat("fps", "FPS", debugStats.getFPS());
 	updateDebugStat("totalVertices", "Vertices", debugStats.getTotalVertices(activeLevel->getObjects()));
 	updateDebugStat("totalTriangles", "Triangles", debugStats.getTotalPolygons(activeLevel->getObjects()));
-	updateDebugStat("totalTrianglesProjected", "Triangles projected", debugStats.getTotalProjectedTriangles());
+	updateDebugStat("totalTrianglesProjected", "Triangles projected", totalProjectedTriangles);
 	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", debugStats.getTotalDrawnTriangles());
 	updateDebugStat("totalScanlines", "Scanlines", rasterizer->getTotalScanlines());
 }
