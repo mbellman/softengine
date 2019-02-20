@@ -9,6 +9,9 @@ public:
 	AudioEngine();
 	~AudioEngine();
 
+	void mute();
+	void unmute();
+
 private:
 	ALCdevice* device = nullptr;
 	ALCcontext* context = nullptr;

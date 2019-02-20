@@ -47,6 +47,7 @@ protected:
 	Settings settings;
 
 	void add(Object* object);
+	void add(Sound* sound);
 	void add(const char* key, Object* object);
 	void add(const char* key, ObjLoader* objLoader);
 	void add(const char* key, TextureBuffer* textureBuffer);

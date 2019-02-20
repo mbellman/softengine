@@ -30,6 +30,10 @@ void Level::add(Object* object) {
 	}
 }
 
+void Level::add(Sound* sound) {
+	sounds.push_back(sound);
+}
+
 void Level::add(const char* key, ObjLoader* objLoader) {
 	objLoaderMap.emplace(key, objLoader);
 }
@@ -40,7 +44,8 @@ void Level::add(const char* key, TextureBuffer* textureBuffer) {
 
 void Level::add(const char* key, Sound* sound) {
 	soundMap.emplace(key, sound);
-	sounds.push_back(sound);
+
+	add(sound);
 }
 
 void Level::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
@@ -108,12 +113,16 @@ void Level::onStart() {}
 void Level::onUpdate(int dt, int runningTime) {}
 
 void Level::quit() {
-	for (auto& object : objects) {
+	for (auto* object : objects) {
 		if (!object->isOfType<Particle>()) {
 			// Only delete Objects other than Particles, which
 			// are managed by their source ParticleSystems
 			delete object;
 		}
+	}
+
+	for (auto* sound : sounds) {
+		delete sound;
 	}
 
 	for (auto& [key, objLoader] : objLoaderMap) {
@@ -130,10 +139,13 @@ void Level::quit() {
 
 	objects.clear();
 	lights.clear();
+	sounds.clear();
 	objectMap.clear();
 	objLoaderMap.clear();
 	textureBufferMap.clear();
 	particleSystemMap.clear();
+
+	Sound::clearSoundCache();
 
 	state = LevelState::INACTIVE;
 }

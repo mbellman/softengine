@@ -5,6 +5,5 @@
 class Garden : public Level {
 public:
 	void load() override;
-	void onStart() override;
 	void onUpdate(int dt, int runningTime) override;
 };

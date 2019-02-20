@@ -6,12 +6,18 @@
 
 using namespace std;
 
+/**
+ * AudioEngine
+ * -----------
+ */
 AudioEngine::AudioEngine() {
 	// Initialize SDL_mixer
 	Mix_Init(0);
 
 	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) != 0) {
 		cout << "Error initializing mixer audio" << endl;
+
+		exit(0);
 	}
 
 	// Initialize OpenAL
@@ -22,6 +28,8 @@ AudioEngine::AudioEngine() {
 		alcMakeContextCurrent(context);
 	} else {
 		cout << "Error initializing audio device" << endl;
+
+		exit(0);
 	}
 }
 
@@ -31,4 +39,12 @@ AudioEngine::~AudioEngine() {
 
 	Mix_CloseAudio();
 	Mix_Quit();
+}
+
+void AudioEngine::mute() {
+	alListenerf(AL_GAIN, 0.0f);
+}
+
+void AudioEngine::unmute() {
+	alListenerf(AL_GAIN, 1.0f);
 }

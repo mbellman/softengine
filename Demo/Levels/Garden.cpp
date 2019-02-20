@@ -5,6 +5,7 @@
 #include <Sound/Sound.h>
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
+#include <Helpers.h>
 
 /**
  * Garden
@@ -15,7 +16,7 @@ void Garden::load() {
 	ObjLoader icoObj("./DemoAssets/da-vinci.obj");
 
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
-	add("ground-texture", new TextureBuffer("./DemoAssets/ground-texture.png"));
+	add("ground-texture", new TextureBuffer("./DemoAssets/snowy-ground-texture.png"));
 
 	for (int i = 0; i < 30; i++) {
 		Model* tree = new Model(treeObj);
@@ -32,9 +33,9 @@ void Garden::load() {
 	for (int x = 0; x < 10; x++) {
 		Light* light = new Light();
 		Cube* cube = new Cube(10);
-		cube->setColor(255, 255, 255);
+		cube->setColor(255, 100, 0);
 
-		light->setColor(255, 50, 0);
+		light->setColor(255, 100, 0);
 		light->position = { (float)(2000 - rand() % 4000), 50 + (float)(rand() % 200), (float)(5000 - rand() % 4000) };
 		light->range = 500 + rand() % 700;
 		light->power = 1.5f;
@@ -74,7 +75,7 @@ void Garden::load() {
 
 	add(mesh);
 
-	ParticleSystem* snow = new ParticleSystem(2000);
+	ParticleSystem* snow = new ParticleSystem(3500);
 
 	snow->setSpawnRange(
 		{ -2500.0f, 2500.0f },
@@ -96,10 +97,24 @@ void Garden::load() {
 	addParticleSystem("snow", snow);
 
 	Sound* bells = new Sound("./DemoAssets/bells.wav");
-	bells->loops(true);
 	bells->position = icosahedron->position;
+	bells->loop();
 
 	add("bells", bells);
+
+	for (int i = 0; i < 3; i++) {
+		Sound* crickets = new Sound("./DemoAssets/crickets.wav");
+
+		crickets->position = {
+			RNG::random(-2500.0f, 2500.0f),
+			0.0f,
+			RNG::random(0.0f, 5000.0f)
+		};
+
+		crickets->loop();
+
+		add(crickets);
+	}
 
 	settings.backgroundColor = { 0, 10, 20 };
 	settings.visibility = 3500;
@@ -108,10 +123,6 @@ void Garden::load() {
 	settings.ambientLightVector = { 0, -0.8f, 0.5f };
 	settings.ambientLightFactor = 0.5f;
 	settings.hasStaticAmbientLight = true;
-}
-
-void Garden::onStart() {
-	getSound("bells")->play();
 }
 
 void Garden::onUpdate(int dt, int runningTime) {

@@ -3,86 +3,78 @@
 #include <iostream>
 #include <SDL_mixer.h>
 #include <al.h>
+#include <map>
 
+/**
+ * Sound
+ * -----
+ */
 Sound::Sound(const char* filename) {
-	this->filename = filename;
+	Mix_Chunk* chunk;
+	auto cachedChunk = Sound::soundCache.find(filename);
 
-	Mix_Chunk* chunk = Mix_LoadWAV(filename);
+	if (cachedChunk == soundCache.end()) {
+		chunk = Mix_LoadWAV(filename);
 
-	if (!chunk) {
-		std::cout << "Unable to load sound: " << filename << std::endl;
+		if (!chunk) {
+			std::cout << "Unable to load sound: " << filename << std::endl;
 
-		return;
+			exit(0);
+		}
+
+		soundCache.emplace(filename, chunk);
+	} else {
+		chunk = cachedChunk->second;
 	}
 
-	alGenBuffers(1, &m_buffer);
-	alGenSources(1, &m_source);
+	alGenBuffers(1, &alAudioBuffer);
+	alGenSources(1, &alAudioSource);
 
-	alBufferData(m_buffer, AL_FORMAT_MONO16, chunk->abuf, chunk->alen, 44100);
-	alSourcei(m_source, AL_BUFFER, m_buffer);
-	alSourcef(m_source, AL_PITCH, 1.0f);
-	alSourcef(m_source, AL_GAIN, 1.0f);
+	alBufferData(alAudioBuffer, AL_FORMAT_MONO16, chunk->abuf, chunk->alen, 44100);
+	alSourcei(alAudioSource, AL_BUFFER, alAudioBuffer);
 
-	ALint error;
-
-	if((error = alGetError()) != AL_NO_ERROR) {
+	if(alGetError() != AL_NO_ERROR) {
 		std::cout << "Failed to generate sound buffer: " << filename << std::endl;
 
-		return;
+		exit(0);
 	}
-
-	Mix_FreeChunk(chunk);
-
-	isInitialized = true;
-}
-
-void Sound::loops(bool shouldLoop) {
-	if (!isInitialized) {
-		return;
-	}
-
-	m_loop = shouldLoop;
-
-	alSourcei(m_source, AL_LOOPING, shouldLoop ? AL_TRUE : AL_FALSE);
-}
-
-void Sound::play() {
-	if (!isInitialized) {
-		return;
-	}
-
-	ALint error;
-
-	alSourcePlay(m_source);
-
-	if((error = alGetError()) != AL_NO_ERROR) {
-		std::cout << "Failed to play sound: " << filename << std::endl;
-	}
-}
-
-bool Sound::isPlaying() {
-	if (!isInitialized) {
-		return false;
-	}
-
-	alGetSourcei(m_source, AL_SOURCE_STATE, &m_state);
-
-	return m_state == AL_PLAYING || AL_LOOPING;
-}
-
-void Sound::setApparentPosition(const Vec3& apparentPosition) {
-	if (!isInitialized) {
-		return;
-	}
-
-	alSource3f(m_source, AL_POSITION, apparentPosition.x, apparentPosition.y, apparentPosition.z);
 }
 
 Sound::~Sound() {
-	if (!isInitialized) {
-		return;
+	stop();
+
+	alDeleteSources(1, &alAudioSource);
+    alDeleteBuffers(1, &alAudioBuffer);
+}
+
+std::map<const char*, Mix_Chunk*> Sound::soundCache;
+
+void Sound::clearSoundCache() {
+	for (auto& [key, mixChunk] : soundCache) {
+		delete mixChunk;
 	}
 
-	alDeleteSources(1, &m_source);
-    alDeleteBuffers(1, &m_buffer);
+	Sound::soundCache.clear();
+}
+
+void Sound::loop() {
+	alSourcei(alAudioSource, AL_LOOPING, AL_TRUE);
+	alSourcePlay(alAudioSource);
+}
+
+void Sound::play() {
+	alSourcei(alAudioSource, AL_LOOPING, AL_FALSE);
+	alSourcePlay(alAudioSource);
+}
+
+void Sound::setApparentPosition(const Vec3& apparentPosition) {
+	alSource3f(alAudioSource, AL_POSITION, apparentPosition.x, apparentPosition.y, apparentPosition.z);
+}
+
+void Sound::setVolume(float volume) {
+	alSourcef(alAudioSource, AL_GAIN, volume);
+}
+
+void Sound::stop() {
+	alSourceStop(alAudioSource);
 }

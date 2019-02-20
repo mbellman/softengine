@@ -377,6 +377,9 @@ void Engine::run() {
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
+	audioEngine->mute();
+	activeLevel->load();
+
 	while (!activeLevel->hasQuit()) {
 		lastStartTime = SDL_GetTicks();
 
@@ -384,6 +387,7 @@ void Engine::run() {
 
 		if (!hasStarted) {
 			activeLevel->onStart();
+			audioEngine->unmute();
 
 			hasStarted = true;
 		}
@@ -410,8 +414,6 @@ void Engine::run() {
 
 void Engine::setActiveLevel(Level* level) {
 	clearActiveLevel();
-
-	level->load();
 
 	activeLevel = level;
 }
@@ -454,7 +456,6 @@ void Engine::updateMovement() {
 	camera.position.x += scalar * xDelta;
 	camera.position.z += scalar * zDelta;
 }
-
 
 void Engine::updateScene() {
 	debugStats.trackScreenProjectionTime();
