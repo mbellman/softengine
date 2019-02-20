@@ -28,6 +28,9 @@ include_directories(${SDL2TTF_INCLUDE_DIR})
 find_package(SDL2image REQUIRED)
 include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 
+find_package(SDL2mixer REQUIRED)
+include_directories(${SDL2_MIXER_INCLUDE_DIRS})
+
 # Find OpenAL dependency
 find_package(OpenAL REQUIRED)
 include_directories(${OPENAL_INCLUDE_DIR})
@@ -54,6 +57,7 @@ set(SOURCE_FILES
     Library/Graphics/TextureBuffer.h
     Library/Loaders/Loader.h
     Library/Loaders/ObjLoader.h
+    Library/Sound/AudioEngine.h
     Library/Sound/Sound.h
     Library/System/DebugStats.h
     Library/System/Flags.h
@@ -76,6 +80,7 @@ set(SOURCE_FILES
     Source/Graphics/TextureBuffer.cpp
     Source/Loaders/Loader.cpp
     Source/Loaders/ObjLoader.cpp
+    Source/Sound/AudioEngine.cpp
     Source/Sound/Sound.cpp
     Source/System/DebugStats.cpp
     Source/System/Geometry.cpp
@@ -96,6 +101,7 @@ add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES})
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARY})
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2TTF_LIBRARY})
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_IMAGE_LIBRARY})
+target_link_libraries(${EXECUTABLE_NAME} ${SDL2_MIXER_LIBRARIES})
 
 # Link OpenAL
 target_link_libraries(${EXECUTABLE_NAME} ${OPENAL_LIBRARY})

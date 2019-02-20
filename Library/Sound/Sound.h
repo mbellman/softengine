@@ -3,25 +3,25 @@
 #include <al.h>
 #include <alc.h>
 #include <System/Geometry.h>
+#include <SDL_mixer.h>
 
 class Sound {
 public:
+	float volume = 0.75f;
+	Vec3 position;
+
 	Sound(const char* filename);
 	~Sound();
 
-	float volume = 0.75;
-
+	bool isPlaying();
 	void loops(bool value);
 	void play();
-	bool isPlaying();
+	void setApparentPosition(const Vec3& apparentPosition);
 
-	void setPosition(const Vec3& position);
-	void setVelocity(const Vec3& velocity);
-
-protected:
+private:
+	const char* filename;
+	bool isInitialized = false;
 	bool m_loop = false;
 	ALuint m_buffer, m_source;
 	ALint m_state;
-	Vec3 m_position = {0, 0, 0};
-	Vec3 m_velocity = {0, 0, 0};
 };

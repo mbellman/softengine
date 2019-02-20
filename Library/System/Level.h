@@ -38,6 +38,7 @@ public:
 	const Settings& getSettings();
 	bool hasQuit();
 	virtual void load() = 0;
+	virtual void onStart();
 	virtual void onUpdate(int dt, int runningTime);
 	void quit();
 	void update(int dt);

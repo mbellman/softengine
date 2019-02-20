@@ -27,8 +27,6 @@ void Level::add(Object* object) {
 
 	if (object->isOfType<Light>()) {
 		lights.push_back((Light*)object);
-	} else if(object->isOfType<Sound>()) {
-		sounds.push_back((Sound*)object);
 	}
 }
 
@@ -42,6 +40,7 @@ void Level::add(const char* key, TextureBuffer* textureBuffer) {
 
 void Level::add(const char* key, Sound* sound) {
 	soundMap.emplace(key, sound);
+	sounds.push_back(sound);
 }
 
 void Level::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
@@ -105,6 +104,7 @@ bool Level::hasQuit() {
 	return state == LevelState::INACTIVE;
 }
 
+void Level::onStart() {}
 void Level::onUpdate(int dt, int runningTime) {}
 
 void Level::quit() {

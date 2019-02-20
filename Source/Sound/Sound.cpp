@@ -1,51 +1,88 @@
 #include <Sound/Sound.h>
+#include <Sound/AudioEngine.h>
 #include <iostream>
+#include <SDL_mixer.h>
+#include <al.h>
 
 Sound::Sound(const char* filename) {
-	// ALint error;
-	// m_buffer = alutCreateBufferFromFile(filename);
+	this->filename = filename;
 
-	// alGenSources(1, &m_source);
-	// if((error = alGetError()) != AL_NO_ERROR) {
-	// 	std::cout << "Failed to generate source: " << alutGetErrorString(error) << std::endl;
-	// }
+	Mix_Chunk* chunk = Mix_LoadWAV(filename);
 
-	// alSourcei(m_source, AL_BUFFER, m_buffer);
-	// if((error = alGetError()) != AL_NO_ERROR) {
-	// 	std::cout << "Failed to set source buffer: " << alutGetErrorString(error) << std::endl;
-	// }
+	if (!chunk) {
+		std::cout << "Unable to load sound: " << filename << std::endl;
+
+		return;
+	}
+
+	alGenBuffers(1, &m_buffer);
+	alGenSources(1, &m_source);
+
+	alBufferData(m_buffer, AL_FORMAT_MONO16, chunk->abuf, chunk->alen, 44100);
+	alSourcei(m_source, AL_BUFFER, m_buffer);
+	alSourcef(m_source, AL_PITCH, 1.0f);
+	alSourcef(m_source, AL_GAIN, 1.0f);
+
+	ALint error;
+
+	if((error = alGetError()) != AL_NO_ERROR) {
+		std::cout << "Failed to generate sound buffer: " << filename << std::endl;
+
+		return;
+	}
+
+	Mix_FreeChunk(chunk);
+
+	isInitialized = true;
 }
 
-void Sound::loops(bool value) {
-	m_loop = value;
-	alSourcei(m_source, AL_LOOPING, ((value) ? AL_TRUE : AL_FALSE));
+void Sound::loops(bool shouldLoop) {
+	if (!isInitialized) {
+		return;
+	}
+
+	m_loop = shouldLoop;
+
+	alSourcei(m_source, AL_LOOPING, shouldLoop ? AL_TRUE : AL_FALSE);
 }
 
 void Sound::play() {
-	// ALint error;
+	if (!isInitialized) {
+		return;
+	}
 
-	// alSourcePlay(m_source);
-	// if((error = alGetError()) != AL_NO_ERROR) {
-	// 	std::cout << "Failed to play sound: " << alutGetErrorString(error) << std::endl;
-	// }
+	ALint error;
+
+	alSourcePlay(m_source);
+
+	if((error = alGetError()) != AL_NO_ERROR) {
+		std::cout << "Failed to play sound: " << filename << std::endl;
+	}
 }
 
 bool Sound::isPlaying() {
+	if (!isInitialized) {
+		return false;
+	}
+
 	alGetSourcei(m_source, AL_SOURCE_STATE, &m_state);
+
 	return m_state == AL_PLAYING || AL_LOOPING;
 }
 
-void Sound::setPosition(const Vec3& position) {
-	m_position = position;
-	alSource3f(m_source, AL_POSITION, position.x, position.y, position.z);
-}
+void Sound::setApparentPosition(const Vec3& apparentPosition) {
+	if (!isInitialized) {
+		return;
+	}
 
-void Sound::setVelocity(const Vec3& velocity) {
-	m_velocity = velocity;
-	alSource3f(m_source, AL_POSITION, m_velocity.x, velocity.y, velocity.z);
+	alSource3f(m_source, AL_POSITION, apparentPosition.x, apparentPosition.y, apparentPosition.z);
 }
 
 Sound::~Sound() {
+	if (!isInitialized) {
+		return;
+	}
+
 	alDeleteSources(1, &m_source);
     alDeleteBuffers(1, &m_buffer);
 }

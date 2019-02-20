@@ -1,5 +1,4 @@
 #include <cmath>
-#include <iostream>
 
 #include <Levels/Garden.h>
 #include <Graphics/TextureBuffer.h>
@@ -96,10 +95,11 @@ void Garden::load() {
 
 	addParticleSystem("snow", snow);
 
-	// auto* applauseSound = new Sound("./DemoAssets/applause.wav");
-	// applauseSound->loops(true);
-	// add("applause", applauseSound);
-	// applauseSound->play();
+	Sound* bells = new Sound("./DemoAssets/bells.wav");
+	bells->loops(true);
+	bells->position = icosahedron->position;
+
+	add("bells", bells);
 
 	settings.backgroundColor = { 0, 10, 20 };
 	settings.visibility = 3500;
@@ -110,15 +110,14 @@ void Garden::load() {
 	settings.hasStaticAmbientLight = true;
 }
 
+void Garden::onStart() {
+	getSound("bells")->play();
+}
+
 void Garden::onUpdate(int dt, int runningTime) {
-	auto* movingLight = getObject("movingLight");
-	auto* applauseSound = getSound("applause");
+	Light* movingLight = (Light*)getObject("movingLight");
 
 	movingLight->position.x = 1500.0f * sinf(runningTime / 900.0f);
 	movingLight->position.z = 2000.0f + 1500.0f * cosf(runningTime / 900.0f);
 	movingLight->position.y = 300.0f + 150.0f * sinf(runningTime / 500.0f);
-
-	// float distance = 6.0f + (cosf(runningTime / 800.0f) * 6.0f);
-	// applauseSound->setPosition({0, 0, distance});
-	// std::cout << "Sound distance z: " << distance << std::endl;
 }

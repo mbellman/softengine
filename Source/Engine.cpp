@@ -52,6 +52,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
 	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
 	ui = new UI();
+	audioEngine = new AudioEngine();
 
 	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
@@ -67,6 +68,7 @@ Engine::~Engine() {
 	delete rasterQueue;
 	delete ui;
 	delete rasterizer;
+	delete audioEngine;
 
 	if (flags & DEBUG_STATS) {
 		for (auto& [key, uiText] : debugStatsTextMap) {
@@ -127,184 +129,6 @@ void Engine::drawTriangle(Triangle& triangle) {
 	}
 
 	debugStats.countDrawnTriangle();
-}
-
-void Engine::drawScene() {
-	debugStats.trackScreenProjectionTime();
-
-	bool hasPixelFilter = flags & PIXEL_FILTER;
-	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
-	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
-	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
-
-	// Allocate reusable vertex/vector objects up front to
-	// be overwritten/projected with each subsequent polygon
-	Vertex3d t_verts[3];
-	Vec3 u_vecs[3];
-	Vec3 w_vecs[3];
-
-	for (const auto* object : activeLevel->getObjects()) {
-		Vec3 relativeObjectPosition = object->position - camera.position;
-
-		if (object->texture != NULL) {
-			object->texture->confirmTexture(renderer, TextureMode::SOFTWARE, ~flags & DISABLE_MIPMAPPING);
-		}
-
-		for (const auto& polygon : object->getPolygons()) {
-			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
-			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
-
-			if (!isFacingCamera) {
-				continue;
-			}
-
-			FrustumCuller frustumCuller;
-
-			// Build our vertex/unit + world vector lists while we perform
-			// view frustum clipping checks on the polygon
-			for (int i = 0; i < 3; i++) {
-				t_verts[i] = *polygon.vertices[i];
-				t_verts[i].vector = cameraRotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
-				u_vecs[i] = t_verts[i].vector.unit();
-				w_vecs[i] = object->position + polygon.vertices[i]->vector;
-
-				if (t_verts[i].vector.z < Engine::NEAR_Z)
-					frustumCuller.near++;
-				else if (t_verts[i].vector.z > activeLevel->getSettings().visibility)
-					frustumCuller.far++;
-
-				if (u_vecs[i].x < -fovAngleRange)
-					frustumCuller.left++;
-				else if (u_vecs[i].x > fovAngleRange)
-					frustumCuller.right++;
-
-				if (u_vecs[i].y < -fovAngleRange)
-					frustumCuller.bottom++;
-				else if (u_vecs[i].y > fovAngleRange)
-					frustumCuller.top++;
-			}
-
-			if (frustumCuller.isCulled()) {
-				continue;
-			}
-
-			if (frustumCuller.near > 0) {
-				// If any vertices are behind the near plane, we have to
-				// clip them against it. This is necessary to prevent
-				// erroneous screen projections at coordinates <= 0.
-
-				// Sort vertices by descending z-order so we can determine
-				// where to interpolate the clipped vertices
-				if (t_verts[0].vector.z < t_verts[1].vector.z) {
-					swap(t_verts[0], t_verts[1]);
-					swap(u_vecs[0], u_vecs[1]);
-					swap(w_vecs[0], w_vecs[1]);
-				}
-
-				if (t_verts[1].vector.z < t_verts[2].vector.z) {
-					swap(t_verts[1], t_verts[2]);
-					swap(u_vecs[1], u_vecs[2]);
-					swap(w_vecs[1], w_vecs[2]);
-				}
-
-				if (t_verts[0].vector.z < t_verts[1].vector.z) {
-					swap(t_verts[0], t_verts[1]);
-					swap(u_vecs[0], u_vecs[1]);
-					swap(w_vecs[0], w_vecs[1]);
-				}
-
-				if (frustumCuller.near == 2) {
-					// When two of the polygon's vertices are behind the near
-					// plane, it can be clipped into a smaller polygon at the
-					// plane boundary.
-
-					// Determine interpolation deltas for each new vertex
-					// (the first need not be interpolated at all)
-					float deltas[3] = {
-						0.0f,
-						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[1].vector.z),
-						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z)
-					};
-
-					// Generate new vertices and unit/world vectors for the clipped polygon
-					for (int i = 1; i < 3; i++) {
-						t_verts[i] = Vertex3d::lerp(t_verts[0], t_verts[i], deltas[i]);
-						u_vecs[i] = t_verts[i].vector.unit();
-						w_vecs[i] = Vec3::lerp(w_vecs[0], w_vecs[i], deltas[i]);
-					}
-
-					// Project the clipped polygon
-					projectAndQueueTriangle(
-						t_verts, u_vecs, w_vecs,
-						object, &polygon, projectionScale, true
-					);
-				} else if (frustumCuller.near == 1) {
-					// If only one of the polygon's vertices is behind the
-					// near plane, we need to clip it into a quad, which then
-					// needs to be clipped into two polygons. The first and
-					// second vertices can be preserved, whereas the latter
-					// two will have to be interpolated between the second and
-					// third, and first and third original vertices.
-					Vertex3d quadVerts[4];
-					Vec3 u_quadVecs[4];
-					Vec3 w_quadVecs[4];
-
-					// Determine interpolation deltas for third and fourth vertices
-					float v2Delta = (t_verts[1].vector.z - Engine::NEAR_Z) / (t_verts[1].vector.z - t_verts[2].vector.z);
-					float v3Delta = (t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z);
-
-					// Define new vertices/unit + world vectors for the quad
-					quadVerts[0] = t_verts[0];
-					quadVerts[1] = t_verts[1];
-					quadVerts[2] = Vertex3d::lerp(t_verts[1], t_verts[2], v2Delta);
-					quadVerts[3] = Vertex3d::lerp(t_verts[0], t_verts[2], v3Delta);
-
-					u_quadVecs[0] = quadVerts[0].vector.unit();
-					u_quadVecs[1] = quadVerts[1].vector.unit();
-					u_quadVecs[2] = quadVerts[2].vector.unit();
-					u_quadVecs[3] = quadVerts[3].vector.unit();
-
-					w_quadVecs[0] = w_vecs[0];
-					w_quadVecs[1] = w_vecs[1];
-					w_quadVecs[2] = Vec3::lerp(w_vecs[1], w_vecs[2], v2Delta);
-					w_quadVecs[3] = Vec3::lerp(w_vecs[0], w_vecs[2], v3Delta);
-
-					// Project the quad's two polygons individually
-					projectAndQueueTriangle(
-						{ quadVerts[0], quadVerts[1], quadVerts[2] },
-						{ u_quadVecs[0], u_quadVecs[1], u_quadVecs[2] },
-						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
-						object, &polygon, projectionScale, true
-					);
-
-					projectAndQueueTriangle(
-						{ quadVerts[0], quadVerts[2], quadVerts[3] },
-						{ u_quadVecs[0], u_quadVecs[2], u_quadVecs[3] },
-						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
-						object, &polygon, projectionScale, true
-					);
-				}
-			} else {
-				// Project a regular, unclipped triangle
-				projectAndQueueTriangle(
-					t_verts, u_vecs, w_vecs,
-					object, &polygon, projectionScale, false
-				);
-			}
-		}
-	}
-
-	debugStats.logScreenProjectionTime();
-	debugStats.trackDrawTime();
-
-	Triangle* triangle;
-
-	while ((triangle = rasterQueue->next()) != NULL) {
-		drawTriangle(*triangle);
-	}
-
-	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
-	debugStats.logDrawTime();
 }
 
 /**
@@ -549,6 +373,7 @@ void Engine::run() {
 	}
 
 	int lastStartTime;
+	bool hasStarted = false;
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
@@ -556,6 +381,12 @@ void Engine::run() {
 		lastStartTime = SDL_GetTicks();
 
 		update();
+
+		if (!hasStarted) {
+			activeLevel->onStart();
+
+			hasStarted = true;
+		}
 
 		int delta = SDL_GetTicks() - lastStartTime;
 
@@ -597,7 +428,9 @@ void Engine::update() {
 	debugStats.resetCounters();
 	debugStats.trackFrameTime();
 
-	drawScene();
+	updateScene();
+	updateSounds();
+
 	ui->draw();
 
 	debugStats.logFrameTime();
@@ -620,6 +453,195 @@ void Engine::updateMovement() {
 
 	camera.position.x += scalar * xDelta;
 	camera.position.z += scalar * zDelta;
+}
+
+
+void Engine::updateScene() {
+	debugStats.trackScreenProjectionTime();
+
+	bool hasPixelFilter = flags & PIXEL_FILTER;
+	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
+	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
+	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
+
+	// Allocate reusable vertex/vector objects up front to
+	// be overwritten/projected with each subsequent polygon
+	Vertex3d t_verts[3];
+	Vec3 u_vecs[3];
+	Vec3 w_vecs[3];
+
+	for (const auto* object : activeLevel->getObjects()) {
+		Vec3 relativeObjectPosition = object->position - camera.position;
+
+		if (object->texture != NULL) {
+			object->texture->confirmTexture(renderer, TextureMode::SOFTWARE, ~flags & DISABLE_MIPMAPPING);
+		}
+
+		for (const auto& polygon : object->getPolygons()) {
+			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
+			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
+
+			if (!isFacingCamera) {
+				continue;
+			}
+
+			FrustumCuller frustumCuller;
+
+			// Build our vertex/unit + world vector lists while we perform
+			// view frustum clipping checks on the polygon
+			for (int i = 0; i < 3; i++) {
+				t_verts[i] = *polygon.vertices[i];
+				t_verts[i].vector = cameraRotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
+				u_vecs[i] = t_verts[i].vector.unit();
+				w_vecs[i] = object->position + polygon.vertices[i]->vector;
+
+				if (t_verts[i].vector.z < Engine::NEAR_Z)
+					frustumCuller.near++;
+				else if (t_verts[i].vector.z > activeLevel->getSettings().visibility)
+					frustumCuller.far++;
+
+				if (u_vecs[i].x < -fovAngleRange)
+					frustumCuller.left++;
+				else if (u_vecs[i].x > fovAngleRange)
+					frustumCuller.right++;
+
+				if (u_vecs[i].y < -fovAngleRange)
+					frustumCuller.bottom++;
+				else if (u_vecs[i].y > fovAngleRange)
+					frustumCuller.top++;
+			}
+
+			if (frustumCuller.isCulled()) {
+				continue;
+			}
+
+			if (frustumCuller.near > 0) {
+				// If any vertices are behind the near plane, we have to
+				// clip them against it. This is necessary to prevent
+				// erroneous screen projections at coordinates <= 0.
+
+				// Sort vertices by descending z-order so we can determine
+				// where to interpolate the clipped vertices
+				if (t_verts[0].vector.z < t_verts[1].vector.z) {
+					swap(t_verts[0], t_verts[1]);
+					swap(u_vecs[0], u_vecs[1]);
+					swap(w_vecs[0], w_vecs[1]);
+				}
+
+				if (t_verts[1].vector.z < t_verts[2].vector.z) {
+					swap(t_verts[1], t_verts[2]);
+					swap(u_vecs[1], u_vecs[2]);
+					swap(w_vecs[1], w_vecs[2]);
+				}
+
+				if (t_verts[0].vector.z < t_verts[1].vector.z) {
+					swap(t_verts[0], t_verts[1]);
+					swap(u_vecs[0], u_vecs[1]);
+					swap(w_vecs[0], w_vecs[1]);
+				}
+
+				if (frustumCuller.near == 2) {
+					// When two of the polygon's vertices are behind the near
+					// plane, it can be clipped into a smaller polygon at the
+					// plane boundary.
+
+					// Determine interpolation deltas for each new vertex
+					// (the first need not be interpolated at all)
+					float deltas[3] = {
+						0.0f,
+						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[1].vector.z),
+						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z)
+					};
+
+					// Generate new vertices and unit/world vectors for the clipped polygon
+					for (int i = 1; i < 3; i++) {
+						t_verts[i] = Vertex3d::lerp(t_verts[0], t_verts[i], deltas[i]);
+						u_vecs[i] = t_verts[i].vector.unit();
+						w_vecs[i] = Vec3::lerp(w_vecs[0], w_vecs[i], deltas[i]);
+					}
+
+					// Project the clipped polygon
+					projectAndQueueTriangle(
+						t_verts, u_vecs, w_vecs,
+						object, &polygon, projectionScale, true
+					);
+				} else if (frustumCuller.near == 1) {
+					// If only one of the polygon's vertices is behind the
+					// near plane, we need to clip it into a quad, which then
+					// needs to be clipped into two polygons. The first and
+					// second vertices can be preserved, whereas the latter
+					// two will have to be interpolated between the second and
+					// third, and first and third original vertices.
+					Vertex3d quadVerts[4];
+					Vec3 u_quadVecs[4];
+					Vec3 w_quadVecs[4];
+
+					// Determine interpolation deltas for third and fourth vertices
+					float v2Delta = (t_verts[1].vector.z - Engine::NEAR_Z) / (t_verts[1].vector.z - t_verts[2].vector.z);
+					float v3Delta = (t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z);
+
+					// Define new vertices/unit + world vectors for the quad
+					quadVerts[0] = t_verts[0];
+					quadVerts[1] = t_verts[1];
+					quadVerts[2] = Vertex3d::lerp(t_verts[1], t_verts[2], v2Delta);
+					quadVerts[3] = Vertex3d::lerp(t_verts[0], t_verts[2], v3Delta);
+
+					u_quadVecs[0] = quadVerts[0].vector.unit();
+					u_quadVecs[1] = quadVerts[1].vector.unit();
+					u_quadVecs[2] = quadVerts[2].vector.unit();
+					u_quadVecs[3] = quadVerts[3].vector.unit();
+
+					w_quadVecs[0] = w_vecs[0];
+					w_quadVecs[1] = w_vecs[1];
+					w_quadVecs[2] = Vec3::lerp(w_vecs[1], w_vecs[2], v2Delta);
+					w_quadVecs[3] = Vec3::lerp(w_vecs[0], w_vecs[2], v3Delta);
+
+					// Project the quad's two polygons individually
+					projectAndQueueTriangle(
+						{ quadVerts[0], quadVerts[1], quadVerts[2] },
+						{ u_quadVecs[0], u_quadVecs[1], u_quadVecs[2] },
+						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
+						object, &polygon, projectionScale, true
+					);
+
+					projectAndQueueTriangle(
+						{ quadVerts[0], quadVerts[2], quadVerts[3] },
+						{ u_quadVecs[0], u_quadVecs[2], u_quadVecs[3] },
+						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
+						object, &polygon, projectionScale, true
+					);
+				}
+			} else {
+				// Project a regular, unclipped triangle
+				projectAndQueueTriangle(
+					t_verts, u_vecs, w_vecs,
+					object, &polygon, projectionScale, false
+				);
+			}
+		}
+	}
+
+	debugStats.logScreenProjectionTime();
+	debugStats.trackDrawTime();
+
+	Triangle* triangle;
+
+	while ((triangle = rasterQueue->next()) != NULL) {
+		drawTriangle(*triangle);
+	}
+
+	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
+	debugStats.logDrawTime();
+}
+
+void Engine::updateSounds() {
+	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
+
+	for (auto* sound : activeLevel->getSounds()) {
+		Vec3 relativeSoundPosition = cameraRotationMatrix * (sound->position - camera.position);
+
+		sound->setApparentPosition(relativeSoundPosition * 0.1f);
+	}
 }
 
 // --------- DEBUG STATS --------- //

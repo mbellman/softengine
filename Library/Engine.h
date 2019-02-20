@@ -15,6 +15,7 @@
 #include <System/Objects.h>
 #include <System/Level.h>
 #include <System/Math.h>
+#include <Sound/AudioEngine.h>
 
 /**
  * Camera
@@ -95,6 +96,7 @@ private:
 	SDL_Renderer* renderer;
 	Rasterizer* rasterizer;
 	RasterQueue* rasterQueue;
+	AudioEngine* audioEngine;
 	UI* ui;
 	Level* activeLevel = NULL;
 	Camera camera;
@@ -109,7 +111,6 @@ private:
 
 	void clearActiveLevel();
 	void delay(int ms);
-	void drawScene();
 	void drawTriangle(Triangle& triangle);
 	Vec3 getTriangleVertexColorIntensity(const Triangle& triangle, int vertexIndex);
 	void handleEvent(const SDL_Event& event);
@@ -131,6 +132,8 @@ private:
 
 	void update();
 	void updateMovement();
+	void updateScene();
+	void updateSounds();
 
 	/* ----- */
 
