@@ -24,6 +24,10 @@
 
 using namespace std;
 
+/**
+ * Camera
+ * ------
+ */
 RotationMatrix Camera::getRotationMatrix() {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
 	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);
@@ -31,6 +35,10 @@ RotationMatrix Camera::getRotationMatrix() {
 	return (q1 * q2).toRotationMatrix();
 }
 
+/**
+ * Engine
+ * ------
+ */
 Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
@@ -51,9 +59,9 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
 	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
-	ui = new UI();
+	triangleBuffer = new TriangleBuffer();
 	audioEngine = new AudioEngine();
-	triangles = new Triangle[250000];
+	ui = new UI();
 
 	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
@@ -64,23 +72,21 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	HALF_W = (int)(width / (hasPixelFilter ? 4 : 2));
 	HALF_H = (int)(height / (hasPixelFilter ? 4 : 2));
 
-	createIlluminationThreads();
+	createRenderThreads();
 }
 
 Engine::~Engine() {
 	isDone = true;
 
-	for (int i = 0; i < illuminationThreads.size(); i++) {
-		SDL_WaitThread(illuminationThreads.at(i), NULL);
+	for (int i = 0; i < renderThreads.size(); i++) {
+		SDL_WaitThread(renderThreads.at(i), NULL);
 	}
 
-	triangleRasterBuffer.clear();
-
+	delete triangleBuffer;
 	delete rasterFilter;
 	delete ui;
 	delete rasterizer;
 	delete audioEngine;
-	delete[] triangles;
 
 	if (flags & DEBUG_STATS) {
 		for (auto& [key, uiText] : debugStatsTextMap) {
@@ -103,7 +109,24 @@ void Engine::addUIObject(UIObject* uiObject) {
 	ui->addObject(uiObject);
 }
 
+void Engine::awaitRenderStep(RenderStep renderStep) {
+	for (int i = 0; i < renderThreads.size(); i++) {
+		RenderThreadManager* manager = &renderThreadManagers[i];
+
+		manager->step = renderStep;
+		manager->isDone = false;
+	}
+
+	for (int i = 0; i < renderThreads.size(); i++) {
+		while (!renderThreadManagers[i].isDone) {
+			SDL_Delay(1);
+		}
+	}
+}
+
 void Engine::clearActiveLevel() {
+	triangleBuffer->setActiveLevel(NULL);
+
 	if (activeLevel != NULL) {
 		delete activeLevel;
 	}
@@ -111,147 +134,24 @@ void Engine::clearActiveLevel() {
 	activeLevel = NULL;
 }
 
-void Engine::createIlluminationThreads() {
+void Engine::createRenderThreads() {
 	int totalThreads = SDL_GetCPUCount();
 
 	if (totalThreads < 2) {
 		return;
 	}
 
-	illuminationThreadManagers = new IlluminationThreadManager[totalThreads];
+	renderThreadManagers = new RenderThreadManager[totalThreads];
 
 	for (int i = 0; i < totalThreads; i++) {
-		IlluminationThreadManager* manager = &illuminationThreadManagers[i];
+		RenderThreadManager* manager = &renderThreadManagers[i];
 
 		manager->engine = this;
-		manager->section = i;
+		manager->sectionId = i;
 
-		SDL_Thread* thread = SDL_CreateThread(manageIlluminationThread, NULL, manager);
-		illuminationThreads.push_back(thread);
+		SDL_Thread* thread = SDL_CreateThread(manageRenderThread, NULL, manager);
+		renderThreads.push_back(thread);
 	}
-}
-
-void Engine::drawTriangle(Triangle* triangle) {
-	if (flags & SHOW_WIREFRAME) {
-		rasterizer->setDrawColor(255, 255, 255);
-
-		rasterizer->triangle(
-			triangle->vertices[0].coordinate.x, triangle->vertices[0].coordinate.y,
-			triangle->vertices[1].coordinate.x, triangle->vertices[1].coordinate.y,
-			triangle->vertices[2].coordinate.x, triangle->vertices[2].coordinate.y
-		);
-	} else {
-		rasterizer->triangle(*triangle);
-	}
-
-	debugStats.countDrawnTriangle();
-}
-
-/**
- * Returns the 3-component color intensity of a given triangle
- * vertex, using the triangle itself and a reference to one of
- * its vertices.
- */
-Vec3 Engine::getTriangleVertexColorIntensity(const Triangle* triangle, int vertexIndex) {
-	const Vertex2d& vertex = triangle->vertices[vertexIndex];
-	const Settings& settings = activeLevel->getSettings();
-	std::map<int, Vec3>& vertexLightCache = triangle->sourcePolygon->vertexLightCache[vertexIndex];
-	Vec3 colorIntensity = { 1.0f, 1.0f, 1.0f };
-
-	colorIntensity *= settings.brightness;
-
-	if (settings.brightness == 0) {
-		return colorIntensity;
-	}
-
-	// Ambient light is a special distance-invariant light
-	// source which affects all geometry in the level
-	if (settings.ambientLightFactor > 0) {
-		const auto& cachedAmbientLight = vertexLightCache.find(Engine::AMBIENT_LIGHT_ID);
-		bool isCacheableLightSource = settings.hasStaticAmbientLight && triangle->sourceObject->isStatic && !triangle->isSynthetic;
-
-		if (isCacheableLightSource && cachedAmbientLight != vertexLightCache.end()) {
-			const Vec3& cachedAmbientLightIntensity = cachedAmbientLight->second;
-
-			colorIntensity *= cachedAmbientLightIntensity;
-		} else {
-			float dot = Vec3::dotProduct(triangle->sourcePolygon->normal, settings.ambientLightVector.unit());
-
-			if (dot < 0) {
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float intensity = incidence * settings.ambientLightFactor;
-				const Vec3& colorRatios = settings.ambientLightColor.ratios();
-
-				Vec3 ambientLightColorIntensity = {
-					(1.0f + (intensity * colorRatios.x) / settings.brightness),
-					(1.0f + (intensity * colorRatios.y) / settings.brightness),
-					(1.0f + (intensity * colorRatios.z) / settings.brightness)
-				};
-
-				colorIntensity *= ambientLightColorIntensity;
-
-				if (isCacheableLightSource) {
-					vertexLightCache.emplace(Engine::AMBIENT_LIGHT_ID, ambientLightColorIntensity);
-				}
-			}
-		}
-	}
-
-	// Regular light sources must be within range of a vertex
-	// to affect its color intensity
-	for (const auto* light : activeLevel->getLights()) {
-		bool isCacheableLightSource = light->isStatic && triangle->sourceObject->isStatic && !triangle->isSynthetic;
-
-		if (isCacheableLightSource) {
-			const auto& cachedLight = vertexLightCache.find(light->getId());
-
-			if (cachedLight != vertexLightCache.end()) {
-				const Vec3& cachedLightIntensity = cachedLight->second;
-
-				colorIntensity *= cachedLightIntensity;
-
-				continue;
-			}
-		}
-
-		if (
-			light->isDisabled ||
-			light->power == 0 ||
-			abs(light->position.x - vertex.worldVector.x) > light->range ||
-			abs(light->position.y - vertex.worldVector.y) > light->range ||
-			abs(light->position.z - vertex.worldVector.z) > light->range
-		) {
-			continue;
-		}
-
-		Vec3 lightVector = vertex.worldVector - light->position;
-		float lightDistance = lightVector.magnitude();
-
-		if (lightDistance < light->range) {
-			float dot = Vec3::dotProduct(triangle->sourcePolygon->normal, lightVector.unit());
-
-			if (dot < 0) {
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float illuminance = pow(1.0f - lightDistance / light->range, 2);
-				float intensity = light->power * incidence * illuminance;
-				const Vec3& colorRatios = light->getColorRatios();
-
-				Vec3 lightColorIntensity = {
-					(1.0f + (intensity * colorRatios.x) / settings.brightness),
-					(1.0f + (intensity * colorRatios.y) / settings.brightness),
-					(1.0f + (intensity * colorRatios.z) / settings.brightness)
-				};
-
-				colorIntensity *= lightColorIntensity;
-
-				if (isCacheableLightSource) {
-					vertexLightCache.emplace(light->getId(), lightColorIntensity);
-				}
-			}
-		}
-	}
-
-	return colorIntensity;
 }
 
 void Engine::handleEvent(const SDL_Event& event) {
@@ -307,75 +207,47 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	camera.yaw += (float)xDelta * deltaFactor;
 }
 
-void Engine::illuminateColorTriangle(Triangle* triangle) {
-	const Settings& settings = activeLevel->getSettings();
+int Engine::manageRenderThread(void* data) {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
 
-	for (int i = 0; i < 3; i++) {
-		Vertex2d* vertex = &triangle->vertices[i];
-		const Vec3 colorIntensity = getTriangleVertexColorIntensity(triangle, i);
-
-		vertex->color.R *= colorIntensity.x;
-		vertex->color.G *= colorIntensity.y;
-		vertex->color.B *= colorIntensity.z;
-		vertex->color.clamp();
-
-		float visibilityRatio = FAST_MIN(vertex->z / settings.visibility, 1.0f);
-
-		vertex->color = Color::lerp(vertex->color, settings.backgroundColor, visibilityRatio);
-	}
-}
-
-void Engine::illuminateScene() {
-	if (illuminationThreads.size() == 0) {
-		for (auto* triangle : triangleRasterBuffer) {
-			if (triangle->sourceObject->texture != NULL) {
-				illuminateTextureTriangle(triangle);
-			} else {
-				illuminateColorTriangle(triangle);
-			}
-		}
-	} else {
-		for (int i = 0; i < illuminationThreads.size(); i++) {
-			illuminationThreadManagers[i].isDone = false;
-		}
-
-		for (int i = 0; i < illuminationThreads.size(); i++) {
-			while (!illuminationThreadManagers[i].isDone) {
-				SDL_Delay(1);
-			}
-		}
-	}
-}
-
-void Engine::illuminateTextureTriangle(Triangle* triangle) {
-	const Settings& settings = activeLevel->getSettings();
-
-	for (int i = 0; i < 3; i++) {
-		Vertex2d* vertex = &triangle->vertices[i];
-		vertex->textureIntensity = getTriangleVertexColorIntensity(triangle, i);
-	}
-}
-
-int Engine::manageIlluminationThread(void* data) {
-	IlluminationThreadManager* manager = (IlluminationThreadManager*)data;
+	RenderThreadManager* manager = (RenderThreadManager*)data;
 	Engine* engine = manager->engine;
+	TriangleBuffer* triangleBuffer = engine->triangleBuffer;
+	Rasterizer* rasterizer = engine->rasterizer;
 
 	while(1) {
 		if (engine->isDone) {
 			break;
 		} else if (!manager->isDone) {
-			int totalThreads = engine->illuminationThreads.size();
+			int totalThreads = engine->renderThreads.size();
 
-			for (int i = 0; i < engine->triangleRasterBuffer.size(); i++) {
-				if (i % totalThreads == manager->section) {
-					Triangle* triangle = engine->triangleRasterBuffer.at(i);
+			switch (manager->step) {
+				case RenderStep::ILLUMINATION: {
+					const auto& bufferedTriangles = triangleBuffer->getBufferedTriangles();
 
-					if (triangle->sourceObject->texture != NULL) {
-						engine->illuminateTextureTriangle(triangle);
-					} else {
-						engine->illuminateColorTriangle(triangle);
+					for (int i = 0; i < bufferedTriangles.size(); i++) {
+						if (i % totalThreads == manager->sectionId) {
+							Triangle* triangle = bufferedTriangles.at(i);
+
+							triangleBuffer->illuminateTriangle(triangle);
+						}
 					}
+
+					break;
 				}
+				case RenderStep::SCANLINE_RASTERIZATION: {
+					for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
+						const Scanline* scanline = rasterizer->getScanline(i);
+
+						if (scanline->y % totalThreads == manager->sectionId) {
+							rasterizer->triangleScanline(scanline);
+						}
+					}
+
+					break;
+				}
+				default:
+					break;
 			}
 
 			manager->isDone = true;
@@ -404,7 +276,7 @@ void Engine::projectAndQueueTriangle(
 	float scale,
 	bool isSynthetic
 ) {
-	Triangle* triangle = &triangles[totalProjectedTriangles++];
+	Triangle* triangle = triangleBuffer->requestTriangle();
 
 	triangle->sourcePolygon = const_cast<Polygon*>(sourcePolygon);
 	triangle->sourceObject = sourceObject;
@@ -427,7 +299,6 @@ void Engine::projectAndQueueTriangle(
 	}
 
 	rasterFilter->addTriangle(triangle);
-	debugStats.countProjectedTriangle();
 }
 
 void Engine::run() {
@@ -483,6 +354,8 @@ void Engine::setActiveLevel(Level* level) {
 	clearActiveLevel();
 
 	activeLevel = level;
+
+	triangleBuffer->setActiveLevel(level);
 }
 
 void Engine::update() {
@@ -492,7 +365,6 @@ void Engine::update() {
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
 
-	debugStats.resetCounters();
 	debugStats.trackFrameTime();
 
 	updateMovement();
@@ -508,8 +380,7 @@ void Engine::update() {
 
 	SDL_RenderPresent(renderer);
 
-	totalProjectedTriangles = 0;
-	triangleRasterBuffer.clear();
+	triangleBuffer->clear();
 }
 
 void Engine::updateMovement() {
@@ -529,6 +400,7 @@ void Engine::updateScene() {
 	debugStats.trackScreenProjectionTime();
 
 	bool hasPixelFilter = flags & PIXEL_FILTER;
+	bool isMultithreaded = renderThreads.size() > 0;
 	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
@@ -691,31 +563,41 @@ void Engine::updateScene() {
 	}
 
 	debugStats.logScreenProjectionTime();
+	debugStats.trackHiddenSurfaceRemovalTime();
 
+	// Hidden surface removal step
 	Triangle* triangle;
 
 	while ((triangle = rasterFilter->next()) != NULL) {
-		triangleRasterBuffer.push_back(triangle);
+		triangleBuffer->bufferTriangle(triangle);
 	}
 
+	debugStats.logHiddenSurfaceRemovalTime();
 	debugStats.trackIlluminationTime();
 
 	// Illumination step
-	illuminateScene();
-
-	// for (auto* triangle : triangleRasterBuffer) {
-	// 	if (triangle->sourceObject->texture != NULL) {
-	// 		illuminateTextureTriangle(triangle);
-	// 	} else {
-	// 		illuminateColorTriangle(triangle);
-	// 	}
-	// }
+	if (isMultithreaded) {
+		awaitRenderStep(RenderStep::ILLUMINATION);
+	} else {
+		for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+			triangleBuffer->illuminateTriangle(triangle);
+		}
+	}
 
 	debugStats.logIlluminationTime();
 	debugStats.trackDrawTime();
 
-	for (auto* triangle : triangleRasterBuffer) {
-		drawTriangle(triangle);
+	// Rasterization step
+	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+		rasterizer->dispatchTriangle(*triangle);
+	}
+
+	if (isMultithreaded) {
+		awaitRenderStep(RenderStep::SCANLINE_RASTERIZATION);
+	} else {
+		for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
+			rasterizer->triangleScanline(rasterizer->getScanline(i));
+		}
 	}
 
 	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
@@ -736,6 +618,7 @@ void Engine::updateSounds() {
 
 void Engine::addDebugStats() {
 	addDebugStat("screenProjectionTime");
+	addDebugStat("hsrTime");
 	addDebugStat("illuminationTime");
 	addDebugStat("drawTime");
 	addDebugStat("frameTime");
@@ -749,15 +632,16 @@ void Engine::addDebugStats() {
 
 void Engine::updateDebugStats() {
 	updateDebugStat("screenProjectionTime", "Screen projection time", debugStats.getScreenProjectionTime());
+	updateDebugStat("hsrTime", "Hidden surface removal time", debugStats.getHiddenSurfaceRemovalTime());
 	updateDebugStat("illuminationTime", "Illumination time", debugStats.getIlluminationTime());
 	updateDebugStat("drawTime", "Draw time", debugStats.getDrawTime());
 	updateDebugStat("frameTime", "Frame time", debugStats.getFrameTime());
 	updateDebugStat("fps", "FPS", debugStats.getFPS());
 	updateDebugStat("totalVertices", "Vertices", debugStats.getTotalVertices(activeLevel->getObjects()));
 	updateDebugStat("totalTriangles", "Triangles", debugStats.getTotalPolygons(activeLevel->getObjects()));
-	updateDebugStat("totalTrianglesProjected", "Triangles projected", totalProjectedTriangles);
-	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", debugStats.getTotalDrawnTriangles());
-	updateDebugStat("totalScanlines", "Scanlines", rasterizer->getTotalScanlines());
+	updateDebugStat("totalTrianglesProjected", "Triangles projected", triangleBuffer->getTotalRequestedTriangles());
+	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", triangleBuffer->getBufferedTriangles().size());
+	updateDebugStat("totalScanlines", "Scanlines", rasterizer->getTotalBufferedScanlines());
 }
 
 void Engine::addDebugStat(const char* key) {

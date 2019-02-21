@@ -9,6 +9,10 @@ void DebugStats::trackScreenProjectionTime() {
 	screenProjectionTime.start = (int)SDL_GetTicks();
 }
 
+void DebugStats::trackHiddenSurfaceRemovalTime() {
+	hiddenSurfaceRemovalTime.start = (int)SDL_GetTicks();
+}
+
 void DebugStats::trackIlluminationTime() {
 	illuminationTime.start = (int)SDL_GetTicks();
 }
@@ -25,6 +29,10 @@ void DebugStats::logScreenProjectionTime() {
 	screenProjectionTime.end = (int)SDL_GetTicks();
 }
 
+void DebugStats::logHiddenSurfaceRemovalTime() {
+	hiddenSurfaceRemovalTime.end = (int)SDL_GetTicks();
+}
+
 void DebugStats::logIlluminationTime() {
 	illuminationTime.end = (int)SDL_GetTicks();
 }
@@ -39,6 +47,10 @@ void DebugStats::logFrameTime() {
 
 int DebugStats::getScreenProjectionTime() {
 	return screenProjectionTime.end - screenProjectionTime.start;
+}
+
+int DebugStats::getHiddenSurfaceRemovalTime() {
+	return hiddenSurfaceRemovalTime.end - hiddenSurfaceRemovalTime.start;
 }
 
 int DebugStats::getIlluminationTime() {
@@ -75,25 +87,4 @@ int DebugStats::getTotalVertices(const std::vector<Object*>& objects) {
 	}
 
 	return total;
-}
-
-int DebugStats::getTotalDrawnTriangles() {
-	return totalDrawnTriangles;
-}
-
-int DebugStats::getTotalProjectedTriangles() {
-	return totalProjectedTriangles;
-}
-
-void DebugStats::countDrawnTriangle() {
-	totalDrawnTriangles++;
-}
-
-void DebugStats::countProjectedTriangle() {
-	totalProjectedTriangles++;
-}
-
-void DebugStats::resetCounters() {
-	totalDrawnTriangles = 0;
-	totalProjectedTriangles = 0;
 }

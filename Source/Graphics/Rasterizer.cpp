@@ -26,44 +26,14 @@ Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, Uint32 fla
 	scanlines = new Scanline[width * height];
 
 	clear();
-
-	if (~flags & DISABLE_MULTITHREADING) {
-		createScanlineThreads();
-	}
 }
 
 Rasterizer::~Rasterizer() {
-	isDone = true;
-
-	for (int i = 0; i < scanlineThreads.size(); i++) {
-		SDL_WaitThread(scanlineThreads.at(i), NULL);
-	}
-
 	SDL_DestroyTexture(screenTexture);
 
 	delete[] pixelBuffer;
 	delete[] depthBuffer;
 	delete[] scanlines;
-}
-
-void Rasterizer::createScanlineThreads() {
-	int totalThreads = SDL_GetCPUCount();
-
-	if (totalThreads < 2) {
-		return;
-	}
-
-	scanlineThreadManagers = new ScanlineThreadManager[totalThreads];
-
-	for (int i = 0; i < totalThreads; i++) {
-		ScanlineThreadManager* manager = &scanlineThreadManagers[i];
-
-		manager->rasterizer = this;
-		manager->section = i;
-
-		SDL_Thread* thread = SDL_CreateThread(manageScanlineThread, NULL, manager);
-		scanlineThreads.push_back(thread);
-	}
 }
 
 void Rasterizer::clear() {
@@ -76,7 +46,72 @@ void Rasterizer::clear() {
 	fill(depthBuffer, depthBuffer + bufferLength, 0.0f);
 }
 
-void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right, const TextureBuffer* texture) {
+void Rasterizer::dispatchTriangle(Triangle& triangle) {
+	// Sort each vertex from top to bottom
+	Vertex2d* top = &triangle.vertices[0];
+	Vertex2d* middle = &triangle.vertices[1];
+	Vertex2d* bottom = &triangle.vertices[2];
+	const TextureBuffer* texture = triangle.sourceObject->texture;
+
+	if (top->coordinate.y > middle->coordinate.y) {
+		swap(top, middle);
+	}
+
+	if (middle->coordinate.y > bottom->coordinate.y) {
+		swap(middle, bottom);
+	}
+
+	if (top->coordinate.y > middle->coordinate.y) {
+		swap(top, middle);
+	}
+
+	if (top->coordinate.y >= height || bottom->coordinate.y < 0) {
+		// Optimize for vertically offscreen triangles
+		return;
+	}
+
+	if (top->coordinate.y == middle->coordinate.y) {
+		// Trivial case #1: Triangle with a flat top edge
+		if (top->coordinate.x > middle->coordinate.x) {
+			swap(top, middle);
+		}
+
+		dispatchFlatTopTriangle(*top, *middle, *bottom, texture);
+	} else if (bottom->coordinate.y == middle->coordinate.y) {
+		// Trivial case #2: Triangle with a flat bottom edge
+		if (bottom->coordinate.x < middle->coordinate.x) {
+			swap(bottom, middle);
+		}
+
+		dispatchFlatBottomTriangle(*top, *middle, *bottom, texture);
+	} else {
+		// Nontrivial case: Triangle with neither a flat top nor
+		// flat bottom edge. These must be rasterized as two
+		// separate flat-bottom-edge and flat-top-edge triangles.
+		float middleYProgress = (float)(middle->coordinate.y - top->coordinate.y) / (bottom->coordinate.y - top->coordinate.y);
+
+		// To rasterize each half of the triangle properly, we must
+		// construct an intermediate vertex along its hypotenuse,
+		// level with the actual middle vertex.
+		Vertex2d hypotenuseVertex = Vertex2d::lerp(*top, *bottom, middleYProgress);
+
+		// Lock the y coordinate of the new vertex to that of the
+		// middle vertex to avoid potential lerp rounding errors
+		hypotenuseVertex.coordinate.y = middle->coordinate.y;
+
+		Vertex2d* middleLeft = middle;
+		Vertex2d* middleRight = &hypotenuseVertex;
+
+		if (middleLeft->coordinate.x > middleRight->coordinate.x) {
+			swap(middleLeft, middleRight);
+		}
+
+		dispatchFlatBottomTriangle(*top, *middleLeft, *middleRight, texture);
+		dispatchFlatTopTriangle(*middleLeft, *middleRight, *bottom, texture);
+	}
+}
+
+void Rasterizer::dispatchFlatTriangle(const Vertex2d& corner, const Vertex2d& left, const Vertex2d& right, const TextureBuffer* texture) {
 	int isHorizontallyOffscreen = (
 		(corner.coordinate.x >= width && left.coordinate.x >= width) ||
 		(corner.coordinate.x < 0 && right.coordinate.x < 0)
@@ -132,30 +167,16 @@ void Rasterizer::flatTriangle(const Vertex2d& corner, const Vertex2d& left, cons
 	}
 }
 
-void Rasterizer::flatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight, const TextureBuffer* texture) {
-	flatTriangle(top, bottomLeft, bottomRight, texture);
+void Rasterizer::dispatchFlatBottomTriangle(const Vertex2d& top, const Vertex2d& bottomLeft, const Vertex2d& bottomRight, const TextureBuffer* texture) {
+	dispatchFlatTriangle(top, bottomLeft, bottomRight, texture);
 }
 
-void Rasterizer::flatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture) {
-	flatTriangle(bottom, topLeft, topRight, texture);
+void Rasterizer::dispatchFlatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture) {
+	dispatchFlatTriangle(bottom, topLeft, topRight, texture);
 }
 
-void Rasterizer::flushScanlines() {
-	if (scanlineThreads.size() == 0) {
-		for (int i = 0; i < totalBufferedScanlines; i++) {
-			triangleScanline(&scanlines[i]);
-		}
-	} else {
-		for (int i = 0; i < scanlineThreads.size(); i++) {
-			scanlineThreadManagers[i].isDone = false;
-		}
-
-		for (int i = 0; i < scanlineThreads.size(); i++) {
-			while (!scanlineThreadManagers[i].isDone) {
-				SDL_Delay(1);
-			}
-		}
-	}
+const Scanline* Rasterizer::getScanline(int index) {
+	return &scanlines[index];
 }
 
 int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int lineLength) {
@@ -197,35 +218,8 @@ int Rasterizer::getTextureSampleInterval(int tex_w, int tex_h, int lineLength, f
 	}
 }
 
-int Rasterizer::getTotalScanlines() {
+int Rasterizer::getTotalBufferedScanlines() {
 	return totalBufferedScanlines;
-}
-
-int Rasterizer::manageScanlineThread(void* data) {
-	ScanlineThreadManager* manager = (ScanlineThreadManager*)data;
-	Rasterizer* rasterizer = manager->rasterizer;
-
-	while (1) {
-		if (rasterizer->isDone) {
-			break;
-		} else if (!manager->isDone) {
-			int totalSections = rasterizer->scanlineThreads.size();
-
-			for (int i = 0; i < rasterizer->totalBufferedScanlines; i++) {
-				Scanline* scanline = &rasterizer->scanlines[i];
-
-				if (scanline->y % totalSections == manager->section) {
-					rasterizer->triangleScanline(scanline);
-				}
-			}
-
-			manager->isDone = true;
-		}
-
-		SDL_Delay(1);
-	}
-
-	return 0;
 }
 
 void Rasterizer::line(int x1, int y1, int x2, int y2) {
@@ -271,7 +265,6 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
 	SDL_Rect destinationRect = { 0, 0, sizeFactor * width, sizeFactor * height };
 
-	flushScanlines();
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
 	SDL_RenderCopy(renderer, screenTexture, NULL, &destinationRect);
 }
@@ -310,67 +303,7 @@ void Rasterizer::triangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 	line(x3, y3, x1, y1);
 }
 
-/**
- * Rasterize a filled triangle with per-vertex coloration or textures.
- */
-void Rasterizer::triangle(Triangle& triangle) {
-	// Sort each vertex from top to bottom
-	Vertex2d* top = &triangle.vertices[0];
-	Vertex2d* middle = &triangle.vertices[1];
-	Vertex2d* bottom = &triangle.vertices[2];
-	const TextureBuffer* texture = triangle.sourceObject->texture;
-
-	if (top->coordinate.y > middle->coordinate.y) swap(top, middle);
-	if (middle->coordinate.y > bottom->coordinate.y) swap(middle, bottom);
-	if (top->coordinate.y > middle->coordinate.y) swap(top, middle);
-
-	if (top->coordinate.y >= height || bottom->coordinate.y < 0) {
-		// Optimize for vertically offscreen triangles
-		return;
-	}
-
-	if (top->coordinate.y == middle->coordinate.y) {
-		// Trivial case #1: Triangle with a flat top edge
-		if (top->coordinate.x > middle->coordinate.x) {
-			swap(top, middle);
-		}
-
-		flatTopTriangle(*top, *middle, *bottom, texture);
-	} else if (bottom->coordinate.y == middle->coordinate.y) {
-		// Trivial case #2: Triangle with a flat bottom edge
-		if (bottom->coordinate.x < middle->coordinate.x) {
-			swap(bottom, middle);
-		}
-
-		flatBottomTriangle(*top, *middle, *bottom, texture);
-	} else {
-		// Nontrivial case: Triangle with neither a flat top nor
-		// flat bottom edge. These must be rasterized as two
-		// separate flat-bottom-edge and flat-top-edge triangles.
-		float middleYProgress = (float)(middle->coordinate.y - top->coordinate.y) / (bottom->coordinate.y - top->coordinate.y);
-
-		// To rasterize each half of the triangle properly, we must
-		// construct an intermediate vertex along its hypotenuse,
-		// level with the actual middle vertex.
-		Vertex2d hypotenuseVertex = Vertex2d::lerp(*top, *bottom, middleYProgress);
-
-		// Lock the y coordinate of the new vertex to that of the
-		// middle vertex to avoid potential lerp rounding errors
-		hypotenuseVertex.coordinate.y = middle->coordinate.y;
-
-		Vertex2d* middleLeft = middle;
-		Vertex2d* middleRight = &hypotenuseVertex;
-
-		if (middleLeft->coordinate.x > middleRight->coordinate.x) {
-			swap(middleLeft, middleRight);
-		}
-
-		flatBottomTriangle(*top, *middleLeft, *middleRight, texture);
-		flatTopTriangle(*middleLeft, *middleRight, *bottom, texture);
-	}
-}
-
-void Rasterizer::triangleScanline(Scanline* scanline) {
+void Rasterizer::triangleScanline(const Scanline* scanline) {
 	triangleScanline(
 		scanline->x, scanline->y, scanline->length,
 		scanline->color,

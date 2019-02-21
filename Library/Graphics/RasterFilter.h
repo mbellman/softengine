@@ -4,14 +4,6 @@
 #include <System/Geometry.h>
 
 /**
- * Zone
- * ----
- *
- * A lineup of Triangle objects corresponding to a given zone.
- */
-typedef std::vector<Triangle*> Zone;
-
-/**
  * Cover
  * -----
  *
@@ -42,6 +34,14 @@ public:
 	Triangle* next();
 
 private:
+	/**
+	 * Zone
+	 * ----
+	 *
+	 * A lineup of Triangle objects corresponding to a given zone.
+	 */
+	typedef std::vector<Triangle*> Zone;
+
 	constexpr static int MAX_ZONES = 50;
 	constexpr static int MIN_COVER_SIZE = 150;
 	constexpr static int ZONE_RANGE = 250;

@@ -9,6 +9,7 @@
 
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterFilter.h>
+#include <Graphics/TriangleBuffer.h>
 #include <UI/UI.h>
 #include <System/Flags.h>
 #include <System/DebugStats.h>
@@ -97,6 +98,7 @@ private:
 	SDL_Renderer* renderer;
 	Rasterizer* rasterizer;
 	RasterFilter* rasterFilter;
+	TriangleBuffer* triangleBuffer;
 	AudioEngine* audioEngine;
 	UI* ui;
 	Level* activeLevel = NULL;
@@ -110,31 +112,31 @@ private:
 	int height;
 	int HALF_H;
 
-	struct IlluminationThreadManager {
+	enum RenderStep {
+		ILLUMINATION,
+		SCANLINE_RASTERIZATION
+	};
+
+	struct RenderThreadManager {
 		Engine* engine;
-		int section;
+		int sectionId;
+		RenderStep step;
 		bool isDone = true;
 	};
 
-	Triangle* triangles;
-	int totalProjectedTriangles = 0;
-	IlluminationThreadManager* illuminationThreadManagers;
-	std::vector<SDL_Thread*> illuminationThreads;
-	std::vector<Triangle*> triangleRasterBuffer;
+	RenderThreadManager* renderThreadManagers;
+	std::vector<SDL_Thread*> renderThreads;
 	bool isDone = false;
 
-	static int manageIlluminationThread(void* data);
+	static int manageRenderThread(void* data);
+	void awaitRenderStep(RenderStep renderStep);
 	void clearActiveLevel();
-	void createIlluminationThreads();
-	void drawTriangle(Triangle* triangle);
+	void createRenderThreads();
 	Vec3 getTriangleVertexColorIntensity(const Triangle* triangle, int vertexIndex);
 	void handleEvent(const SDL_Event& event);
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);
 	void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
-	void illuminateColorTriangle(Triangle* triangle);
-	void illuminateScene();
-	void illuminateTextureTriangle(Triangle* triangle);
 
 	void projectAndQueueTriangle(
 		const Vertex3d (&vertexes)[3],

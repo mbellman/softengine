@@ -55,6 +55,7 @@ set(SOURCE_FILES
     Library/Graphics/RasterFilter.h
     Library/Graphics/Rasterizer.h
     Library/Graphics/TextureBuffer.h
+    Library/Graphics/TriangleBuffer.h
     Library/Loaders/Loader.h
     Library/Loaders/ObjLoader.h
     Library/Sound/AudioEngine.h
@@ -78,6 +79,7 @@ set(SOURCE_FILES
     Source/Graphics/RasterFilter.cpp
     Source/Graphics/Rasterizer.cpp
     Source/Graphics/TextureBuffer.cpp
+    Source/Graphics/TriangleBuffer.cpp
     Source/Loaders/Loader.cpp
     Source/Loaders/ObjLoader.cpp
     Source/Sound/AudioEngine.cpp
