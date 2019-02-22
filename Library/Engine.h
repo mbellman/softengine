@@ -126,7 +126,7 @@ private:
 
 	RenderWorkerManager* renderWorkerManagers;
 	std::vector<SDL_Thread*> renderWorkerThreads;
-	SDL_Thread* renderThread;
+	SDL_Thread* renderThread = NULL;
 	bool isRendering = false;
 	bool isDone = false;
 	int frame = 0;
@@ -153,7 +153,8 @@ private:
 
 	void update();
 	void updateMovement();
-	void updateScene();
+	void updateScene_MultiThreaded();
+	void updateScene_SingleThreaded();
 	void updateScreenProjection();
 	void updateSounds();
 

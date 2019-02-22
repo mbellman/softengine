@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -72,7 +70,9 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	HALF_W = (int)(width / (hasPixelFilter ? 4 : 2));
 	HALF_H = (int)(height / (hasPixelFilter ? 4 : 2));
 
-	createRenderThreads();
+	if (~flags & DISABLE_MULTITHREADING) {
+		createRenderThreads();
+	}
 }
 
 Engine::~Engine() {
@@ -82,7 +82,9 @@ Engine::~Engine() {
 		SDL_WaitThread(renderWorkerThreads.at(i), NULL);
 	}
 
-	SDL_WaitThread(renderThread, NULL);
+	if (renderThread != NULL) {
+		SDL_WaitThread(renderThread, NULL);
+	}
 
 	delete triangleBuffer;
 	delete rasterFilter;
@@ -137,16 +139,22 @@ void Engine::clearActiveLevel() {
 }
 
 void Engine::createRenderThreads() {
-	int totalThreads = SDL_GetCPUCount() - 2;
+	// Adhering to a 1-active-thread-per-core limit, we can allot
+	// as many render worker threads as cores are available after
+	// the 1) main thread and 2) primary rendering threads are
+	// discounted.
+	int totalRenderWorkerThreads = SDL_GetCPUCount() - 2;
 
-	if (totalThreads < 2) {
+	if (totalRenderWorkerThreads < 1) {
+		// If we don't even have enough cores available for 1 render
+		// worker thread, forgo multithreading entirely.
 		return;
 	}
 
-	renderWorkerManagers = new RenderWorkerManager[totalThreads];
+	renderWorkerManagers = new RenderWorkerManager[totalRenderWorkerThreads];
 
 	// Create render worker threads
-	for (int i = 0; i < totalThreads; i++) {
+	for (int i = 0; i < totalRenderWorkerThreads; i++) {
 		RenderWorkerManager* manager = &renderWorkerManagers[i];
 
 		manager->engine = this;
@@ -217,7 +225,7 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
  * TODO description
  */
 int Engine::handleRenderWorkerThread(void* data) {
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 
 	RenderWorkerManager* manager = (RenderWorkerManager*)data;
 	Engine* engine = manager->engine;
@@ -228,14 +236,14 @@ int Engine::handleRenderWorkerThread(void* data) {
 		if (engine->isDone) {
 			break;
 		} else if (manager->isWorking) {
-			int totalThreads = engine->renderWorkerThreads.size();
+			int totalRenderWorkerThreads = engine->renderWorkerThreads.size();
 
 			switch (manager->step) {
 				case RenderStep::ILLUMINATION: {
 					const auto& bufferedTriangles = triangleBuffer->getBufferedTriangles();
 
 					for (int i = 0; i < bufferedTriangles.size(); i++) {
-						if (i % totalThreads == manager->sectionId) {
+						if (i % totalRenderWorkerThreads == manager->sectionId) {
 							Triangle* triangle = bufferedTriangles.at(i);
 
 							triangleBuffer->illuminateTriangle(triangle);
@@ -248,7 +256,7 @@ int Engine::handleRenderWorkerThread(void* data) {
 					for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
 						const Scanline* scanline = rasterizer->getScanline(i);
 
-						if (scanline->y % totalThreads == manager->sectionId) {
+						if (scanline->y % totalRenderWorkerThreads == manager->sectionId) {
 							rasterizer->triangleScanline(scanline);
 						}
 					}
@@ -272,7 +280,7 @@ int Engine::handleRenderWorkerThread(void* data) {
  * TODO description
  */
 int Engine::handleRenderThread(void* data) {
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 
 	Engine* engine = (Engine*)data;
 
@@ -411,8 +419,14 @@ void Engine::update() {
 	debugStats.trackFrameTime();
 
 	updateMovement();
-	updateScene();
 	updateSounds();
+
+	if (renderWorkerThreads.size() > 0) {
+		updateScene_MultiThreaded();
+	} else {
+		updateScene_SingleThreaded();
+	}
+
 	ui->draw();
 
 	debugStats.logFrameTime();
@@ -441,13 +455,15 @@ void Engine::updateMovement() {
 	camera.position.z += scalar * zDelta;
 }
 
-void Engine::updateScene() {
+/**
+ * Updates the game scene using parallelization mechanisms.
+ */
+void Engine::updateScene_MultiThreaded() {
 	// In mulithreaded mode, we wait a full frame before the
-	// first render pass so that the triangle buffer can be
-	// queued up with all render-ready triangles, and its
-	// internal buffers swapped at the end of the frame for
-	// parallelizing screen projection/raster filtering and
-	// rendering from then on.
+	// first render pass. The scene needs to be projected and
+	// buffered once; after this, next-frame projection/raster
+	// filtering can occur while previous-frame rendering occurs
+	// in parallel.
 	if (frame > 0) {
 		// Signal the main render thread to kick off the
 		// rendering pipeline while we perform screen
@@ -472,14 +488,53 @@ void Engine::updateScene() {
 
 	if (frame > 0) {
 		// If screen projection/raster filtering took less time than
-		// parallel rendering, wait for rendering to finish and pass
-		// the results to the screen.
+		// parallel rendering, wait for rendering to finish
 		while (isRendering) {
 			SDL_Delay(1);
 		}
 
 		rasterizer->render(renderer, (flags & PIXEL_FILTER) ? 2 : 1);
 	}
+}
+
+/**
+ * Updates the game scene in a serial fashion when multithreading is
+ * either disabled or unavailable due to limited available CPU cores.
+ */
+void Engine::updateScene_SingleThreaded() {
+	debugStats.trackScreenProjectionTime();
+
+	updateScreenProjection();
+
+	debugStats.logScreenProjectionTime();
+	debugStats.trackHiddenSurfaceRemovalTime();
+
+	Triangle* triangle;
+
+	while ((triangle = rasterFilter->next()) != NULL) {
+		triangleBuffer->bufferTriangle(triangle);
+	}
+
+	debugStats.logHiddenSurfaceRemovalTime();
+	debugStats.trackIlluminationTime();
+
+	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+		triangleBuffer->illuminateTriangle(triangle);
+	}
+
+	debugStats.logIlluminationTime();
+	debugStats.trackDrawTime();
+
+	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+		rasterizer->dispatchTriangle(*triangle);
+	}
+
+	for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
+		rasterizer->triangleScanline(rasterizer->getScanline(i));
+	}
+
+	rasterizer->render(renderer, (flags & PIXEL_FILTER) ? 2 : 1);
+	debugStats.logDrawTime();
 }
 
 void Engine::updateScreenProjection() {

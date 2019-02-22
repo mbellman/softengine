@@ -40,10 +40,10 @@ void Rasterizer::clear() {
 	int bufferLength = width * height;
 	Uint32 clearColor = ARGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
 
-	totalBufferedScanlines = 0;
-
 	fill(pixelBuffer, pixelBuffer + bufferLength, clearColor);
 	fill(depthBuffer, depthBuffer + bufferLength, 0.0f);
+
+	totalBufferedScanlines = 0;
 }
 
 void Rasterizer::dispatchTriangle(Triangle& triangle) {
