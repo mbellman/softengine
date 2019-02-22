@@ -78,9 +78,11 @@ Engine::Engine(int width, int height, Uint32 flags) {
 Engine::~Engine() {
 	isDone = true;
 
-	for (int i = 0; i < renderThreads.size(); i++) {
-		SDL_WaitThread(renderThreads.at(i), NULL);
+	for (int i = 0; i < renderWorkerThreads.size(); i++) {
+		SDL_WaitThread(renderWorkerThreads.at(i), NULL);
 	}
+
+	SDL_WaitThread(renderThread, NULL);
 
 	delete triangleBuffer;
 	delete rasterFilter;
@@ -110,15 +112,15 @@ void Engine::addUIObject(UIObject* uiObject) {
 }
 
 void Engine::awaitRenderStep(RenderStep renderStep) {
-	for (int i = 0; i < renderThreads.size(); i++) {
-		RenderThreadManager* manager = &renderThreadManagers[i];
+	for (int i = 0; i < renderWorkerThreads.size(); i++) {
+		RenderWorkerManager* manager = &renderWorkerManagers[i];
 
 		manager->step = renderStep;
-		manager->isDone = false;
+		manager->isWorking = true;
 	}
 
-	for (int i = 0; i < renderThreads.size(); i++) {
-		while (!renderThreadManagers[i].isDone) {
+	for (int i = 0; i < renderWorkerThreads.size(); i++) {
+		while (renderWorkerManagers[i].isWorking) {
 			SDL_Delay(1);
 		}
 	}
@@ -135,23 +137,27 @@ void Engine::clearActiveLevel() {
 }
 
 void Engine::createRenderThreads() {
-	int totalThreads = SDL_GetCPUCount();
+	int totalThreads = SDL_GetCPUCount() - 2;
 
 	if (totalThreads < 2) {
 		return;
 	}
 
-	renderThreadManagers = new RenderThreadManager[totalThreads];
+	renderWorkerManagers = new RenderWorkerManager[totalThreads];
 
+	// Create render worker threads
 	for (int i = 0; i < totalThreads; i++) {
-		RenderThreadManager* manager = &renderThreadManagers[i];
+		RenderWorkerManager* manager = &renderWorkerManagers[i];
 
 		manager->engine = this;
 		manager->sectionId = i;
 
-		SDL_Thread* thread = SDL_CreateThread(manageRenderThread, NULL, manager);
-		renderThreads.push_back(thread);
+		SDL_Thread* thread = SDL_CreateThread(Engine::handleRenderWorkerThread, NULL, manager);
+		renderWorkerThreads.push_back(thread);
 	}
+
+	// Create main render thread
+	renderThread = SDL_CreateThread(Engine::handleRenderThread, NULL, this);
 }
 
 void Engine::handleEvent(const SDL_Event& event) {
@@ -207,19 +213,22 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	camera.yaw += (float)xDelta * deltaFactor;
 }
 
-int Engine::manageRenderThread(void* data) {
+/**
+ * TODO description
+ */
+int Engine::handleRenderWorkerThread(void* data) {
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
 
-	RenderThreadManager* manager = (RenderThreadManager*)data;
+	RenderWorkerManager* manager = (RenderWorkerManager*)data;
 	Engine* engine = manager->engine;
 	TriangleBuffer* triangleBuffer = engine->triangleBuffer;
 	Rasterizer* rasterizer = engine->rasterizer;
 
-	while(1) {
+	while (1) {
 		if (engine->isDone) {
 			break;
-		} else if (!manager->isDone) {
-			int totalThreads = engine->renderThreads.size();
+		} else if (manager->isWorking) {
+			int totalThreads = engine->renderWorkerThreads.size();
 
 			switch (manager->step) {
 				case RenderStep::ILLUMINATION: {
@@ -250,7 +259,41 @@ int Engine::manageRenderThread(void* data) {
 					break;
 			}
 
-			manager->isDone = true;
+			manager->isWorking = false;
+		}
+
+		SDL_Delay(1);
+	}
+
+	return 0;
+}
+
+/**
+ * TODO description
+ */
+int Engine::handleRenderThread(void* data) {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
+
+	Engine* engine = (Engine*)data;
+
+	while (1) {
+		if (engine->isDone) {
+			break;
+		} else if (engine->isRendering) {
+			engine->debugStats.trackIlluminationTime();
+			engine->awaitRenderStep(RenderStep::ILLUMINATION);
+			engine->debugStats.logIlluminationTime();
+
+			engine->debugStats.trackDrawTime();
+
+			for (auto* triangle : engine->triangleBuffer->getBufferedTriangles()) {
+				engine->rasterizer->dispatchTriangle(*triangle);
+			}
+
+			engine->awaitRenderStep(RenderStep::SCANLINE_RASTERIZATION);
+			engine->debugStats.logDrawTime();
+
+			engine->isRendering = false;
 		}
 
 		SDL_Delay(1);
@@ -380,7 +423,9 @@ void Engine::update() {
 
 	SDL_RenderPresent(renderer);
 
-	triangleBuffer->clear();
+	triangleBuffer->reset();
+
+	frame++;
 }
 
 void Engine::updateMovement() {
@@ -397,10 +442,47 @@ void Engine::updateMovement() {
 }
 
 void Engine::updateScene() {
+	// In mulithreaded mode, we wait a full frame before the
+	// first render pass so that the triangle buffer can be
+	// queued up with all render-ready triangles, and its
+	// internal buffers swapped at the end of the frame for
+	// parallelizing screen projection/raster filtering and
+	// rendering from then on.
+	if (frame > 0) {
+		// Signal the main render thread to kick off the
+		// rendering pipeline while we perform screen
+		// projection/raster filtering here
+		isRendering = true;
+	}
+
 	debugStats.trackScreenProjectionTime();
 
-	bool hasPixelFilter = flags & PIXEL_FILTER;
-	bool isMultithreaded = renderThreads.size() > 0;
+	updateScreenProjection();
+
+	debugStats.logScreenProjectionTime();
+	debugStats.trackHiddenSurfaceRemovalTime();
+
+	Triangle* triangle;
+
+	while ((triangle = rasterFilter->next()) != NULL) {
+		triangleBuffer->bufferTriangle(triangle);
+	}
+
+	debugStats.logHiddenSurfaceRemovalTime();
+
+	if (frame > 0) {
+		// If screen projection/raster filtering took less time than
+		// parallel rendering, wait for rendering to finish and pass
+		// the results to the screen.
+		while (isRendering) {
+			SDL_Delay(1);
+		}
+
+		rasterizer->render(renderer, (flags & PIXEL_FILTER) ? 2 : 1);
+	}
+}
+
+void Engine::updateScreenProjection() {
 	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
@@ -561,47 +643,6 @@ void Engine::updateScene() {
 			}
 		}
 	}
-
-	debugStats.logScreenProjectionTime();
-	debugStats.trackHiddenSurfaceRemovalTime();
-
-	// Hidden surface removal step
-	Triangle* triangle;
-
-	while ((triangle = rasterFilter->next()) != NULL) {
-		triangleBuffer->bufferTriangle(triangle);
-	}
-
-	debugStats.logHiddenSurfaceRemovalTime();
-	debugStats.trackIlluminationTime();
-
-	// Illumination step
-	if (isMultithreaded) {
-		awaitRenderStep(RenderStep::ILLUMINATION);
-	} else {
-		for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
-			triangleBuffer->illuminateTriangle(triangle);
-		}
-	}
-
-	debugStats.logIlluminationTime();
-	debugStats.trackDrawTime();
-
-	// Rasterization step
-	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
-		rasterizer->dispatchTriangle(*triangle);
-	}
-
-	if (isMultithreaded) {
-		awaitRenderStep(RenderStep::SCANLINE_RASTERIZATION);
-	} else {
-		for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
-			rasterizer->triangleScanline(rasterizer->getScanline(i));
-		}
-	}
-
-	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
-	debugStats.logDrawTime();
 }
 
 void Engine::updateSounds() {

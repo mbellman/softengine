@@ -7,29 +7,45 @@
 /**
  * TriangleBuffer
  * --------------
+ *
+ * TODO description
  */
 TriangleBuffer::TriangleBuffer() {
-	trianglePool = new Triangle[TriangleBuffer::TRIANGLE_POOL_SIZE];
+	trianglePoolA = new Triangle[TriangleBuffer::TRIANGLE_POOL_SIZE];
+	trianglePoolB = new Triangle[TriangleBuffer::TRIANGLE_POOL_SIZE];
 }
 
 TriangleBuffer::~TriangleBuffer() {
-	delete[] trianglePool;
+	delete[] trianglePoolA;
+	delete[] trianglePoolB;
 
-	bufferedTriangles.clear();
+	triangleBufferA.clear();
+	triangleBufferB.clear();
 }
 
+/**
+ * Places a screen-projected Triangle into the primary buffer.
+ * Once the buffers are swapped at the end of the frame and
+ * the primary buffer becomes secondary, the rendering pipeline
+ * can consume and apply effects to Triangles in the buffer
+ * while the screen projection/raster filter pipeline queues
+ * new Triangles into the new primary buffer.
+ */
 void TriangleBuffer::bufferTriangle(Triangle* triangle) {
-	bufferedTriangles.push_back(triangle);
+	auto& primaryBuffer = isSwapped ? triangleBufferB : triangleBufferA;
+
+	primaryBuffer.push_back(triangle);
 }
 
-void TriangleBuffer::clear() {
-	totalRequestedTriangles = 0;
-
-	bufferedTriangles.clear();
-}
-
+/**
+ * Returns the secondary triangle buffer for consumption by the
+ * rendering pipeline, after it has already been written to by
+ * the screen projection/raster filter pipeline.
+ */
 const std::vector<Triangle*>& TriangleBuffer::getBufferedTriangles() {
-	return bufferedTriangles;
+	auto& secondaryBuffer = isSwapped ? triangleBufferA : triangleBufferB;
+
+	return secondaryBuffer;
 }
 
 int TriangleBuffer::getTotalRequestedTriangles() {
@@ -172,7 +188,25 @@ void TriangleBuffer::illuminateTriangle(Triangle* triangle) {
 }
 
 Triangle* TriangleBuffer::requestTriangle() {
-	return &trianglePool[totalRequestedTriangles++];
+	Triangle* pool = isSwapped ? trianglePoolB : trianglePoolA;
+
+	return &pool[totalRequestedTriangles++];
+}
+
+/**
+ * Resets state by resetting the requested triangle counter,
+ * swapping between primary and secondary buffers/pools, and
+ * clearing the new primary buffer (previously filled with
+ * render-ready Triangles) so it can be written to with new
+ * screen-projected Triangles on the next frame.
+ */
+void TriangleBuffer::reset() {
+	totalRequestedTriangles = 0;
+	isSwapped = !isSwapped;
+
+	auto& primaryBuffer = isSwapped ? triangleBufferB : triangleBufferA;
+
+	primaryBuffer.clear();
 }
 
 void TriangleBuffer::setActiveLevel(Level* activeLevel) {

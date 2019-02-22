@@ -117,22 +117,25 @@ private:
 		SCANLINE_RASTERIZATION
 	};
 
-	struct RenderThreadManager {
+	struct RenderWorkerManager {
 		Engine* engine;
 		int sectionId;
 		RenderStep step;
-		bool isDone = true;
+		bool isWorking = false;
 	};
 
-	RenderThreadManager* renderThreadManagers;
-	std::vector<SDL_Thread*> renderThreads;
+	RenderWorkerManager* renderWorkerManagers;
+	std::vector<SDL_Thread*> renderWorkerThreads;
+	SDL_Thread* renderThread;
+	bool isRendering = false;
 	bool isDone = false;
+	int frame = 0;
 
-	static int manageRenderThread(void* data);
+	static int handleRenderWorkerThread(void* data);
+	static int handleRenderThread(void* data);
 	void awaitRenderStep(RenderStep renderStep);
 	void clearActiveLevel();
 	void createRenderThreads();
-	Vec3 getTriangleVertexColorIntensity(const Triangle* triangle, int vertexIndex);
 	void handleEvent(const SDL_Event& event);
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);
@@ -151,6 +154,7 @@ private:
 	void update();
 	void updateMovement();
 	void updateScene();
+	void updateScreenProjection();
 	void updateSounds();
 
 	/* ----- */
