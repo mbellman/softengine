@@ -222,7 +222,11 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 }
 
 /**
- * TODO description
+ * Runner for a render worker thread. Depending on the step in
+ * the rendering pipeline, render workers either handle illumination
+ * or scanline rasterization in parallel with one another, each
+ * managing an isolated set of triangles (for illumination) or
+ * scanlines (for rasterization) to avoid race conditions.
  */
 int Engine::handleRenderWorkerThread(void* data) {
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
@@ -243,6 +247,8 @@ int Engine::handleRenderWorkerThread(void* data) {
 					const auto& bufferedTriangles = triangleBuffer->getBufferedTriangles();
 
 					for (int i = 0; i < bufferedTriangles.size(); i++) {
+						// Each render worker gets to illuminate every Nth triangle,
+						// where N is the number of available workers.
 						if (i % totalRenderWorkerThreads == manager->sectionId) {
 							Triangle* triangle = bufferedTriangles.at(i);
 
@@ -256,6 +262,8 @@ int Engine::handleRenderWorkerThread(void* data) {
 					for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
 						const Scanline* scanline = rasterizer->getScanline(i);
 
+						// Each render worker gets to rasterize scanlines on every
+						// Nth screen row, where N is the number of available workers.
 						if (scanline->y % totalRenderWorkerThreads == manager->sectionId) {
 							rasterizer->triangleScanline(scanline);
 						}
@@ -277,7 +285,13 @@ int Engine::handleRenderWorkerThread(void* data) {
 }
 
 /**
- * TODO description
+ * Runner for the 'primary' render thread, which is distinct from the
+ * main thread. The render thread is in charge of signaling render
+ * worker threads to perform parallel illumination, followed by
+ * scanline rasterization. The main thread in turn is responsible
+ * for signaling to the render thread that a new frame has begun,
+ * and previous-frame rendering can occur in parallel with next-frame
+ * screen projection and raster filtering.
  */
 int Engine::handleRenderThread(void* data) {
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
@@ -289,15 +303,22 @@ int Engine::handleRenderThread(void* data) {
 			break;
 		} else if (engine->isRendering) {
 			engine->debugStats.trackIlluminationTime();
-			engine->awaitRenderStep(RenderStep::ILLUMINATION);
-			engine->debugStats.logIlluminationTime();
 
+			// Parallelize triangle illumination
+			engine->awaitRenderStep(RenderStep::ILLUMINATION);
+
+			engine->debugStats.logIlluminationTime();
 			engine->debugStats.trackDrawTime();
 
+			// Triangles cannot be dispatched to the rasterizer in parallel,
+			// since triangles are buffered in approximate order from closest
+			// to furthest, helping to mitigate overdraw.
 			for (auto* triangle : engine->triangleBuffer->getBufferedTriangles()) {
 				engine->rasterizer->dispatchTriangle(*triangle);
 			}
 
+			// Once all triangles are dispatched to the rasterizer and their
+			// scanlines queued up, we can parallelize the actual scanlines.
 			engine->awaitRenderStep(RenderStep::SCANLINE_RASTERIZATION);
 			engine->debugStats.logDrawTime();
 
@@ -487,8 +508,6 @@ void Engine::updateScene_MultiThreaded() {
 	debugStats.logHiddenSurfaceRemovalTime();
 
 	if (frame > 0) {
-		// If screen projection/raster filtering took less time than
-		// parallel rendering, wait for rendering to finish
 		while (isRendering) {
 			SDL_Delay(1);
 		}

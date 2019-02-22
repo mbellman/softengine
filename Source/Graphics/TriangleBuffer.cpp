@@ -8,7 +8,22 @@
  * TriangleBuffer
  * --------------
  *
- * TODO description
+ * Provides a reusable pool of Triangle objects for use by the
+ * main engine, and methods for applying visual effects preceding
+ * actual rasterization. Two pools are available, and two buffers
+ * for queueing Triangles once qualified for rasterization. To
+ * support the engine's multithreaded architecture, the alternate
+ * pools and buffers allow next-frame screen projection to occur
+ * while previous-frame rendering occurs simultaneously. Since
+ * screen projection requires recycling Triangles, and render
+ * effects require mutating them (for example, altering vertex
+ * color information), the separate pools and buffers allow us to
+ * swap back and forth on each frame so that a Triangle is never
+ * simultaneously mutated, or buffers simultaneously written/read,
+ * by different threads.
+ *
+ * In single-threaded mode, the pool/buffer swapping still occurs,
+ * with virtually no cost, but no utility either.
  */
 TriangleBuffer::TriangleBuffer() {
 	trianglePoolA = new Triangle[TriangleBuffer::TRIANGLE_POOL_SIZE];
@@ -194,9 +209,9 @@ Triangle* TriangleBuffer::requestTriangle() {
 }
 
 /**
- * Resets state by resetting the requested triangle counter,
- * swapping between primary and secondary buffers/pools, and
- * clearing the new primary buffer (previously filled with
+ * Resets state by A) resetting the requested triangle counter,
+ * B) swapping the primary and secondary pools/buffers, and
+ * C) clearing the new primary buffer (previously filled with
  * render-ready Triangles) so it can be written to with new
  * screen-projected Triangles on the next frame.
  */
