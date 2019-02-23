@@ -1,7 +1,8 @@
 #include <Sound/Sound.h>
 #include <Sound/AudioEngine.h>
-#include <iostream>
+#include <UI/Alert.h>
 #include <SDL_mixer.h>
+#include <stdio.h>
 #include <al.h>
 #include <map>
 
@@ -17,8 +18,10 @@ Sound::Sound(const char* filename) {
 		chunk = Mix_LoadWAV(filename);
 
 		if (!chunk) {
-			std::cout << "Unable to load sound: " << filename << std::endl;
+			char errorMessage[60];
 
+			sprintf(errorMessage, "Unable to load sound: %s", filename);
+			Alert::error(ALERT_ASSET_ERROR, errorMessage);
 			exit(0);
 		}
 
@@ -34,8 +37,10 @@ Sound::Sound(const char* filename) {
 	alSourcei(alAudioSource, AL_BUFFER, alAudioBuffer);
 
 	if(alGetError() != AL_NO_ERROR) {
-		std::cout << "Failed to generate sound buffer: " << filename << std::endl;
+		char errorMessage[60];
 
+		sprintf(errorMessage, "Failed to generate sound buffer: %s", filename);
+		Alert::error(ALERT_AUDIO_ERROR, errorMessage);
 		exit(0);
 	}
 }

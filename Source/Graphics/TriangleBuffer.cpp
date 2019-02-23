@@ -2,6 +2,7 @@
 #include <System/Geometry.h>
 #include <System/Objects.h>
 #include <System/Level.h>
+#include <UI/Alert.h>
 #include <Helpers.h>
 
 /**
@@ -203,6 +204,11 @@ void TriangleBuffer::illuminateTriangle(Triangle* triangle) {
 }
 
 Triangle* TriangleBuffer::requestTriangle() {
+	if (totalRequestedTriangles >= TriangleBuffer::TRIANGLE_POOL_SIZE) {
+		Alert::error(ALERT_ERROR, "Triangle buffer overflow");
+		exit(0);
+	}
+
 	Triangle* pool = isSwapped ? trianglePoolB : trianglePoolA;
 
 	return &pool[totalRequestedTriangles++];

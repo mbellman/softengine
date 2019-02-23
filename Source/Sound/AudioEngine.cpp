@@ -1,8 +1,9 @@
 #include <Sound/AudioEngine.h>
+#include <SDL_mixer.h>
 #include <al.h>
 #include <alc.h>
 #include <iostream>
-#include <SDL_mixer.h>
+#include <UI/Alert.h>
 
 using namespace std;
 
@@ -15,8 +16,7 @@ AudioEngine::AudioEngine() {
 	Mix_Init(0);
 
 	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) != 0) {
-		cout << "Error initializing mixer audio" << endl;
-
+		Alert::error(ALERT_ERROR, "Error initializing SDL mixer audio");
 		exit(0);
 	}
 
@@ -27,8 +27,7 @@ AudioEngine::AudioEngine() {
 		context = alcCreateContext(device, 0);
 		alcMakeContextCurrent(context);
 	} else {
-		cout << "Error initializing audio device" << endl;
-
+		Alert::error(ALERT_ERROR, "Error initializing audio device");
 		exit(0);
 	}
 }

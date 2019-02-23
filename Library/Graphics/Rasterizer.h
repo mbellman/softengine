@@ -77,6 +77,7 @@ private:
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
 	float* depthBuffer;
+	int bufferSize;
 	int width;
 	int height;
 

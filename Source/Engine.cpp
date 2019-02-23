@@ -229,7 +229,7 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
  * scanlines (for rasterization) to avoid race conditions.
  */
 int Engine::handleRenderWorkerThread(void* data) {
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
 
 	RenderWorkerManager* manager = (RenderWorkerManager*)data;
 	Engine* engine = manager->engine;
@@ -294,7 +294,7 @@ int Engine::handleRenderWorkerThread(void* data) {
  * screen projection and raster filtering.
  */
 int Engine::handleRenderThread(void* data) {
-	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
 
 	Engine* engine = (Engine*)data;
 

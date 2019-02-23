@@ -68,6 +68,7 @@ set(SOURCE_FILES
     Library/System/Objects.h
     Library/System/ParticleSystem.h
     Library/System/Quaternion.h
+    Library/UI/Alert.h
     Library/UI/UI.h
     Library/UI/UIObjects.h
     Library/Engine.h
@@ -91,6 +92,7 @@ set(SOURCE_FILES
     Source/System/Objects.cpp
     Source/System/ParticleSystem.cpp
     Source/System/Quaternion.cpp
+    Source/UI/Alert.cpp
     Source/UI/UI.cpp
     Source/UI/UIObjects.cpp
     Source/Engine.cpp

@@ -21,7 +21,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Refactoring/organization
 
-* Convert error messages preceding exit(0) to alert prompts
 * Separate `Camera` into its own class with keyboard/mouse event handling
 * Engine::updateScreenProjection() -> Separate out near-plane clipping operations
 * Move existing documentation into .h files, add more documentation

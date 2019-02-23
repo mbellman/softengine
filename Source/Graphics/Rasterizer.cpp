@@ -8,6 +8,7 @@
 #include <System/Geometry.h>
 #include <System/Objects.h>
 #include <System/Flags.h>
+#include <UI/Alert.h>
 
 using namespace std;
 
@@ -24,6 +25,7 @@ Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, Uint32 fla
 	pixelBuffer = new Uint32[width * height];
 	depthBuffer = new float[width * height];
 	scanlines = new Scanline[width * height];
+	bufferSize = width * height;
 
 	clear();
 }
@@ -136,6 +138,11 @@ void Rasterizer::dispatchFlatTriangle(const Vertex2d& corner, const Vertex2d& le
 
 		if (length == 0) {
 			continue;
+		}
+
+		if (totalBufferedScanlines >= bufferSize) {
+			Alert::error(ALERT_ERROR, "Scanline buffer overflow");
+			exit(0);
 		}
 
 		Scanline* scanline = &scanlines[totalBufferedScanlines++];
