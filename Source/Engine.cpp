@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -18,12 +16,16 @@
 #include <System/Geometry.h>
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
-#include <Graphics/RasterQueue.h>
+#include <Graphics/RasterFilter.h>
 #include <Graphics/TextureBuffer.h>
 #include <System/DebugStats.h>
 
 using namespace std;
 
+/**
+ * Camera
+ * ------
+ */
 RotationMatrix Camera::getRotationMatrix() {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
 	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);
@@ -31,6 +33,10 @@ RotationMatrix Camera::getRotationMatrix() {
 	return (q1 * q2).toRotationMatrix();
 }
 
+/**
+ * Engine
+ * ------
+ */
 Engine::Engine(int width, int height, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
@@ -50,9 +56,10 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
-	rasterQueue = new RasterQueue(rasterWidth, rasterHeight);
-	ui = new UI();
+	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
+	triangleBuffer = new TriangleBuffer();
 	audioEngine = new AudioEngine();
+	ui = new UI();
 
 	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
@@ -62,10 +69,25 @@ Engine::Engine(int width, int height, Uint32 flags) {
 
 	HALF_W = (int)(width / (hasPixelFilter ? 4 : 2));
 	HALF_H = (int)(height / (hasPixelFilter ? 4 : 2));
+
+	if (~flags & DISABLE_MULTITHREADING) {
+		createRenderThreads();
+	}
 }
 
 Engine::~Engine() {
-	delete rasterQueue;
+	isDone = true;
+
+	for (int i = 0; i < renderWorkerThreads.size(); i++) {
+		SDL_WaitThread(renderWorkerThreads.at(i), NULL);
+	}
+
+	if (renderThread != NULL) {
+		SDL_WaitThread(renderThread, NULL);
+	}
+
+	delete triangleBuffer;
+	delete rasterFilter;
 	delete ui;
 	delete rasterizer;
 	delete audioEngine;
@@ -91,7 +113,24 @@ void Engine::addUIObject(UIObject* uiObject) {
 	ui->addObject(uiObject);
 }
 
+void Engine::awaitRenderStep(RenderStep renderStep) {
+	for (int i = 0; i < renderWorkerThreads.size(); i++) {
+		RenderWorkerManager* manager = &renderWorkerManagers[i];
+
+		manager->step = renderStep;
+		manager->isWorking = true;
+	}
+
+	for (int i = 0; i < renderWorkerThreads.size(); i++) {
+		while (renderWorkerManagers[i].isWorking) {
+			SDL_Delay(1);
+		}
+	}
+}
+
 void Engine::clearActiveLevel() {
+	triangleBuffer->setActiveLevel(NULL);
+
 	if (activeLevel != NULL) {
 		delete activeLevel;
 	}
@@ -99,143 +138,34 @@ void Engine::clearActiveLevel() {
 	activeLevel = NULL;
 }
 
-void Engine::delay(int ms) {
-	int startTime = SDL_GetTicks();
+void Engine::createRenderThreads() {
+	// Adhering to a 1-active-thread-per-core limit, we can allot
+	// as many render worker threads as cores are available after
+	// the 1) main thread and 2) primary rendering threads are
+	// discounted.
+	int totalRenderWorkerThreads = SDL_GetCPUCount() - 2;
 
-	if (ms > 0) {
-		while ((SDL_GetTicks() - startTime) < ms) {
-			SDL_Delay(1);
-		}
-	}
-}
-
-void Engine::drawTriangle(Triangle& triangle) {
-	if (flags & SHOW_WIREFRAME) {
-		rasterizer->setDrawColor(255, 255, 255);
-
-		rasterizer->triangle(
-			triangle.vertices[0].coordinate.x, triangle.vertices[0].coordinate.y,
-			triangle.vertices[1].coordinate.x, triangle.vertices[1].coordinate.y,
-			triangle.vertices[2].coordinate.x, triangle.vertices[2].coordinate.y
-		);
-	} else {
-		if (triangle.sourceObject->texture != NULL) {
-			illuminateTextureTriangle(triangle);
-		} else {
-			illuminateColorTriangle(triangle);
-		}
-
-		rasterizer->triangle(triangle);
+	if (totalRenderWorkerThreads < 1) {
+		// If we don't even have enough cores available for 1 render
+		// worker thread, forgo multithreading entirely.
+		return;
 	}
 
-	debugStats.countDrawnTriangle();
-}
+	renderWorkerManagers = new RenderWorkerManager[totalRenderWorkerThreads];
 
-/**
- * Returns the 3-component color intensity of a given triangle
- * vertex, using the triangle itself and a reference to one of
- * its vertices.
- */
-Vec3 Engine::getTriangleVertexColorIntensity(const Triangle& triangle, int vertexIndex) {
-	const Vertex2d& vertex = triangle.vertices[vertexIndex];
-	const Settings& settings = activeLevel->getSettings();
-	std::map<int, Vec3>& vertexLightCache = triangle.sourcePolygon->vertexLightCache[vertexIndex];
-	Vec3 colorIntensity = { 1.0f, 1.0f, 1.0f };
+	// Create render worker threads
+	for (int i = 0; i < totalRenderWorkerThreads; i++) {
+		RenderWorkerManager* manager = &renderWorkerManagers[i];
 
-	colorIntensity *= settings.brightness;
+		manager->engine = this;
+		manager->sectionId = i;
 
-	if (settings.brightness == 0) {
-		return colorIntensity;
+		SDL_Thread* thread = SDL_CreateThread(Engine::handleRenderWorkerThread, NULL, manager);
+		renderWorkerThreads.push_back(thread);
 	}
 
-	// Ambient light is a special distance-invariant light
-	// source which affects all geometry in the level
-	if (settings.ambientLightFactor > 0) {
-		const auto& cachedAmbientLight = vertexLightCache.find(Engine::AMBIENT_LIGHT_ID);
-		bool isCacheableLightSource = settings.hasStaticAmbientLight && triangle.sourceObject->isStatic && !triangle.isSynthetic;
-
-		if (isCacheableLightSource && cachedAmbientLight != vertexLightCache.end()) {
-			const Vec3& cachedAmbientLightIntensity = cachedAmbientLight->second;
-
-			colorIntensity *= cachedAmbientLightIntensity;
-		} else {
-			float dot = Vec3::dotProduct(triangle.sourcePolygon->normal, settings.ambientLightVector.unit());
-
-			if (dot < 0) {
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float intensity = incidence * settings.ambientLightFactor;
-				const Vec3& colorRatios = settings.ambientLightColor.ratios();
-
-				Vec3 ambientLightColorIntensity = {
-					(1.0f + (intensity * colorRatios.x) / settings.brightness),
-					(1.0f + (intensity * colorRatios.y) / settings.brightness),
-					(1.0f + (intensity * colorRatios.z) / settings.brightness)
-				};
-
-				colorIntensity *= ambientLightColorIntensity;
-
-				if (isCacheableLightSource) {
-					vertexLightCache.emplace(Engine::AMBIENT_LIGHT_ID, ambientLightColorIntensity);
-				}
-			}
-		}
-	}
-
-	// Regular light sources must be within range of a vertex
-	// to affect its color intensity
-	for (const auto* light : activeLevel->getLights()) {
-		bool isCacheableLightSource = triangle.sourceObject->isStatic && light->isStatic && !triangle.isSynthetic;
-
-		if (isCacheableLightSource) {
-			const auto& cachedLight = vertexLightCache.find(light->getId());
-
-			if (cachedLight != vertexLightCache.end()) {
-				const Vec3& cachedLightIntensity = cachedLight->second;
-
-				colorIntensity *= cachedLightIntensity;
-
-				continue;
-			}
-		}
-
-		if (
-			light->isDisabled ||
-			light->power == 0 ||
-			abs(light->position.x - vertex.worldVector.x) > light->range ||
-			abs(light->position.y - vertex.worldVector.y) > light->range ||
-			abs(light->position.z - vertex.worldVector.z) > light->range
-		) {
-			continue;
-		}
-
-		Vec3 lightVector = vertex.worldVector - light->position;
-		float lightDistance = lightVector.magnitude();
-
-		if (lightDistance < light->range) {
-			float dot = Vec3::dotProduct(triangle.sourcePolygon->normal, lightVector.unit());
-
-			if (dot < 0) {
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float illuminance = pow(1.0f - lightDistance / light->range, 2);
-				float intensity = light->power * incidence * illuminance;
-				const Vec3& colorRatios = light->getColorRatios();
-
-				Vec3 lightColorIntensity = {
-					(1.0f + (intensity * colorRatios.x) / settings.brightness),
-					(1.0f + (intensity * colorRatios.y) / settings.brightness),
-					(1.0f + (intensity * colorRatios.z) / settings.brightness)
-				};
-
-				colorIntensity *= lightColorIntensity;
-
-				if (isCacheableLightSource) {
-					vertexLightCache.emplace(light->getId(), lightColorIntensity);
-				}
-			}
-		}
-	}
-
-	return colorIntensity;
+	// Create main render thread
+	renderThread = SDL_CreateThread(Engine::handleRenderThread, NULL, this);
 }
 
 void Engine::handleEvent(const SDL_Event& event) {
@@ -291,40 +221,123 @@ void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
 	camera.yaw += (float)xDelta * deltaFactor;
 }
 
-void Engine::illuminateColorTriangle(Triangle& triangle) {
-	const Settings& settings = activeLevel->getSettings();
+/**
+ * Runner for a render worker thread. Depending on the step in
+ * the rendering pipeline, render workers either handle illumination
+ * or scanline rasterization in parallel with one another, each
+ * managing an isolated set of triangles (for illumination) or
+ * scanlines (for rasterization) to avoid race conditions.
+ */
+int Engine::handleRenderWorkerThread(void* data) {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 
-	for (int i = 0; i < 3; i++) {
-		Vertex2d* vertex = &triangle.vertices[i];
-		const Vec3 colorIntensity = getTriangleVertexColorIntensity(triangle, i);
+	RenderWorkerManager* manager = (RenderWorkerManager*)data;
+	Engine* engine = manager->engine;
+	TriangleBuffer* triangleBuffer = engine->triangleBuffer;
+	Rasterizer* rasterizer = engine->rasterizer;
 
-		vertex->color.R *= colorIntensity.x;
-		vertex->color.G *= colorIntensity.y;
-		vertex->color.B *= colorIntensity.z;
-		vertex->color.clamp();
+	while (1) {
+		if (engine->isDone) {
+			break;
+		} else if (manager->isWorking) {
+			int totalRenderWorkerThreads = engine->renderWorkerThreads.size();
 
-		float visibilityRatio = FAST_MIN(vertex->z / settings.visibility, 1.0f);
+			switch (manager->step) {
+				case RenderStep::ILLUMINATION: {
+					const auto& bufferedTriangles = triangleBuffer->getBufferedTriangles();
 
-		vertex->color = Color::lerp(vertex->color, settings.backgroundColor, visibilityRatio);
+					for (int i = 0; i < bufferedTriangles.size(); i++) {
+						// Each render worker gets to illuminate every Nth triangle,
+						// where N is the number of available workers.
+						if (i % totalRenderWorkerThreads == manager->sectionId) {
+							Triangle* triangle = bufferedTriangles.at(i);
+
+							triangleBuffer->illuminateTriangle(triangle);
+						}
+					}
+
+					break;
+				}
+				case RenderStep::SCANLINE_RASTERIZATION: {
+					for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
+						const Scanline* scanline = rasterizer->getScanline(i);
+
+						// Each render worker gets to rasterize scanlines on every
+						// Nth screen row, where N is the number of available workers.
+						if (scanline->y % totalRenderWorkerThreads == manager->sectionId) {
+							rasterizer->triangleScanline(scanline);
+						}
+					}
+
+					break;
+				}
+				default:
+					break;
+			}
+
+			manager->isWorking = false;
+		}
+
+		SDL_Delay(1);
 	}
-}
 
-void Engine::illuminateTextureTriangle(Triangle& triangle) {
-	const Settings& settings = activeLevel->getSettings();
-
-	for (int i = 0; i < 3; i++) {
-		Vertex2d* vertex = &triangle.vertices[i];
-		vertex->textureIntensity = getTriangleVertexColorIntensity(triangle, i);
-	}
+	return 0;
 }
 
 /**
- * Projects and adds a new triangle to the raster queue using
- * a set of three vertices, three unit vectors, and three
- * world vectors representing to the original location of the
- * source polygon, as well as the triangle's source object and
- * polygon for contextual information. For efficiency we forward
- * the arguments from drawScene(), which has already computed them.
+ * Runner for the 'primary' render thread, which is distinct from the
+ * main thread. The render thread is in charge of signaling render
+ * worker threads to perform parallel illumination, followed by
+ * scanline rasterization. The main thread in turn is responsible
+ * for signaling to the render thread that a new frame has begun,
+ * and previous-frame rendering can occur in parallel with next-frame
+ * screen projection and raster filtering.
+ */
+int Engine::handleRenderThread(void* data) {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+
+	Engine* engine = (Engine*)data;
+
+	while (1) {
+		if (engine->isDone) {
+			break;
+		} else if (engine->isRendering) {
+			engine->debugStats.trackIlluminationTime();
+
+			// Parallelize triangle illumination
+			engine->awaitRenderStep(RenderStep::ILLUMINATION);
+
+			engine->debugStats.logIlluminationTime();
+			engine->debugStats.trackDrawTime();
+
+			// Triangles cannot be dispatched to the rasterizer in parallel,
+			// since triangles are buffered in approximate order from closest
+			// to furthest, helping to mitigate overdraw.
+			for (auto* triangle : engine->triangleBuffer->getBufferedTriangles()) {
+				engine->rasterizer->dispatchTriangle(*triangle);
+			}
+
+			// Once all triangles are dispatched to the rasterizer and their
+			// scanlines queued up, we can parallelize the actual scanlines.
+			engine->awaitRenderStep(RenderStep::SCANLINE_RASTERIZATION);
+			engine->debugStats.logDrawTime();
+
+			engine->isRendering = false;
+		}
+
+		SDL_Delay(1);
+	}
+
+	return 0;
+}
+
+/**
+ * Projects and queues a triangle into the raster filter using
+ * a set of three vertices, three unit vectors, and three world
+ * vectors representing to the original location of the source
+ * polygon, as well as the triangle's source object and polygon for
+ * contextual information. For efficiency we forward the arguments
+ * from drawScene(), which has already computed them.
  */
 void Engine::projectAndQueueTriangle(
 	const Vertex3d (&vertexes)[3],
@@ -335,32 +348,29 @@ void Engine::projectAndQueueTriangle(
 	float scale,
 	bool isSynthetic
 ) {
-	Triangle triangle;
+	Triangle* triangle = triangleBuffer->requestTriangle();
 
-	triangle.sourcePolygon = const_cast<Polygon*>(sourcePolygon);
-	triangle.sourceObject = sourceObject;
-	triangle.isSynthetic = isSynthetic;
+	triangle->sourcePolygon = const_cast<Polygon*>(sourcePolygon);
+	triangle->sourceObject = sourceObject;
+	triangle->isSynthetic = isSynthetic;
 
 	for (int i = 0; i < 3; i++) {
 		const Vertex3d& vertex3d = vertexes[i];
 		const Vec3& vector = vertex3d.vector;
 		const Vec3& unit = unitVecs[i];
 
-		Vertex2d vertex;
+		Vertex2d* vertex = &triangle->vertices[i];
 
-		vertex.coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
-		vertex.coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
-		vertex.z = vector.z;
-		vertex.inverseDepth = 1.0f / vector.z;
-		vertex.perspectiveUV = vertex3d.uv / vector.z;
-		vertex.color = vertex3d.color;
-		vertex.worldVector = worldVecs[i];
-
-		triangle.vertices[i] = vertex;
+		vertex->coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
+		vertex->coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
+		vertex->z = vector.z;
+		vertex->inverseDepth = 1.0f / vector.z;
+		vertex->perspectiveUV = vertex3d.uv / vector.z;
+		vertex->color = vertex3d.color;
+		vertex->worldVector = worldVecs[i];
 	}
 
-	rasterQueue->addTriangle(triangle);
-	debugStats.countProjectedTriangle();
+	rasterFilter->addTriangle(triangle);
 }
 
 void Engine::run() {
@@ -416,22 +426,27 @@ void Engine::setActiveLevel(Level* level) {
 	clearActiveLevel();
 
 	activeLevel = level;
+
+	triangleBuffer->setActiveLevel(level);
 }
 
 void Engine::update() {
 	const Settings& settings = activeLevel->getSettings();
 
-	updateMovement();
-
 	rasterizer->setBackgroundColor(settings.backgroundColor);
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
 
-	debugStats.resetCounters();
 	debugStats.trackFrameTime();
 
-	updateScene();
+	updateMovement();
 	updateSounds();
+
+	if (renderWorkerThreads.size() > 0) {
+		updateScene_MultiThreaded();
+	} else {
+		updateScene_SingleThreaded();
+	}
 
 	ui->draw();
 
@@ -442,6 +457,10 @@ void Engine::update() {
 	}
 
 	SDL_RenderPresent(renderer);
+
+	triangleBuffer->reset();
+
+	frame++;
 }
 
 void Engine::updateMovement() {
@@ -457,10 +476,87 @@ void Engine::updateMovement() {
 	camera.position.z += scalar * zDelta;
 }
 
-void Engine::updateScene() {
+/**
+ * Updates the game scene using parallelization mechanisms.
+ */
+void Engine::updateScene_MultiThreaded() {
+	// In mulithreaded mode, we wait a full frame before the
+	// first render pass. The scene needs to be projected and
+	// buffered once; after this, next-frame projection/raster
+	// filtering can occur while previous-frame rendering occurs
+	// in parallel.
+	if (frame > 0) {
+		// Signal the main render thread to kick off the
+		// rendering pipeline while we perform screen
+		// projection/raster filtering here
+		isRendering = true;
+	}
+
 	debugStats.trackScreenProjectionTime();
 
-	bool hasPixelFilter = flags & PIXEL_FILTER;
+	updateScreenProjection();
+
+	debugStats.logScreenProjectionTime();
+	debugStats.trackHiddenSurfaceRemovalTime();
+
+	Triangle* triangle;
+
+	while ((triangle = rasterFilter->next()) != NULL) {
+		triangleBuffer->bufferTriangle(triangle);
+	}
+
+	debugStats.logHiddenSurfaceRemovalTime();
+
+	if (frame > 0) {
+		while (isRendering) {
+			SDL_Delay(1);
+		}
+
+		rasterizer->render(renderer, (flags & PIXEL_FILTER) ? 2 : 1);
+	}
+}
+
+/**
+ * Updates the game scene in a serial fashion when multithreading is
+ * either disabled or unavailable due to limited available CPU cores.
+ */
+void Engine::updateScene_SingleThreaded() {
+	debugStats.trackScreenProjectionTime();
+
+	updateScreenProjection();
+
+	debugStats.logScreenProjectionTime();
+	debugStats.trackHiddenSurfaceRemovalTime();
+
+	Triangle* triangle;
+
+	while ((triangle = rasterFilter->next()) != NULL) {
+		triangleBuffer->bufferTriangle(triangle);
+	}
+
+	debugStats.logHiddenSurfaceRemovalTime();
+	debugStats.trackIlluminationTime();
+
+	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+		triangleBuffer->illuminateTriangle(triangle);
+	}
+
+	debugStats.logIlluminationTime();
+	debugStats.trackDrawTime();
+
+	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+		rasterizer->dispatchTriangle(*triangle);
+	}
+
+	for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
+		rasterizer->triangleScanline(rasterizer->getScanline(i));
+	}
+
+	rasterizer->render(renderer, (flags & PIXEL_FILTER) ? 2 : 1);
+	debugStats.logDrawTime();
+}
+
+void Engine::updateScreenProjection() {
 	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
@@ -621,18 +717,6 @@ void Engine::updateScene() {
 			}
 		}
 	}
-
-	debugStats.logScreenProjectionTime();
-	debugStats.trackDrawTime();
-
-	Triangle* triangle;
-
-	while ((triangle = rasterQueue->next()) != NULL) {
-		drawTriangle(*triangle);
-	}
-
-	rasterizer->render(renderer, hasPixelFilter ? 2 : 1);
-	debugStats.logDrawTime();
 }
 
 void Engine::updateSounds() {
@@ -649,6 +733,8 @@ void Engine::updateSounds() {
 
 void Engine::addDebugStats() {
 	addDebugStat("screenProjectionTime");
+	addDebugStat("hsrTime");
+	addDebugStat("illuminationTime");
 	addDebugStat("drawTime");
 	addDebugStat("frameTime");
 	addDebugStat("fps");
@@ -661,14 +747,16 @@ void Engine::addDebugStats() {
 
 void Engine::updateDebugStats() {
 	updateDebugStat("screenProjectionTime", "Screen projection time", debugStats.getScreenProjectionTime());
+	updateDebugStat("hsrTime", "Hidden surface removal time", debugStats.getHiddenSurfaceRemovalTime());
+	updateDebugStat("illuminationTime", "Illumination time", debugStats.getIlluminationTime());
 	updateDebugStat("drawTime", "Draw time", debugStats.getDrawTime());
 	updateDebugStat("frameTime", "Frame time", debugStats.getFrameTime());
 	updateDebugStat("fps", "FPS", debugStats.getFPS());
 	updateDebugStat("totalVertices", "Vertices", debugStats.getTotalVertices(activeLevel->getObjects()));
 	updateDebugStat("totalTriangles", "Triangles", debugStats.getTotalPolygons(activeLevel->getObjects()));
-	updateDebugStat("totalTrianglesProjected", "Triangles projected", debugStats.getTotalProjectedTriangles());
-	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", debugStats.getTotalDrawnTriangles());
-	updateDebugStat("totalScanlines", "Scanlines", rasterizer->getTotalScanlines());
+	updateDebugStat("totalTrianglesProjected", "Triangles projected", triangleBuffer->getTotalRequestedTriangles());
+	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", triangleBuffer->getBufferedTriangles().size());
+	updateDebugStat("totalScanlines", "Scanlines", rasterizer->getTotalBufferedScanlines());
 }
 
 void Engine::addDebugStat(const char* key) {

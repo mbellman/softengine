@@ -9,7 +9,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
-* Triangle buffer + parallel illumination
 * Cache ambient light color ratios
 * Skip texture sampling on surfaces with insufficient illumination
 * Staggered perspective-correct/linear UV interpolation
@@ -24,7 +23,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 * Convert error messages preceding exit(0) to alert prompts
 * Separate `Camera` into its own class with keyboard/mouse event handling
-* Refactor Engine::updateScene(); separate out near-plane clipping operations
+* Engine::updateScreenProjection() -> Separate out near-plane clipping operations
 * Move existing documentation into .h files, add more documentation
 
 ## Development

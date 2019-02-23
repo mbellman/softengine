@@ -117,7 +117,7 @@ void Garden::load() {
 	}
 
 	settings.backgroundColor = { 0, 10, 20 };
-	settings.visibility = 3500;
+	// settings.visibility = 3500;
 	settings.brightness = 0.1;
 	settings.ambientLightColor = { 0, 0, 100 };
 	settings.ambientLightVector = { 0, -0.8f, 0.5f };

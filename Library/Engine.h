@@ -8,11 +8,13 @@
 #include <SDL_ttf.h>
 
 #include <Graphics/Rasterizer.h>
-#include <Graphics/RasterQueue.h>
+#include <Graphics/RasterFilter.h>
+#include <Graphics/TriangleBuffer.h>
 #include <UI/UI.h>
 #include <System/Flags.h>
 #include <System/DebugStats.h>
 #include <System/Objects.h>
+#include <System/Geometry.h>
 #include <System/Level.h>
 #include <System/Math.h>
 #include <Sound/AudioEngine.h>
@@ -95,7 +97,8 @@ private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	Rasterizer* rasterizer;
-	RasterQueue* rasterQueue;
+	RasterFilter* rasterFilter;
+	TriangleBuffer* triangleBuffer;
 	AudioEngine* audioEngine;
 	UI* ui;
 	Level* activeLevel = NULL;
@@ -109,16 +112,34 @@ private:
 	int height;
 	int HALF_H;
 
+	enum RenderStep {
+		ILLUMINATION,
+		SCANLINE_RASTERIZATION
+	};
+
+	struct RenderWorkerManager {
+		Engine* engine;
+		int sectionId;
+		RenderStep step;
+		bool isWorking = false;
+	};
+
+	RenderWorkerManager* renderWorkerManagers;
+	std::vector<SDL_Thread*> renderWorkerThreads;
+	SDL_Thread* renderThread = NULL;
+	bool isRendering = false;
+	bool isDone = false;
+	int frame = 0;
+
+	static int handleRenderWorkerThread(void* data);
+	static int handleRenderThread(void* data);
+	void awaitRenderStep(RenderStep renderStep);
 	void clearActiveLevel();
-	void delay(int ms);
-	void drawTriangle(Triangle& triangle);
-	Vec3 getTriangleVertexColorIntensity(const Triangle& triangle, int vertexIndex);
+	void createRenderThreads();
 	void handleEvent(const SDL_Event& event);
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);
 	void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
-	void illuminateColorTriangle(Triangle& triangle);
-	void illuminateTextureTriangle(Triangle& triangle);
 
 	void projectAndQueueTriangle(
 		const Vertex3d (&vertexes)[3],
@@ -132,7 +153,9 @@ private:
 
 	void update();
 	void updateMovement();
-	void updateScene();
+	void updateScene_MultiThreaded();
+	void updateScene_SingleThreaded();
+	void updateScreenProjection();
 	void updateSounds();
 
 	/* ----- */

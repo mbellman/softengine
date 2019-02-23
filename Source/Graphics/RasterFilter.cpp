@@ -1,29 +1,29 @@
-#include <Graphics/RasterQueue.h>
+#include <Graphics/RasterFilter.h>
 #include <algorithm>
 #include <Helpers.h>
 #include <System/Geometry.h>
 
 /**
- * RasterQueue
- * -----------
+ * RasterFilter
+ * ------------
  */
-RasterQueue::RasterQueue(int width, int height) {
+RasterFilter::RasterFilter(int width, int height) {
 	rasterWidth = width;
 	rasterHeight = height;
 }
 
-void RasterQueue::addCover(const Triangle& triangle, int zone) {
+void RasterFilter::addCover(const Triangle* triangle, int zone) {
 	covers.push_back({
-		triangle.vertices[0].coordinate,
-		triangle.vertices[1].coordinate,
-		triangle.vertices[2].coordinate,
+		triangle->vertices[0].coordinate,
+		triangle->vertices[1].coordinate,
+		triangle->vertices[2].coordinate,
 		zone,
 		isTriangleClockwise(triangle)
 	});
 }
 
-void RasterQueue::addTriangle(Triangle triangle) {
-	int zoneIndex = std::clamp((int)(triangle.averageZ() / RasterQueue::ZONE_RANGE), 0, RasterQueue::MAX_ZONES - 1);
+void RasterFilter::addTriangle(Triangle* triangle) {
+	int zoneIndex = std::clamp((int)(triangle->averageZ() / RasterFilter::ZONE_RANGE), 0, RasterFilter::MAX_ZONES - 1);
 
 	if (zoneIndex > highestZoneIndex) {
 		highestZoneIndex = zoneIndex;
@@ -36,22 +36,22 @@ void RasterQueue::addTriangle(Triangle triangle) {
 	zones[zoneIndex].push_back(triangle);
 }
 
-inline bool RasterQueue::isPointInsideEdge(int x, int y, int ex1, int ey1, int ex2, int ey2) {
+inline bool RasterFilter::isPointInsideEdge(int x, int y, int ex1, int ey1, int ex2, int ey2) {
 	return ((x - ex1) * (ey2 - ey1) - (y - ey1) * (ex2 - ex1)) > 0;
 }
 
-bool RasterQueue::isTriangleClockwise(const Triangle& triangle) {
-	const Coordinate& c0 = triangle.vertices[0].coordinate;
-	const Coordinate& c1 = triangle.vertices[1].coordinate;
-	const Coordinate& c2 = triangle.vertices[2].coordinate;
+bool RasterFilter::isTriangleClockwise(const Triangle* triangle) {
+	const Coordinate& c0 = triangle->vertices[0].coordinate;
+	const Coordinate& c1 = triangle->vertices[1].coordinate;
+	const Coordinate& c2 = triangle->vertices[2].coordinate;
 
 	return isPointInsideEdge(c2.x, c2.y, c0.x, c0.y, c1.x, c1.y);
 }
 
-bool RasterQueue::isTriangleCoverable(const Triangle& triangle) {
-	const Coordinate& c0 = triangle.vertices[0].coordinate;
-	const Coordinate& c1 = triangle.vertices[1].coordinate;
-	const Coordinate& c2 = triangle.vertices[2].coordinate;
+bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
+	const Coordinate& c0 = triangle->vertices[0].coordinate;
+	const Coordinate& c1 = triangle->vertices[1].coordinate;
+	const Coordinate& c2 = triangle->vertices[2].coordinate;
 
 	int minX = std::min(c0.x, std::min(c1.x, c2.x));
 	int maxX = std::max(c0.x, std::max(c1.x, c2.x));
@@ -74,9 +74,9 @@ bool RasterQueue::isTriangleCoverable(const Triangle& triangle) {
 /**
  * Determines whether a Triangle is occluded by a Cover.
  */
-bool RasterQueue::isTriangleOccluded(const Triangle& triangle, const Cover& cover) {
+bool RasterFilter::isTriangleOccluded(const Triangle* triangle, const Cover& cover) {
 	for (int i = 0; i < 3; i++) {
-		const Coordinate& tc = triangle.vertices[i].coordinate;
+		const Coordinate& tc = triangle->vertices[i].coordinate;
 
 		// To determine whether a triangle T is completely covered by
 		// another triangle T*, we have to check T's vertices against
@@ -110,10 +110,10 @@ bool RasterQueue::isTriangleOccluded(const Triangle& triangle, const Cover& cove
 	return true;
 }
 
-bool RasterQueue::isTriangleOnScreen(const Triangle& triangle) {
-	const Coordinate& c0 = triangle.vertices[0].coordinate;
-	const Coordinate& c1 = triangle.vertices[1].coordinate;
-	const Coordinate& c2 = triangle.vertices[2].coordinate;
+bool RasterFilter::isTriangleOnScreen(const Triangle* triangle) {
+	const Coordinate& c0 = triangle->vertices[0].coordinate;
+	const Coordinate& c1 = triangle->vertices[1].coordinate;
+	const Coordinate& c2 = triangle->vertices[2].coordinate;
 
 	int minX = std::min(c0.x, std::min(c1.x, c2.x));
 	int maxX = std::max(c0.x, std::max(c1.x, c2.x));
@@ -124,7 +124,7 @@ bool RasterQueue::isTriangleOnScreen(const Triangle& triangle) {
 	return (minX < rasterWidth) && (maxX > 0) && (minY < rasterHeight) && (maxY > 0);
 }
 
-bool RasterQueue::isTriangleVisible(const Triangle& triangle) {
+bool RasterFilter::isTriangleVisible(const Triangle* triangle) {
 	if (!isTriangleOnScreen(triangle)) {
 		return false;
 	}
@@ -138,7 +138,7 @@ bool RasterQueue::isTriangleVisible(const Triangle& triangle) {
 	return true;
 }
 
-Triangle* RasterQueue::next() {
+Triangle* RasterFilter::next() {
 	Zone* currentZone = &zones[currentZoneIndex];
 	bool isEndOfZone = currentElementIndex >= currentZone->size() || currentZone->size() == 0;
 
@@ -157,13 +157,13 @@ Triangle* RasterQueue::next() {
 			return NULL;
 		}
 	} else {
-		Triangle* triangle = &currentZone->at(currentElementIndex++);
+		Triangle* triangle = currentZone->at(currentElementIndex++);
 
-		return isTriangleVisible(*triangle) ? triangle : next();
+		return isTriangleVisible(triangle) ? triangle : next();
 	}
 }
 
-void RasterQueue::reset() {
+void RasterFilter::reset() {
 	currentZoneIndex = 0;
 	highestZoneIndex = 0;
 

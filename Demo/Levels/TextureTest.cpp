@@ -24,7 +24,7 @@ void TextureTest::load() {
 		c->position = {
 			300.0f * (i % 2 == 0 ? -1 : 1),
 			-150,
-			1000.0f + 300.0f * (int)(i / 2)
+			2000.0f + 300.0f * (int)(i / 2)
 		};
 
 		add(c);

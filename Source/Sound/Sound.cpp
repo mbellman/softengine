@@ -22,7 +22,7 @@ Sound::Sound(const char* filename) {
 			exit(0);
 		}
 
-		mixChunkCache.emplace(filename, chunk);
+		Sound::mixChunkCache.emplace(filename, chunk);
 	} else {
 		chunk = cachedChunk->second;
 	}
@@ -50,8 +50,8 @@ Sound::~Sound() {
 std::map<const char*, Mix_Chunk*> Sound::mixChunkCache;
 
 void Sound::clearMixChunkCache() {
-	for (auto& [key, mixChunk] : mixChunkCache) {
-		delete mixChunk;
+	for (auto& [key, mixChunk] : Sound::mixChunkCache) {
+		Mix_FreeChunk(mixChunk);
 	}
 
 	Sound::mixChunkCache.clear();

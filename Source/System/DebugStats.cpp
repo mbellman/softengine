@@ -5,36 +5,60 @@
  * DebugStats
  * ----------
  */
-void DebugStats::trackDrawTime() {
-	drawTime.start = (int)SDL_GetTicks();
-}
-
 void DebugStats::trackScreenProjectionTime() {
 	screenProjectionTime.start = (int)SDL_GetTicks();
+}
+
+void DebugStats::trackHiddenSurfaceRemovalTime() {
+	hiddenSurfaceRemovalTime.start = (int)SDL_GetTicks();
+}
+
+void DebugStats::trackIlluminationTime() {
+	illuminationTime.start = (int)SDL_GetTicks();
+}
+
+void DebugStats::trackDrawTime() {
+	drawTime.start = (int)SDL_GetTicks();
 }
 
 void DebugStats::trackFrameTime() {
 	frameTime.start = (int)SDL_GetTicks();
 }
 
-void DebugStats::logDrawTime() {
-	drawTime.end = (int)SDL_GetTicks();
-}
-
 void DebugStats::logScreenProjectionTime() {
 	screenProjectionTime.end = (int)SDL_GetTicks();
+}
+
+void DebugStats::logHiddenSurfaceRemovalTime() {
+	hiddenSurfaceRemovalTime.end = (int)SDL_GetTicks();
+}
+
+void DebugStats::logIlluminationTime() {
+	illuminationTime.end = (int)SDL_GetTicks();
+}
+
+void DebugStats::logDrawTime() {
+	drawTime.end = (int)SDL_GetTicks();
 }
 
 void DebugStats::logFrameTime() {
 	frameTime.end = (int)SDL_GetTicks();
 }
 
-int DebugStats::getDrawTime() {
-	return drawTime.end - drawTime.start;
-}
-
 int DebugStats::getScreenProjectionTime() {
 	return screenProjectionTime.end - screenProjectionTime.start;
+}
+
+int DebugStats::getHiddenSurfaceRemovalTime() {
+	return hiddenSurfaceRemovalTime.end - hiddenSurfaceRemovalTime.start;
+}
+
+int DebugStats::getIlluminationTime() {
+	return illuminationTime.end - illuminationTime.start;
+}
+
+int DebugStats::getDrawTime() {
+	return drawTime.end - drawTime.start;
 }
 
 int DebugStats::getFrameTime() {
@@ -63,25 +87,4 @@ int DebugStats::getTotalVertices(const std::vector<Object*>& objects) {
 	}
 
 	return total;
-}
-
-int DebugStats::getTotalDrawnTriangles() {
-	return totalDrawnTriangles;
-}
-
-int DebugStats::getTotalProjectedTriangles() {
-	return totalProjectedTriangles;
-}
-
-void DebugStats::countDrawnTriangle() {
-	totalDrawnTriangles++;
-}
-
-void DebugStats::countProjectedTriangle() {
-	totalProjectedTriangles++;
-}
-
-void DebugStats::resetCounters() {
-	totalDrawnTriangles = 0;
-	totalProjectedTriangles = 0;
 }
