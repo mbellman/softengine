@@ -93,7 +93,7 @@ find_library(OPENAL_LIBRARY
 
 unset(_OpenAL_ARCH_DIR)
 
-include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
+INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(OpenAL  DEFAULT_MSG  OPENAL_LIBRARY OPENAL_INCLUDE_DIR)
 
 mark_as_advanced(OPENAL_LIBRARY OPENAL_INCLUDE_DIR)
