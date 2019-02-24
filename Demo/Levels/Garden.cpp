@@ -18,10 +18,10 @@ void Garden::load() {
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
 	add("ground-texture", new TextureBuffer("./DemoAssets/snowy-ground-texture.png"));
 
-	for (int i = 0; i < 30; i++) {
+	for (int i = 0; i < 60; i++) {
 		Model* tree = new Model(treeObj);
 
-		tree->position = { (float)(2000 - rand() % 4000), -10.0f, (float)(5000 - rand() % 4000) };
+		tree->position = { (float)(2000 - rand() % 4000), -10.0f, (float)(10000 - rand() % 9000) };
 		tree->setTexture(getTexture("tree-texture"));
 		tree->scale(100);
 		tree->rotateDeg({ 0, (float)(rand() % 360), 0 });
@@ -30,13 +30,13 @@ void Garden::load() {
 		add(tree);
 	}
 
-	for (int x = 0; x < 10; x++) {
+	for (int x = 0; x < 20; x++) {
 		Light* light = new Light();
 		Cube* cube = new Cube(10);
 		cube->setColor(255, 100, 0);
 
 		light->setColor(255, 100, 0);
-		light->position = { (float)(2000 - rand() % 4000), 50 + (float)(rand() % 200), (float)(5000 - rand() % 4000) };
+		light->position = { (float)(2000 - rand() % 4000), 50 + (float)(rand() % 200), (float)(10000 - rand() % 9000) };
 		light->range = 500 + rand() % 700;
 		light->power = 1.5f;
 		light->isStatic = true;
@@ -66,7 +66,7 @@ void Garden::load() {
 
 	add(icosahedron);
 
-	Mesh* mesh = new Mesh(50, 50, 100);
+	Mesh* mesh = new Mesh(100, 50, 100);
 	mesh->setColor(10, 5, 0);
 	mesh->position = { -2500, -40, 0 };
 	mesh->setTexture(getTexture("ground-texture"));
@@ -106,13 +106,13 @@ void Garden::load() {
 
 	add("bells", bells);
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 6; i++) {
 		Sound* crickets = new Sound("./DemoAssets/crickets.wav");
 
 		crickets->position = {
 			RNG::random(-2500.0f, 2500.0f),
 			0.0f,
-			RNG::random(0.0f, 5000.0f)
+			RNG::random(0.0f, 10000.0f)
 		};
 
 		crickets->loop();
