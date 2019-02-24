@@ -1,6 +1,7 @@
 #include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
+#include <functional>
 
 /**
  * Object
@@ -269,7 +270,7 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 
 	for (int z = 0; z < verticesPerColumn; z++) {
 		for (int x = 0; x < verticesPerRow; x++) {
-			addVertex({ x * tileSize, (float)(rand() % 50), z * tileSize }, { rand() % 255, rand() % 255, rand() % 255 });
+			addVertex({ x * tileSize, 0.0f, z * tileSize }, { rand() % 255, rand() % 255, rand() % 255 });
 		}
 	}
 
@@ -306,6 +307,23 @@ void Mesh::setTextureInterval(int rowInterval, int columnInterval) {
 			vertex->uv.y = v;
 		}
 	}
+}
+
+void Mesh::setVertexOffsets(std::function<void(int, int, Vec3&)> offsetHandler) {
+	int verticesPerRow = columns + 1;
+	int verticesPerColumn = rows + 1;
+
+	for (int i = 0; i < verticesPerColumn; i++) {
+		for (int j = 0; j < verticesPerRow; j++) {
+			int index = i * verticesPerRow + j;
+
+			Vertex3d* vertex = &vertices.at(index);
+
+			offsetHandler(i, j, vertex->vector);
+		}
+	}
+
+	computeSurfaceNormals();
 }
 
 /**

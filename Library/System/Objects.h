@@ -73,6 +73,7 @@ struct Mesh : Object {
 	Mesh(int rows, int columns, float tileSize);
 
 	void setTextureInterval(int rowInterval, int columnInterval);
+	void setVertexOffsets(std::function<void(int, int, Vec3&)> offsetHandler);
 
 private:
 	int rows = 0;

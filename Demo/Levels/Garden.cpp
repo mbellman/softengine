@@ -73,6 +73,10 @@ void Garden::load() {
 	mesh->setTextureInterval(5, 5);
 	mesh->isStatic = true;
 
+	mesh->setVertexOffsets([=](int row, int column, Vec3& vertexVector) {
+		vertexVector.y = 25.0f * sinf(row) + 25.0f * sinf(column);
+	});
+
 	add(mesh);
 
 	ParticleSystem* snow = new ParticleSystem(4000);

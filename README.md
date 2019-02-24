@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Mesh: custom static or real-time deformations
 * Fresnel effect/grazing angle reflections/object reflectivity
 * Model: dynamic levels of detail
 * KB+M input manager
