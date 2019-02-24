@@ -41,7 +41,6 @@ struct Vertex3d : Colorable {
 struct Triangle {
 	Vertex2d vertices[3];
 	Polygon* sourcePolygon = NULL;
-	const Object* sourceObject = NULL;
 
 	/**
 	 * Determines whether the triangle is the result of
@@ -61,9 +60,8 @@ struct Triangle {
 struct Polygon {
 	Vertex3d* vertices[3];
 	Vec3 normal;
-	std::map<int, Vec3> vertexLightCache[3];
-
-	~Polygon();
+	Vec3 cachedVertexColorIntensities[3];
+	const Object* sourceObject = NULL;
 
 	void bindVertex(int index, Vertex3d* vertex);
 };

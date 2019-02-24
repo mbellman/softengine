@@ -53,6 +53,57 @@ void TriangleBuffer::bufferTriangle(Triangle* triangle) {
 	primaryBuffer.push_back(triangle);
 }
 
+void TriangleBuffer::computeAmbientLightColorIntensity(const Vec3& normal, Vec3& colorIntensity) {
+	const Settings& settings = activeLevel->getSettings();
+
+	if (settings.ambientLightFactor > 0) {
+		float dot = Vec3::dotProduct(normal, settings.ambientLightVector.unit());
+
+		if (dot < 0) {
+			float incidence = cosf((1 + dot) * M_PI / 2);
+			float intensity = incidence * settings.ambientLightFactor;
+			const Vec3& colorRatios = settings.ambientLightColor.ratios();
+
+			colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
+			colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
+			colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+		}
+	}
+}
+
+void TriangleBuffer::computeLightColorIntensity(const Light* light, const Vec3& vertexPosition, const Vec3& normal, Vec3& colorIntensity) {
+	if (
+		light->isDisabled ||
+		light->power == 0 ||
+		abs(light->position.x - vertexPosition.x) > light->range ||
+		abs(light->position.y - vertexPosition.y) > light->range ||
+		abs(light->position.z - vertexPosition.z) > light->range
+	) {
+		// Color intensity remains unaffected when lights
+		// are disabled, at 0 power, or out of range.
+		return;
+	}
+
+	const Settings& settings = activeLevel->getSettings();
+	Vec3 lightVector = vertexPosition - light->position;
+	float lightDistance = lightVector.magnitude();
+
+	if (lightDistance < light->range) {
+		float dot = Vec3::dotProduct(normal, lightVector.unit());
+
+		if (dot < 0) {
+			float incidence = cosf((1 + dot) * M_PI / 2);
+			float illuminance = pow(1.0f - lightDistance / light->range, 2);
+			float intensity = light->power * incidence * illuminance;
+			const Vec3& colorRatios = light->getColorRatios();
+
+			colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
+			colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
+			colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
+		}
+	}
+}
+
 /**
  * Returns the secondary triangle buffer for consumption by the
  * rendering pipeline, after it has already been written to by
@@ -68,102 +119,47 @@ int TriangleBuffer::getTotalRequestedTriangles() {
 	return totalRequestedTriangles;
 }
 
+int TriangleBuffer::getTotalNonStaticTriangles() {
+	int total = 0;
+
+	for (auto* triangle : getBufferedTriangles()) {
+		if (!triangle->sourcePolygon->sourceObject->isStatic) {
+			total++;
+		}
+	}
+
+	return total;
+}
+
 Vec3 TriangleBuffer::getTriangleVertexColorIntensity(Triangle* triangle, int vertexIndex) {
 	const Vertex2d& vertex = triangle->vertices[vertexIndex];
 	const Settings& settings = activeLevel->getSettings();
-	std::map<int, Vec3>& vertexLightCache = triangle->sourcePolygon->vertexLightCache[vertexIndex];
-	Vec3 colorIntensity = { 1.0f, 1.0f, 1.0f };
+	bool isStaticTriangle = !triangle->isSynthetic && triangle->sourcePolygon->sourceObject->isStatic;
+	Vec3 colorIntensity;
 
-	colorIntensity *= settings.brightness;
+	if (isStaticTriangle) {
+		colorIntensity = triangle->sourcePolygon->cachedVertexColorIntensities[vertexIndex];
+	} else {
+		colorIntensity = { settings.brightness, settings.brightness, settings.brightness };
+	}
 
 	if (settings.brightness == 0) {
 		return colorIntensity;
 	}
 
-	// Ambient light is a special distance-invariant light
-	// source which affects all geometry in the level
 	if (settings.ambientLightFactor > 0) {
-		const auto& cachedAmbientLight = vertexLightCache.find(TriangleBuffer::AMBIENT_LIGHT_ID);
-		bool isCacheableLightSource = settings.hasStaticAmbientLight && triangle->sourceObject->isStatic && !triangle->isSynthetic;
+		bool shouldRecomputeAmbientLightColorIntensity = !isStaticTriangle || !settings.hasStaticAmbientLight;
 
-		if (isCacheableLightSource && cachedAmbientLight != vertexLightCache.end()) {
-			const Vec3& cachedAmbientLightIntensity = cachedAmbientLight->second;
-
-			colorIntensity *= cachedAmbientLightIntensity;
-		} else {
-			float dot = Vec3::dotProduct(triangle->sourcePolygon->normal, settings.ambientLightVector.unit());
-
-			if (dot < 0) {
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float intensity = incidence * settings.ambientLightFactor;
-				const Vec3& colorRatios = settings.ambientLightColor.ratios();
-
-				Vec3 ambientLightColorIntensity = {
-					(1.0f + (intensity * colorRatios.x) / settings.brightness),
-					(1.0f + (intensity * colorRatios.y) / settings.brightness),
-					(1.0f + (intensity * colorRatios.z) / settings.brightness)
-				};
-
-				colorIntensity *= ambientLightColorIntensity;
-
-				if (isCacheableLightSource) {
-					vertexLightCache.emplace(TriangleBuffer::AMBIENT_LIGHT_ID, ambientLightColorIntensity);
-				}
-			}
+		if (shouldRecomputeAmbientLightColorIntensity) {
+			computeAmbientLightColorIntensity(triangle->sourcePolygon->normal, colorIntensity);
 		}
 	}
 
-	// Regular light sources must be within range of a vertex
-	// to affect its color intensity
 	for (const auto* light : activeLevel->getLights()) {
-		bool isCacheableLightSource = light->isStatic && triangle->sourceObject->isStatic && !triangle->isSynthetic;
+		bool shouldRecomputeLightColorIntensity = !isStaticTriangle || !light->isStatic;
 
-		if (isCacheableLightSource) {
-			const auto& cachedLight = vertexLightCache.find(light->getId());
-
-			if (cachedLight != vertexLightCache.end()) {
-				const Vec3& cachedLightIntensity = cachedLight->second;
-
-				colorIntensity *= cachedLightIntensity;
-
-				continue;
-			}
-		}
-
-		if (
-			light->isDisabled ||
-			light->power == 0 ||
-			abs(light->position.x - vertex.worldVector.x) > light->range ||
-			abs(light->position.y - vertex.worldVector.y) > light->range ||
-			abs(light->position.z - vertex.worldVector.z) > light->range
-		) {
-			continue;
-		}
-
-		Vec3 lightVector = vertex.worldVector - light->position;
-		float lightDistance = lightVector.magnitude();
-
-		if (lightDistance < light->range) {
-			float dot = Vec3::dotProduct(triangle->sourcePolygon->normal, lightVector.unit());
-
-			if (dot < 0) {
-				float incidence = cosf((1 + dot) * M_PI / 2);
-				float illuminance = pow(1.0f - lightDistance / light->range, 2);
-				float intensity = light->power * incidence * illuminance;
-				const Vec3& colorRatios = light->getColorRatios();
-
-				Vec3 lightColorIntensity = {
-					(1.0f + (intensity * colorRatios.x) / settings.brightness),
-					(1.0f + (intensity * colorRatios.y) / settings.brightness),
-					(1.0f + (intensity * colorRatios.z) / settings.brightness)
-				};
-
-				colorIntensity *= lightColorIntensity;
-
-				if (isCacheableLightSource) {
-					vertexLightCache.emplace(light->getId(), lightColorIntensity);
-				}
-			}
+		if (shouldRecomputeLightColorIntensity) {
+			computeLightColorIntensity(light, vertex.worldVector, triangle->sourcePolygon->normal, colorIntensity);
 		}
 	}
 
@@ -188,6 +184,38 @@ void TriangleBuffer::illuminateColorTriangle(Triangle* triangle) {
 	}
 }
 
+/**
+ * Performs a one-time illumination step on Polygons belonging to
+ * static Objects, storing the color intensity results in the
+ * Polygon's vertex color intensity cache. Only static ambient
+ * light (if applicable) and static light sources should factor
+ * into the cached value; non-static light sources must be
+ * recalculated during runtime.
+ */
+void TriangleBuffer::illuminateStaticPolygon(Polygon* polygon) {
+	const Settings& settings = activeLevel->getSettings();
+
+	for (int i = 0; i < 3; i++) {
+		Vec3 vertexPosition = polygon->sourceObject->position + polygon->vertices[i]->vector;
+		Vec3 colorIntensity = { settings.brightness, settings.brightness, settings.brightness };
+		Vec3& cachedColorIntensity = polygon->cachedVertexColorIntensities[i];
+
+		if (settings.hasStaticAmbientLight) {
+			computeAmbientLightColorIntensity(polygon->normal, colorIntensity);
+		}
+
+		for (auto* light : activeLevel->getLights()) {
+			if (light->isStatic) {
+				computeLightColorIntensity(light, vertexPosition, polygon->normal, colorIntensity);
+			}
+		}
+
+		cachedColorIntensity.x = colorIntensity.x;
+		cachedColorIntensity.y = colorIntensity.y;
+		cachedColorIntensity.z = colorIntensity.z;
+	}
+}
+
 void TriangleBuffer::illuminateTextureTriangle(Triangle* triangle) {
 	for (int i = 0; i < 3; i++) {
 		Vertex2d* vertex = &triangle->vertices[i];
@@ -196,7 +224,7 @@ void TriangleBuffer::illuminateTextureTriangle(Triangle* triangle) {
 }
 
 void TriangleBuffer::illuminateTriangle(Triangle* triangle) {
-	if (triangle->sourceObject->texture != NULL) {
+	if (triangle->sourcePolygon->sourceObject->texture != NULL) {
 		illuminateTextureTriangle(triangle);
 	} else {
 		illuminateColorTriangle(triangle);

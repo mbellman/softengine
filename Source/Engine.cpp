@@ -304,8 +304,13 @@ int Engine::handleRenderThread(void* data) {
 		} else if (engine->isRendering) {
 			engine->debugStats.trackIlluminationTime();
 
-			// Parallelize triangle illumination
-			engine->awaitRenderStep(RenderStep::ILLUMINATION);
+			if (engine->triangleBuffer->getTotalNonStaticTriangles() > Engine::SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT) {
+				engine->awaitRenderStep(RenderStep::ILLUMINATION);
+			} else {
+				for (auto* triangle : engine->triangleBuffer->getBufferedTriangles()) {
+					engine->triangleBuffer->illuminateTriangle(triangle);
+				}
+			}
 
 			engine->debugStats.logIlluminationTime();
 			engine->debugStats.trackDrawTime();
@@ -332,6 +337,23 @@ int Engine::handleRenderThread(void* data) {
 }
 
 /**
+ * Precomputes and caches static ambient or static light source
+ * color intensities on Polygons belonging to static Objects,
+ * avoiding the need to recalculate these values during runtime.
+ */
+void Engine::precomputeStaticLightColorIntensities() {
+	for (auto* object : activeLevel->getObjects()) {
+		if (!object->isStatic) {
+			continue;
+		}
+
+		for (auto& polygon : object->getPolygons()) {
+			triangleBuffer->illuminateStaticPolygon(const_cast<Polygon*>(&polygon));
+		}
+	}
+}
+
+/**
  * Projects and queues a triangle into the raster filter using
  * a set of three vertices, three unit vectors, and three world
  * vectors representing to the original location of the source
@@ -351,7 +373,6 @@ void Engine::projectAndQueueTriangle(
 	Triangle* triangle = triangleBuffer->requestTriangle();
 
 	triangle->sourcePolygon = const_cast<Polygon*>(sourcePolygon);
-	triangle->sourceObject = sourceObject;
 	triangle->isSynthetic = isSynthetic;
 
 	for (int i = 0; i < 3; i++) {
@@ -389,6 +410,8 @@ void Engine::run() {
 
 	audioEngine->mute();
 	activeLevel->load();
+
+	precomputeStaticLightColorIntensities();
 
 	while (!activeLevel->hasQuit()) {
 		lastStartTime = SDL_GetTicks();

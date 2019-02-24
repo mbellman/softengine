@@ -25,6 +25,7 @@ void Object::addPolygon(int v1, int v2, int v3) {
 	polygon.bindVertex(1, &vertices.at(v2));
 	polygon.bindVertex(2, &vertices.at(v3));
 	polygon.normal = Object::computePolygonNormal(polygon);
+	polygon.sourceObject = this;
 
 	polygons.push_back(polygon);
 }

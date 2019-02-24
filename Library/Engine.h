@@ -28,7 +28,7 @@ struct Camera {
 	Vec3 position = { 0, 100, 0 };
 	float pitch = 0.0f;
 	float yaw = 0.0f;
-	int fov = 100;
+	int fov = 90;
 
 	RotationMatrix getRotationMatrix();
 };
@@ -89,7 +89,7 @@ public:
 private:
 	constexpr static float NEAR_Z = 30.0f;
 	constexpr static int MOVEMENT_SPEED = 5;
-	constexpr static int AMBIENT_LIGHT_ID = 0;
+	constexpr static int SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT = 2500;
 
 	DebugStats debugStats;
 	std::map<const char*, UIText*> debugStatsTextMap;
@@ -140,6 +140,7 @@ private:
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);
 	void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
+	void precomputeStaticLightColorIntensities();
 
 	void projectAndQueueTriangle(
 		const Vertex3d (&vertexes)[3],

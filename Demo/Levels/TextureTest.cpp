@@ -15,6 +15,7 @@ void TextureTest::load() {
 	cube->position = { 0, 100, 2500 };
 	cube->setTexture(getTexture("blockTexture"));
 	cube->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
+	cube->isStatic = true;
 
 	add("spinningCube", cube);
 
@@ -27,6 +28,8 @@ void TextureTest::load() {
 			2000.0f + 300.0f * (int)(i / 2)
 		};
 
+		c->isStatic = true;
+
 		add(c);
 	}
 
@@ -35,6 +38,7 @@ void TextureTest::load() {
 	settings.ambientLightColor = { 0, 0, 255 };
 	settings.ambientLightVector = { 0.5, -1, 0.3 };
 	settings.ambientLightFactor = 0.7;
+	settings.hasStaticAmbientLight = true;
 	// settings.visibility = 2500;
 }
 

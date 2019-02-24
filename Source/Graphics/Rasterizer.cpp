@@ -53,7 +53,7 @@ void Rasterizer::dispatchTriangle(Triangle& triangle) {
 	Vertex2d* top = &triangle.vertices[0];
 	Vertex2d* middle = &triangle.vertices[1];
 	Vertex2d* bottom = &triangle.vertices[2];
-	const TextureBuffer* texture = triangle.sourceObject->texture;
+	const TextureBuffer* texture = triangle.sourcePolygon->sourceObject->texture;
 
 	if (top->coordinate.y > middle->coordinate.y) {
 		swap(top, middle);
