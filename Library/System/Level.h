@@ -3,17 +3,27 @@
 #include <map>
 #include <vector>
 #include <climits>
+#include <functional>
 
 #include <Sound/Sound.h>
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
+#include <System/Camera.h>
 #include <Graphics/TextureBuffer.h>
 
+/**
+ * LevelState
+ * ----------
+ */
 enum LevelState {
 	ACTIVE,
 	INACTIVE
 };
 
+/**
+ * Settings
+ * --------
+ */
 struct Settings {
 	Color backgroundColor = { 0, 0, 0 };
 	Color ambientLightColor = { 0, 0, 0 };
@@ -41,9 +51,11 @@ public:
 	virtual void onStart();
 	virtual void onUpdate(int dt, int runningTime);
 	void quit();
+	void setCamera(Camera* camera);
 	void update(int dt);
 
 protected:
+	Camera* camera = NULL;
 	Settings settings;
 
 	void add(Object* object);

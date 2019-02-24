@@ -1,6 +1,7 @@
 #pragma once
 
 #include <System/Objects.h>
+#include <System/Positionable.h>
 #include <Graphics/Color.h>
 #include <Graphics/TextureBuffer.h>
 #include <System/Math.h>
@@ -11,7 +12,7 @@
  * ParticleSystem
  * --------------
  */
-class ParticleSystem {
+class ParticleSystem : public Positionable {
 public:
 	ParticleSystem(int size);
 	~ParticleSystem();

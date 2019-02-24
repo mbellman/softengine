@@ -75,12 +75,12 @@ void Garden::load() {
 
 	add(mesh);
 
-	ParticleSystem* snow = new ParticleSystem(3500);
+	ParticleSystem* snow = new ParticleSystem(4000);
 
 	snow->setSpawnRange(
-		{ -2500.0f, 2500.0f },
-		{ 0.0f, 2000.0f },
-		{ 0.0f, 5000.0f }
+		{ -2000.0f, 2000.0f },
+		{ 0.0f, 1200.0f },
+		{ -2000.0f, 2000.0f }
 	);
 
 	snow->setParticleColor({ 255, 255, 255 });
@@ -92,6 +92,10 @@ void Garden::load() {
 		if (particle->position.y < -100) {
 			particle->shouldReset = true;
 		}
+	});
+
+	snow->follow(camera, [=](const Vec3& cameraPosition, Vec3& snowPosition) {
+		snowPosition = cameraPosition;
 	});
 
 	addParticleSystem("snow", snow);

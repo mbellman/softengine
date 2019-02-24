@@ -60,6 +60,7 @@ set(SOURCE_FILES
     Library/Loaders/ObjLoader.h
     Library/Sound/AudioEngine.h
     Library/Sound/Sound.h
+    Library/System/Camera.h
     Library/System/DebugStats.h
     Library/System/Flags.h
     Library/System/Geometry.h
@@ -67,6 +68,7 @@ set(SOURCE_FILES
     Library/System/Math.h
     Library/System/Objects.h
     Library/System/ParticleSystem.h
+    Library/System/Positionable.h
     Library/System/Quaternion.h
     Library/UI/Alert.h
     Library/UI/UI.h
@@ -85,12 +87,14 @@ set(SOURCE_FILES
     Source/Loaders/ObjLoader.cpp
     Source/Sound/AudioEngine.cpp
     Source/Sound/Sound.cpp
+    Source/System/Camera.cpp
     Source/System/DebugStats.cpp
     Source/System/Geometry.cpp
     Source/System/Level.cpp
     Source/System/Math.cpp
     Source/System/Objects.cpp
     Source/System/ParticleSystem.cpp
+    Source/System/Positionable.cpp
     Source/System/Quaternion.cpp
     Source/UI/Alert.cpp
     Source/UI/UI.cpp

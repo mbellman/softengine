@@ -29,9 +29,9 @@ const std::vector<Particle*>& ParticleSystem::getParticles() const {
 
 void ParticleSystem::resetParticle(Particle* particle) {
 	particle->position = {
-		RNG::random(xSpawnRange.start, xSpawnRange.end),
-		RNG::random(ySpawnRange.start, ySpawnRange.end),
-		RNG::random(zSpawnRange.start, zSpawnRange.end)
+		position.x + RNG::random(xSpawnRange.start, xSpawnRange.end),
+		position.y + RNG::random(ySpawnRange.start, ySpawnRange.end),
+		position.z + RNG::random(zSpawnRange.start, zSpawnRange.end)
 	};
 
 	particle->rotateDeg({ 0.0f, RNG::random(0.0f, 360.0f), 0.0f });
@@ -85,4 +85,6 @@ void ParticleSystem::update(int dt) {
 
 		behaviorHandler(particle, dt);
 	}
+
+	updatePosition();
 }

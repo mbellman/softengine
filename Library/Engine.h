@@ -17,21 +17,8 @@
 #include <System/Geometry.h>
 #include <System/Level.h>
 #include <System/Math.h>
+#include <System/Positionable.h>
 #include <Sound/AudioEngine.h>
-
-/**
- * Camera
- * ------
- */
-struct Camera {
-	constexpr static float MAX_PITCH = 89 * M_PI / 180;
-	Vec3 position = { 0, 100, 0 };
-	float pitch = 0.0f;
-	float yaw = 0.0f;
-	int fov = 90;
-
-	RotationMatrix getRotationMatrix();
-};
 
 /**
  * Movement

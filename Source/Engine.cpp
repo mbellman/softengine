@@ -14,6 +14,7 @@
 #include <System/Quaternion.h>
 #include <System/Objects.h>
 #include <System/Geometry.h>
+#include <System/Camera.h>
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterFilter.h>
@@ -21,17 +22,6 @@
 #include <System/DebugStats.h>
 
 using namespace std;
-
-/**
- * Camera
- * ------
- */
-RotationMatrix Camera::getRotationMatrix() {
-	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
-	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);
-
-	return (q1 * q2).toRotationMatrix();
-}
 
 /**
  * Engine
@@ -409,6 +399,7 @@ void Engine::run() {
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	audioEngine->mute();
+	activeLevel->setCamera(&camera);
 	activeLevel->load();
 
 	precomputeStaticLightColorIntensities();

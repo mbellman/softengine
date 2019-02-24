@@ -146,7 +146,7 @@ void Object::setColor(const Color& color) {
 }
 
 void Object::update(int dt) {
-
+	updatePosition();
 }
 
 /**

@@ -5,10 +5,10 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Positionable entities following others
 * Mesh: custom static or real-time deformations
 * Fresnel effect/grazing angle reflections/object reflectivity
 * Model: dynamic levels of detail
+* KB+M input manager
 * Precalculated static shadows
 
 **Pending optimizations:**
@@ -18,7 +18,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Refactoring/organization
 
-* Separate `Camera` into its own class with keyboard/mouse event handling
 * Engine::updateScreenProjection() -> Separate out near-plane clipping operations
 
 ## Development

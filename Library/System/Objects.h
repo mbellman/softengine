@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <System/Math.h>
 #include <System/Geometry.h>
+#include <System/Positionable.h>
 #include <Graphics/Color.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
@@ -13,9 +14,8 @@
  * Object
  * ------
  */
-struct Object {
+struct Object : public Positionable {
 	bool isStatic = false;
-	Vec3 position;
 	Vec3 velocity;
 	TextureBuffer* texture = NULL;
 

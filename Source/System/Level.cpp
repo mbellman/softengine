@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <System/Objects.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
@@ -248,6 +249,10 @@ void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 	}
 }
 
+void Level::setCamera(Camera* camera) {
+	this->camera = camera;
+}
+
 void Level::update(int dt) {
 	for (auto* object : objects) {
 		object->update(dt);
@@ -256,4 +261,6 @@ void Level::update(int dt) {
 	for (auto [key, particleSystem] : particleSystemMap) {
 		particleSystem->update(dt);
 	}
+
+	camera->update();
 }
