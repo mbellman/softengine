@@ -67,7 +67,7 @@ find_path(OPENAL_INCLUDE_DIR al.h
   /opt/local # DarwinPorts
   /opt/csw # Blastwave
   /opt
-  "C:/Program Files (x86)/OpenAL 1.1 SDK/include"
+  "C:/mingw-dev/OpenAL/include"
 )
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -88,7 +88,7 @@ find_library(OPENAL_LIBRARY
   /opt/local
   /opt/csw
   /opt
-  "C:/Program Files (x86)/OpenAL 1.1 SDK/libs/Win32"
+  "C:/mingw-dev/OpenAL/libs/Win32"
 )
 
 unset(_OpenAL_ARCH_DIR)
