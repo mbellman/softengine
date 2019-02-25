@@ -20,16 +20,28 @@ void LightTest::load() {
 	floorMesh->rotateDeg({ 0, -90, 0 });
 	floorMesh->isStatic = true;
 
+	floorMesh->setVertexOffsets([=](int row, int column, Vec3& offset) {
+		offset.y = -25 + rand() % 50;
+	});
+
 	leftWall->setColor(210, 210, 210);
 	leftWall->position = { -500, 0, 0 };
 	leftWall->rotateDeg({ 0, -90, 0 });
 	leftWall->rotateDeg({ 0, 0, -90 });
 	leftWall->isStatic = true;
 
+	leftWall->setVertexOffsets([=](int row, int column, Vec3& offset) {
+		offset.x = rand() % 50;
+	});
+
 	rightWall->position = { 500, 500, 0 };
 	rightWall->rotateDeg({ 0, -90, 90 });
 	rightWall->setColor(210, 210, 210);
 	rightWall->isStatic = true;
+
+	rightWall->setVertexOffsets([=](int row, int column, Vec3& offset) {
+		offset.x = -(rand() % 50);
+	});
 
 	add("wall", new TextureBuffer("./DemoAssets/wall.png"));
 

@@ -8,6 +8,9 @@ A software 3D rendering engine, written as an educational exercise.
 * Fresnel effect/grazing angle reflections/object reflectivity
 * Model: dynamic levels of detail
 * KB+M input manager
+* Real-time level settings editing
+* Level layouts stored as files
+* Level editor
 * Precalculated static shadows
 
 **Pending optimizations:**

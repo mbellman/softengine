@@ -10,6 +10,11 @@ void Default::load() {
 
 	mesh->position = { -1000, 0, -1000 };
 	mesh->isStatic = true;
+	mesh->isFlatShaded = true;
+
+	mesh->setVertexOffsets([=](int row, int column, Vec3& offset) {
+		offset.y = rand() % 50;
+	});
 
 	Cube* cube = new Cube(100);
 	Cube* cube2 = new Cube(50);
@@ -43,17 +48,17 @@ void Default::load() {
 	add("oscillatingCube", oscillatingCube);
 
 	Light* light = new Light();
-	light->setColor(0, 0, 255);
+	light->setColor(0, 200, 255);
 	light->position = { 0, 100, 2000 };
 	light->range = 1000;
 
 	add("light", light);
 
-	settings.backgroundColor = { 50, 0, 75 };
-	settings.brightness = 0.3;
+	settings.backgroundColor = { 75, 0, 50 };
+	settings.brightness = 0.2;
 	settings.ambientLightColor = { 255, 0, 200 };
 	settings.ambientLightVector = { 0, -1, 1 };
-	settings.ambientLightFactor = 0.5;
+	settings.ambientLightFactor = 0.6;
 }
 
 void Default::onUpdate(int dt, int runningTime) {

@@ -13,6 +13,10 @@ void StressTest::load() {
 	mesh->position = { -2000, 0, 0 };
 	mesh->isStatic = true;
 
+	mesh->setVertexOffsets([=](int row, int column, Vec3& offset) {
+		offset.y = rand() % 50;
+	});
+
 	add(mesh);
 
 	for (int i = 0; i < 10; i++) {
