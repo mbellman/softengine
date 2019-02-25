@@ -24,6 +24,8 @@ void Level::add(const char* key, Object* object) {
 }
 
 void Level::add(Object* object) {
+	object->computeSurfaceNormals();
+
 	objects.push_back(object);
 
 	if (object->isOfType<Light>()) {

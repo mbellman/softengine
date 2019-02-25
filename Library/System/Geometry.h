@@ -19,6 +19,7 @@ struct Vertex2d : Colorable {
 	Vec2 perspectiveUV;
 	Vec3 textureIntensity = { 1.0f, 1.0f, 1.0f };
 	Vec3 worldVector;
+	Vec3 normal;
 
 	static Vertex2d lerp(const Vertex2d& v1, const Vertex2d& v2, float r);
 };
@@ -29,7 +30,9 @@ struct Vertex2d : Colorable {
  */
 struct Vertex3d : Colorable {
 	Vec3 vector;
+	Vec3 normal;
 	Vec2 uv;
+	std::vector<Polygon*> connectedPolygons;
 
 	static Vertex3d lerp(const Vertex3d& v1, const Vertex3d& v2, float r);
 };

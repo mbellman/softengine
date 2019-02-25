@@ -133,6 +133,7 @@ int TriangleBuffer::getTotalNonStaticTriangles() {
 
 Vec3 TriangleBuffer::getTriangleVertexColorIntensity(Triangle* triangle, int vertexIndex) {
 	const Vertex2d& vertex = triangle->vertices[vertexIndex];
+	const Vec3& vertexNormal = triangle->sourcePolygon->sourceObject->isFlatShaded ? triangle->sourcePolygon->normal : vertex.normal;
 	const Settings& settings = activeLevel->getSettings();
 	bool isStaticTriangle = !triangle->isSynthetic && triangle->sourcePolygon->sourceObject->isStatic;
 	Vec3 colorIntensity;
@@ -151,7 +152,7 @@ Vec3 TriangleBuffer::getTriangleVertexColorIntensity(Triangle* triangle, int ver
 		bool shouldRecomputeAmbientLightColorIntensity = !isStaticTriangle || !settings.hasStaticAmbientLight;
 
 		if (shouldRecomputeAmbientLightColorIntensity) {
-			computeAmbientLightColorIntensity(triangle->sourcePolygon->normal, colorIntensity);
+			computeAmbientLightColorIntensity(vertexNormal, colorIntensity);
 		}
 	}
 
@@ -159,7 +160,7 @@ Vec3 TriangleBuffer::getTriangleVertexColorIntensity(Triangle* triangle, int ver
 		bool shouldRecomputeLightColorIntensity = !isStaticTriangle || !light->isStatic;
 
 		if (shouldRecomputeLightColorIntensity) {
-			computeLightColorIntensity(light, vertex.worldVector, triangle->sourcePolygon->normal, colorIntensity);
+			computeLightColorIntensity(light, vertex.worldVector, vertexNormal, colorIntensity);
 		}
 	}
 
@@ -197,16 +198,17 @@ void TriangleBuffer::illuminateStaticPolygon(Polygon* polygon) {
 
 	for (int i = 0; i < 3; i++) {
 		Vec3 vertexPosition = polygon->sourceObject->position + polygon->vertices[i]->vector;
+		Vec3& vertexNormal = polygon->sourceObject->isFlatShaded ? polygon->normal : polygon->vertices[i]->normal;
 		Vec3 colorIntensity = { settings.brightness, settings.brightness, settings.brightness };
 		Vec3& cachedColorIntensity = polygon->cachedVertexColorIntensities[i];
 
 		if (settings.hasStaticAmbientLight) {
-			computeAmbientLightColorIntensity(polygon->normal, colorIntensity);
+			computeAmbientLightColorIntensity(vertexNormal, colorIntensity);
 		}
 
 		for (auto* light : activeLevel->getLights()) {
 			if (light->isStatic) {
-				computeLightColorIntensity(light, vertexPosition, polygon->normal, colorIntensity);
+				computeLightColorIntensity(light, vertexPosition, vertexNormal, colorIntensity);
 			}
 		}
 

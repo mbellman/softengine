@@ -45,10 +45,13 @@ struct Vec3 {
 	void rotate(const RotationMatrix& rotationMatrix);
 	Vec3 unit() const;
 	Vec3 operator +(const Vec3& vector) const;
+	Vec3 operator +=(const Vec3& vector);
 	Vec3 operator -(const Vec3& vector) const;
 	Vec3 operator *(float scalar) const;
 	Vec3 operator *=(float scalar);
 	Vec3 operator *=(const Vec3& vector);
+	Vec3 operator /(float scalar) const;
+	Vec3 operator /=(float scalar);
 };
 
 /**

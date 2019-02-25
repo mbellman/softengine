@@ -16,14 +16,16 @@
  */
 struct Object : public Positionable {
 	bool isStatic = false;
+	bool isFlatShaded = false;
 	Vec3 velocity;
 	TextureBuffer* texture = NULL;
 
 	Object();
 	virtual ~Object();
 
+	void computeSurfaceNormals();
 	int getId() const;
-	const std::vector<Polygon>& getPolygons() const;
+	const std::vector<Polygon*>& getPolygons() const;
 	int getPolygonCount() const;
 	int getVertexCount() const;
 
@@ -44,17 +46,17 @@ struct Object : public Positionable {
 protected:
 	std::vector<Vertex3d> vertices;
 
-	void addPolygon(int v1, int v2, int v3);
+	void addPolygon(int v1_index, int v2_index, int v3_index);
 	void addVertex(const Vec3& vector);
 	void addVertex(const Vec3& vector, const Color& color);
 	void addVertex(const Vec3& vector, const Vec2& color);
-	void computeSurfaceNormals();
 
 private:
-	std::vector<Polygon> polygons;
+	std::vector<Polygon*> polygons;
 	int id;
 
 	static Vec3 computePolygonNormal(const Polygon& polygon);
+	static Vec3 computeVertexNormal(const Vertex3d& vertex);
 };
 
 /**

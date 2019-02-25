@@ -337,8 +337,8 @@ void Engine::precomputeStaticLightColorIntensities() {
 			continue;
 		}
 
-		for (auto& polygon : object->getPolygons()) {
-			triangleBuffer->illuminateStaticPolygon(const_cast<Polygon*>(&polygon));
+		for (auto* polygon : object->getPolygons()) {
+			triangleBuffer->illuminateStaticPolygon(const_cast<Polygon*>(polygon));
 		}
 	}
 }
@@ -379,6 +379,7 @@ void Engine::projectAndQueueTriangle(
 		vertex->perspectiveUV = vertex3d.uv / vector.z;
 		vertex->color = vertex3d.color;
 		vertex->worldVector = worldVecs[i];
+		vertex->normal = vertex3d.normal;
 	}
 
 	rasterFilter->addTriangle(triangle);
@@ -393,9 +394,6 @@ void Engine::run() {
 		addDebugStats();
 	}
 
-	int lastStartTime;
-	bool hasStarted = false;
-
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	audioEngine->mute();
@@ -404,22 +402,14 @@ void Engine::run() {
 
 	precomputeStaticLightColorIntensities();
 
+	int lastStartTime = SDL_GetTicks();
+
 	while (!activeLevel->hasQuit()) {
+		int dt = SDL_GetTicks() - lastStartTime;
+
 		lastStartTime = SDL_GetTicks();
 
-		update();
-
-		if (!hasStarted) {
-			activeLevel->onStart();
-			audioEngine->unmute();
-
-			hasStarted = true;
-		}
-
-		int delta = SDL_GetTicks() - lastStartTime;
-
-		activeLevel->update(delta);
-		activeLevel->onUpdate(delta, SDL_GetTicks());
+		update(dt);
 
 		SDL_Event event;
 
@@ -444,14 +434,14 @@ void Engine::setActiveLevel(Level* level) {
 	triangleBuffer->setActiveLevel(level);
 }
 
-void Engine::update() {
+void Engine::update(int dt) {
+	debugStats.trackFrameTime();
+
 	const Settings& settings = activeLevel->getSettings();
 
 	rasterizer->setBackgroundColor(settings.backgroundColor);
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
-
-	debugStats.trackFrameTime();
 
 	updateMovement();
 	updateSounds();
@@ -464,6 +454,17 @@ void Engine::update() {
 
 	ui->draw();
 
+	debugStats.trackUpdateTime();
+
+	if (frame++ == 0) {
+		activeLevel->onStart();
+		audioEngine->unmute();
+	} else {
+		activeLevel->update(dt);
+		activeLevel->onUpdate(dt, SDL_GetTicks());
+	}
+
+	debugStats.logUpdateTime();
 	debugStats.logFrameTime();
 
 	if (flags & DEBUG_STATS) {
@@ -473,8 +474,6 @@ void Engine::update() {
 	SDL_RenderPresent(renderer);
 
 	triangleBuffer->reset();
-
-	frame++;
 }
 
 void Engine::updateMovement() {
@@ -588,9 +587,9 @@ void Engine::updateScreenProjection() {
 			object->texture->confirmTexture(renderer, TextureMode::SOFTWARE, ~flags & DISABLE_MIPMAPPING);
 		}
 
-		for (const auto& polygon : object->getPolygons()) {
-			Vec3 polygonPosition = relativeObjectPosition + polygon.vertices[0]->vector;
-			bool isFacingCamera = Vec3::dotProduct(polygon.normal, polygonPosition) < 0;
+		for (const auto* polygon : object->getPolygons()) {
+			Vec3 polygonPosition = relativeObjectPosition + polygon->vertices[0]->vector;
+			bool isFacingCamera = Vec3::dotProduct(polygon->normal, polygonPosition) < 0;
 
 			if (!isFacingCamera) {
 				continue;
@@ -601,10 +600,10 @@ void Engine::updateScreenProjection() {
 			// Build our vertex/unit + world vector lists while we perform
 			// view frustum clipping checks on the polygon
 			for (int i = 0; i < 3; i++) {
-				t_verts[i] = *polygon.vertices[i];
-				t_verts[i].vector = cameraRotationMatrix * (relativeObjectPosition + polygon.vertices[i]->vector);
+				t_verts[i] = *polygon->vertices[i];
+				t_verts[i].vector = cameraRotationMatrix * (relativeObjectPosition + polygon->vertices[i]->vector);
 				u_vecs[i] = t_verts[i].vector.unit();
-				w_vecs[i] = object->position + polygon.vertices[i]->vector;
+				w_vecs[i] = object->position + polygon->vertices[i]->vector;
 
 				if (t_verts[i].vector.z < Engine::NEAR_Z)
 					frustumCuller.near++;
@@ -674,7 +673,7 @@ void Engine::updateScreenProjection() {
 					// Project the clipped polygon
 					projectAndQueueTriangle(
 						t_verts, u_vecs, w_vecs,
-						object, &polygon, projectionScale, true
+						object, polygon, projectionScale, true
 					);
 				} else if (frustumCuller.near == 1) {
 					// If only one of the polygon's vertices is behind the
@@ -712,21 +711,21 @@ void Engine::updateScreenProjection() {
 						{ quadVerts[0], quadVerts[1], quadVerts[2] },
 						{ u_quadVecs[0], u_quadVecs[1], u_quadVecs[2] },
 						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
-						object, &polygon, projectionScale, true
+						object, polygon, projectionScale, true
 					);
 
 					projectAndQueueTriangle(
 						{ quadVerts[0], quadVerts[2], quadVerts[3] },
 						{ u_quadVecs[0], u_quadVecs[2], u_quadVecs[3] },
 						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
-						object, &polygon, projectionScale, true
+						object, polygon, projectionScale, true
 					);
 				}
 			} else {
 				// Project a regular, unclipped triangle
 				projectAndQueueTriangle(
 					t_verts, u_vecs, w_vecs,
-					object, &polygon, projectionScale, false
+					object, polygon, projectionScale, false
 				);
 			}
 		}
@@ -750,6 +749,7 @@ void Engine::addDebugStats() {
 	addDebugStat("hsrTime");
 	addDebugStat("illuminationTime");
 	addDebugStat("drawTime");
+	addDebugStat("updateTime");
 	addDebugStat("frameTime");
 	addDebugStat("fps");
 	addDebugStat("totalVertices");
@@ -764,6 +764,7 @@ void Engine::updateDebugStats() {
 	updateDebugStat("hsrTime", "Hidden surface removal time", debugStats.getHiddenSurfaceRemovalTime());
 	updateDebugStat("illuminationTime", "Illumination time", debugStats.getIlluminationTime());
 	updateDebugStat("drawTime", "Draw time", debugStats.getDrawTime());
+	updateDebugStat("updateTime", "Update time", debugStats.getUpdateTime());
 	updateDebugStat("frameTime", "Frame time", debugStats.getFrameTime());
 	updateDebugStat("fps", "FPS", debugStats.getFPS());
 	updateDebugStat("totalVertices", "Vertices", debugStats.getTotalVertices(activeLevel->getObjects()));

@@ -21,6 +21,10 @@ void DebugStats::trackDrawTime() {
 	drawTime.start = (int)SDL_GetTicks();
 }
 
+void DebugStats::trackUpdateTime() {
+	updateTime.start = (int)SDL_GetTicks();
+}
+
 void DebugStats::trackFrameTime() {
 	frameTime.start = (int)SDL_GetTicks();
 }
@@ -41,6 +45,10 @@ void DebugStats::logDrawTime() {
 	drawTime.end = (int)SDL_GetTicks();
 }
 
+void DebugStats::logUpdateTime() {
+	updateTime.end = (int)SDL_GetTicks();
+}
+
 void DebugStats::logFrameTime() {
 	frameTime.end = (int)SDL_GetTicks();
 }
@@ -59,6 +67,10 @@ int DebugStats::getIlluminationTime() {
 
 int DebugStats::getDrawTime() {
 	return drawTime.end - drawTime.start;
+}
+
+int DebugStats::getUpdateTime() {
+	return updateTime.end - updateTime.start;
 }
 
 int DebugStats::getFrameTime() {

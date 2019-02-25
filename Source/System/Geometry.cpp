@@ -31,6 +31,7 @@ Vertex3d Vertex3d::lerp(const Vertex3d& v1, const Vertex3d& v2, float r) {
 	vertex.vector = Vec3::lerp(v1.vector, v2.vector, r);
 	vertex.uv = Vec2::lerp(v1.uv, v2.uv, r);
 	vertex.color = Color::lerp(v1.color, v2.color, r);
+	vertex.normal = ((v1.normal + v2.normal) / 2.0f).unit();
 
 	return vertex;
 }
@@ -49,4 +50,6 @@ float Triangle::averageZ() const {
  */
 void Polygon::bindVertex(int index, Vertex3d* vertex) {
 	vertices[index] = vertex;
+
+	vertex->connectedPolygons.push_back(this);
 }

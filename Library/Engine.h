@@ -139,7 +139,7 @@ private:
 		bool isSynthetic
 	);
 
-	void update();
+	void update(int dt);
 	void updateMovement();
 	void updateScene_MultiThreaded();
 	void updateScene_SingleThreaded();

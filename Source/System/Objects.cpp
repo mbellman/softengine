@@ -19,14 +19,14 @@ Object::~Object() {
 	vertices.clear();
 }
 
-void Object::addPolygon(int v1, int v2, int v3) {
-	Polygon polygon;
+void Object::addPolygon(int v1_index, int v2_index, int v3_index) {
+	Polygon* polygon = new Polygon();
 
-	polygon.bindVertex(0, &vertices.at(v1));
-	polygon.bindVertex(1, &vertices.at(v2));
-	polygon.bindVertex(2, &vertices.at(v3));
-	polygon.normal = Object::computePolygonNormal(polygon);
-	polygon.sourceObject = this;
+	polygon->bindVertex(0, &vertices.at(v1_index));
+	polygon->bindVertex(1, &vertices.at(v2_index));
+	polygon->bindVertex(2, &vertices.at(v3_index));
+	polygon->normal = Object::computePolygonNormal(*polygon);
+	polygon->sourceObject = this;
 
 	polygons.push_back(polygon);
 }
@@ -73,9 +73,23 @@ Vec3 Object::computePolygonNormal(const Polygon& polygon) {
 }
 
 void Object::computeSurfaceNormals() {
-	for (auto& polygon : polygons) {
-		polygon.normal = Object::computePolygonNormal(polygon);
+	for (auto* polygon : polygons) {
+		polygon->normal = Object::computePolygonNormal(*polygon);
 	}
+
+	for (auto& vertex : vertices) {
+		vertex.normal = Object::computeVertexNormal(vertex);
+	}
+}
+
+Vec3 Object::computeVertexNormal(const Vertex3d& vertex) {
+	Vec3 averageNormal;
+
+	for (auto* polygon : vertex.connectedPolygons) {
+		averageNormal += polygon->normal;
+	}
+
+	return averageNormal.unit();
 }
 
 int Object::getId() const {
@@ -86,7 +100,7 @@ int Object::getPolygonCount() const {
 	return polygons.size();
 }
 
-const std::vector<Polygon>& Object::getPolygons() const {
+const std::vector<Polygon*>& Object::getPolygons() const {
 	return polygons;
 }
 
@@ -458,6 +472,8 @@ Particle::Particle() {
 	// 'Back' face
 	addPolygon(0, 1, 2);
 	addPolygon(1, 3, 2);
+
+	isFlatShaded = true;
 }
 
 /**

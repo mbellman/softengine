@@ -14,6 +14,7 @@
 void Garden::load() {
 	ObjLoader treeObj("./DemoAssets/tree-model.obj");
 	ObjLoader icoObj("./DemoAssets/da-vinci.obj");
+	ObjLoader teapotObj("./DemoAssets/teapot.obj");
 
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
 	add("ground-texture", new TextureBuffer("./DemoAssets/snowy-ground-texture.png"));
@@ -60,11 +61,20 @@ void Garden::load() {
 
 	Model* icosahedron = new Model(icoObj);
 	icosahedron->setColor(255, 255, 255);
-	icosahedron->position = { 0, 150, 2500 };
+	icosahedron->position = { 0, 150, 4000 };
 	icosahedron->scale(200);
 	icosahedron->isStatic = true;
 
 	add(icosahedron);
+
+	Model* teapot = new Model(teapotObj);
+
+	teapot->setColor(255, 255, 255);
+	teapot->position = { 1000, 50, 3000 };
+	teapot->scale(50);
+	teapot->isStatic = true;
+
+	add(teapot);
 
 	Mesh* mesh = new Mesh(100, 50, 100);
 	mesh->setColor(10, 5, 0);
@@ -82,9 +92,9 @@ void Garden::load() {
 	ParticleSystem* snow = new ParticleSystem(4000);
 
 	snow->setSpawnRange(
-		{ -2000.0f, 2000.0f },
+		{ -2500.0f, 2500.0f },
 		{ 0.0f, 1200.0f },
-		{ -2000.0f, 2000.0f }
+		{ -2500.0f, 2500.0f }
 	);
 
 	snow->setParticleColor({ 255, 255, 255 });
