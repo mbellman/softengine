@@ -590,8 +590,12 @@ void Engine::updateScreenProjection() {
 
 		for (const auto* polygon : object->getPolygons()) {
 			Vec3 polygonPosition = relativeObjectPosition + polygon->vertices[0]->vector;
-			float dot = Vec3::dotProduct(polygon->normal, polygonPosition);
-			bool isFacingCamera = dot < 0;
+			float normalizedDotProduct = Vec3::dotProduct(polygon->normal, polygonPosition.unit());
+
+			// As hack to fix polygons viewed at or near glancing angles
+			// being rendered as holes in meshes, we allow polygons through
+			// even when they are very marginally back-facing.
+			bool isFacingCamera = normalizedDotProduct < 0.05f;
 
 			if (!isFacingCamera) {
 				continue;
@@ -626,8 +630,6 @@ void Engine::updateScreenProjection() {
 			if (frustumCuller.isCulled()) {
 				continue;
 			}
-
-			float normalizedDotProduct = Vec3::dotProduct(polygon->normal, polygonPosition.unit());
 
 			if (frustumCuller.near > 0) {
 				// If any vertices are behind the near plane, we have to

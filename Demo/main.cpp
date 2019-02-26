@@ -12,7 +12,7 @@ int height = 720;
 int main(int argc, char* argv[]) {
 	Engine engine(width, height, DEBUG_STATS);
 
-	engine.setActiveLevel(new Beach());
+	engine.setActiveLevel(new Garden());
 	engine.run();
 
 	return 0;
