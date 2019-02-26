@@ -1,11 +1,10 @@
-#include <cmath>
-
 #include <Levels/Garden.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
 #include <Helpers.h>
+#include <cmath>
 
 /**
  * Garden
