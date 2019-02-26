@@ -7,7 +7,9 @@ A software 3D rendering engine, written as an educational exercise.
 
 * Fresnel effect/grazing angle reflections/object reflectivity
 * Model: dynamic levels of detail
+* Background color gradient/image skybox
 * KB+M input manager
+* Sectors/area zones
 * Real-time level settings editing
 * Level layouts stored as files
 * Level editor
@@ -15,6 +17,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
+* Screen projection optimizations
 * Texture sampling logic cleanup
 * Staggered perspective-correct/linear UV interpolation
 
