@@ -44,6 +44,7 @@ struct Vertex3d : Colorable {
 struct Triangle {
 	Vertex2d vertices[3];
 	Polygon* sourcePolygon = NULL;
+	float fresnelFactor = 0.0f;
 
 	/**
 	 * Determines whether the triangle is the result of

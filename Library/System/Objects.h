@@ -18,6 +18,7 @@ struct Object : public Positionable {
 	bool isStatic = false;
 	bool isFlatShaded = false;
 	Vec3 velocity;
+	float fresnelFactor = 0.0f;
 	TextureBuffer* texture = NULL;
 
 	Object();

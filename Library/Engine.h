@@ -133,8 +133,8 @@ private:
 		const Vertex3d (&vertexes)[3],
 		const Vec3 (&unitVecs)[3],
 		const Vec3 (&worldVecs)[3],
-		const Object* sourceObject,
 		const Polygon* sourcePolygon,
+		float normalizedDotProduct,
 		float scale,
 		bool isSynthetic
 	);

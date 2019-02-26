@@ -12,6 +12,7 @@ void Beach::load() {
 	Mesh* water = new Mesh(100, 100, 150);
 	water->setColor({ 20, 125, 200 });
 	water->position = { -7500, -1000, 3000 };
+	water->fresnelFactor = 2.0f;
 
 	add("water", water);
 
@@ -32,7 +33,7 @@ void Beach::load() {
 	sun->position = { 0, 0, 16000 };
 	sun->isStatic = true;
 	sun->range = 12500;
-	sun->power = 2.0f;
+	sun->power = 1.0f;
 
 	sun->follow(camera, [=](const Vec3& cameraPosition, Vec3& sunPosition) {
 		sunPosition.x = cameraPosition.x;
@@ -40,10 +41,10 @@ void Beach::load() {
 
 	add(sun);
 
-	settings.backgroundColor = { 120, 100, 220 };
-	settings.ambientLightColor = { 255, 150, 225 };
+	settings.backgroundColor = { 115, 75, 170 };
+	settings.ambientLightColor = { 255, 175, 50 };
 	settings.ambientLightVector = { 0, -0.25, -0.75 };
-	settings.brightness = 0.3;
+	settings.brightness = 0.2;
 	settings.hasStaticAmbientLight = true;
 }
 
@@ -51,6 +52,6 @@ void Beach::onUpdate(int dt, int runningTime) {
 	Mesh* water = (Mesh*)getObject("water");
 
 	water->setVertexOffsets([=](int row, int column, Vec3& offset) {
-		offset.y = 25.0f * sinf(row / 1.5f + runningTime / 900.0f) + 25.0f * sinf((row * M_PI) / 2.0f + column / 1.5f + runningTime / 900.0f);
+		offset.y = 25.0f * sinf(row / 1.5f + runningTime / 600.0f) + 25.0f * sinf((row * M_PI) / 2.0f + column / 1.5f + runningTime / 600.0f);
 	});
 }

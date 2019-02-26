@@ -15,8 +15,8 @@ public:
 	int getTotalNonStaticTriangles();
 	void illuminateTriangle(Triangle* triangle);
 	void illuminateStaticPolygon(Polygon* polygon);
-	void reset();
 	Triangle* requestTriangle();
+	void reset();
 	void setActiveLevel(Level* activeLevel);
 
 private:
@@ -31,8 +31,8 @@ private:
 	Triangle* trianglePoolA;
 	Triangle* trianglePoolB;
 
-	void computeAmbientLightColorIntensity(const Vec3& normal, Vec3& colorIntensity);
-	void computeLightColorIntensity(const Light* light, const Vec3& vertexPosition, const Vec3& normal, Vec3& colorIntensity);
+	void computeAmbientLightColorIntensity(const Vec3& normal, float fresnelFactor, Vec3& colorIntensity);
+	void computeLightColorIntensity(const Light* light, const Vec3& vertexPosition, const Vec3& normal, float fresnelFactor, Vec3& colorIntensity);
 	Vec3 getTriangleVertexColorIntensity(Triangle* triangle, int vertexIndex);
 	void illuminateColorTriangle(Triangle* triangle);
 	void illuminateTextureTriangle(Triangle* triangle);

@@ -347,16 +347,16 @@ void Engine::precomputeStaticLightColorIntensities() {
  * Projects and queues a triangle into the raster filter using
  * a set of three vertices, three unit vectors, and three world
  * vectors representing to the original location of the source
- * polygon, as well as the triangle's source object and polygon for
- * contextual information. For efficiency we forward the arguments
- * from drawScene(), which has already computed them.
+ * polygon, as well as additional values to aid with lighting
+ * and scaling calculations. For efficiency we forward the
+ * arguments from drawScene(), which has already computed them.
  */
 void Engine::projectAndQueueTriangle(
 	const Vertex3d (&vertexes)[3],
 	const Vec3 (&unitVecs)[3],
 	const Vec3 (&worldVecs)[3],
-	const Object* sourceObject,
 	const Polygon* sourcePolygon,
+	float normalizedDotProduct,
 	float scale,
 	bool isSynthetic
 ) {
@@ -364,6 +364,7 @@ void Engine::projectAndQueueTriangle(
 
 	triangle->sourcePolygon = const_cast<Polygon*>(sourcePolygon);
 	triangle->isSynthetic = isSynthetic;
+	triangle->fresnelFactor = cosf(normalizedDotProduct * (M_PI / 2.0f)) * sourcePolygon->sourceObject->fresnelFactor;
 
 	for (int i = 0; i < 3; i++) {
 		const Vertex3d& vertex3d = vertexes[i];
@@ -589,7 +590,8 @@ void Engine::updateScreenProjection() {
 
 		for (const auto* polygon : object->getPolygons()) {
 			Vec3 polygonPosition = relativeObjectPosition + polygon->vertices[0]->vector;
-			bool isFacingCamera = Vec3::dotProduct(polygon->normal, polygonPosition) < 0;
+			float dot = Vec3::dotProduct(polygon->normal, polygonPosition);
+			bool isFacingCamera = dot < 0;
 
 			if (!isFacingCamera) {
 				continue;
@@ -624,6 +626,8 @@ void Engine::updateScreenProjection() {
 			if (frustumCuller.isCulled()) {
 				continue;
 			}
+
+			float normalizedDotProduct = Vec3::dotProduct(polygon->normal, polygonPosition.unit());
 
 			if (frustumCuller.near > 0) {
 				// If any vertices are behind the near plane, we have to
@@ -673,7 +677,7 @@ void Engine::updateScreenProjection() {
 					// Project the clipped polygon
 					projectAndQueueTriangle(
 						t_verts, u_vecs, w_vecs,
-						object, polygon, projectionScale, true
+						polygon, normalizedDotProduct, projectionScale, true
 					);
 				} else if (frustumCuller.near == 1) {
 					// If only one of the polygon's vertices is behind the
@@ -711,21 +715,21 @@ void Engine::updateScreenProjection() {
 						{ quadVerts[0], quadVerts[1], quadVerts[2] },
 						{ u_quadVecs[0], u_quadVecs[1], u_quadVecs[2] },
 						{ w_quadVecs[0], w_quadVecs[1], w_quadVecs[2] },
-						object, polygon, projectionScale, true
+						polygon, normalizedDotProduct, projectionScale, true
 					);
 
 					projectAndQueueTriangle(
 						{ quadVerts[0], quadVerts[2], quadVerts[3] },
 						{ u_quadVecs[0], u_quadVecs[2], u_quadVecs[3] },
 						{ w_quadVecs[0], w_quadVecs[2], w_quadVecs[3] },
-						object, polygon, projectionScale, true
+						polygon, normalizedDotProduct, projectionScale, true
 					);
 				}
 			} else {
 				// Project a regular, unclipped triangle
 				projectAndQueueTriangle(
 					t_verts, u_vecs, w_vecs,
-					object, polygon, projectionScale, false
+					polygon, normalizedDotProduct, projectionScale, false
 				);
 			}
 		}

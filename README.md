@@ -5,7 +5,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Fresnel effect/grazing angle reflections/object reflectivity
+* Conical light sources
 * Model: dynamic levels of detail
 * Background color gradient/image skybox
 * KB+M input manager
@@ -17,6 +17,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
+* Disable fresnel calculations for entities which don't need it
 * Screen projection optimizations
 * Texture sampling logic cleanup
 * Staggered perspective-correct/linear UV interpolation

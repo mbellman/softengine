@@ -53,7 +53,7 @@ void TriangleBuffer::bufferTriangle(Triangle* triangle) {
 	primaryBuffer.push_back(triangle);
 }
 
-void TriangleBuffer::computeAmbientLightColorIntensity(const Vec3& normal, Vec3& colorIntensity) {
+void TriangleBuffer::computeAmbientLightColorIntensity(const Vec3& normal, float fresnelFactor, Vec3& colorIntensity) {
 	const Settings& settings = activeLevel->getSettings();
 
 	if (settings.ambientLightFactor > 0) {
@@ -61,7 +61,7 @@ void TriangleBuffer::computeAmbientLightColorIntensity(const Vec3& normal, Vec3&
 
 		if (dot < 0) {
 			float incidence = cosf((1 + dot) * M_PI / 2);
-			float intensity = incidence * settings.ambientLightFactor;
+			float intensity = incidence * settings.ambientLightFactor * (1.0f + fresnelFactor);
 			const Vec3& colorRatios = settings.ambientLightColor.ratios();
 
 			colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
@@ -71,7 +71,7 @@ void TriangleBuffer::computeAmbientLightColorIntensity(const Vec3& normal, Vec3&
 	}
 }
 
-void TriangleBuffer::computeLightColorIntensity(const Light* light, const Vec3& vertexPosition, const Vec3& normal, Vec3& colorIntensity) {
+void TriangleBuffer::computeLightColorIntensity(const Light* light, const Vec3& vertexPosition, const Vec3& normal, float fresnelFactor, Vec3& colorIntensity) {
 	if (
 		light->isDisabled ||
 		light->power == 0 ||
@@ -94,7 +94,7 @@ void TriangleBuffer::computeLightColorIntensity(const Light* light, const Vec3& 
 		if (dot < 0) {
 			float incidence = cosf((1 + dot) * M_PI / 2);
 			float illuminance = pow(1.0f - lightDistance / light->range, 2);
-			float intensity = light->power * incidence * illuminance;
+			float intensity = light->power * incidence * illuminance * (1.0f + fresnelFactor);
 			const Vec3& colorRatios = light->getColorRatios();
 
 			colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
@@ -144,23 +144,19 @@ Vec3 TriangleBuffer::getTriangleVertexColorIntensity(Triangle* triangle, int ver
 		colorIntensity = { settings.brightness, settings.brightness, settings.brightness };
 	}
 
-	if (settings.brightness == 0) {
-		return colorIntensity;
-	}
-
-	if (settings.ambientLightFactor > 0) {
-		bool shouldRecomputeAmbientLightColorIntensity = !isStaticTriangle || !settings.hasStaticAmbientLight;
+	if (settings.brightness > 0) {
+		bool shouldRecomputeAmbientLightColorIntensity = settings.ambientLightFactor > 0 && (!isStaticTriangle || !settings.hasStaticAmbientLight);
 
 		if (shouldRecomputeAmbientLightColorIntensity) {
-			computeAmbientLightColorIntensity(vertexNormal, colorIntensity);
+			computeAmbientLightColorIntensity(vertexNormal, triangle->fresnelFactor, colorIntensity);
 		}
-	}
 
-	for (const auto* light : activeLevel->getLights()) {
-		bool shouldRecomputeLightColorIntensity = !isStaticTriangle || !light->isStatic;
+		for (const auto* light : activeLevel->getLights()) {
+			bool shouldRecomputeLightColorIntensity = !isStaticTriangle || !light->isStatic;
 
-		if (shouldRecomputeLightColorIntensity) {
-			computeLightColorIntensity(light, vertex.worldVector, vertexNormal, colorIntensity);
+			if (shouldRecomputeLightColorIntensity) {
+				computeLightColorIntensity(light, vertex.worldVector, vertexNormal, triangle->fresnelFactor, colorIntensity);
+			}
 		}
 	}
 
@@ -195,6 +191,7 @@ void TriangleBuffer::illuminateColorTriangle(Triangle* triangle) {
  */
 void TriangleBuffer::illuminateStaticPolygon(Polygon* polygon) {
 	const Settings& settings = activeLevel->getSettings();
+	float fresnelFactor = 0.0f;
 
 	for (int i = 0; i < 3; i++) {
 		Vec3 vertexPosition = polygon->sourceObject->position + polygon->vertices[i]->vector;
@@ -202,13 +199,13 @@ void TriangleBuffer::illuminateStaticPolygon(Polygon* polygon) {
 		Vec3 colorIntensity = { settings.brightness, settings.brightness, settings.brightness };
 		Vec3& cachedColorIntensity = polygon->cachedVertexColorIntensities[i];
 
-		if (settings.hasStaticAmbientLight) {
-			computeAmbientLightColorIntensity(vertexNormal, colorIntensity);
+		if (settings.hasStaticAmbientLight && settings.ambientLightFactor > 0) {
+			computeAmbientLightColorIntensity(vertexNormal, fresnelFactor, colorIntensity);
 		}
 
 		for (auto* light : activeLevel->getLights()) {
 			if (light->isStatic) {
-				computeLightColorIntensity(light, vertexPosition, vertexNormal, colorIntensity);
+				computeLightColorIntensity(light, vertexPosition, vertexNormal, fresnelFactor, colorIntensity);
 			}
 		}
 
