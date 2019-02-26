@@ -360,24 +360,26 @@ void Engine::projectAndQueueTriangle(
 	float scale,
 	bool isSynthetic
 ) {
+	float objectFresnelFactor = sourcePolygon->sourceObject->fresnelFactor;
 	Triangle* triangle = triangleBuffer->requestTriangle();
 
 	triangle->sourcePolygon = const_cast<Polygon*>(sourcePolygon);
 	triangle->isSynthetic = isSynthetic;
-	triangle->fresnelFactor = cosf(normalizedDotProduct * (M_PI / 2.0f)) * sourcePolygon->sourceObject->fresnelFactor;
+	triangle->fresnelFactor = objectFresnelFactor > 0 ? cosf(normalizedDotProduct * (M_PI / 2.0f)) * objectFresnelFactor : 0.0f;
 
 	for (int i = 0; i < 3; i++) {
 		const Vertex3d& vertex3d = vertexes[i];
 		const Vec3& vector = vertex3d.vector;
 		const Vec3& unit = unitVecs[i];
+		float inverseDepth = 1.0f / vector.z;
 
 		Vertex2d* vertex = &triangle->vertices[i];
 
 		vertex->coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
 		vertex->coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
 		vertex->z = vector.z;
-		vertex->inverseDepth = 1.0f / vector.z;
-		vertex->perspectiveUV = vertex3d.uv / vector.z;
+		vertex->inverseDepth = inverseDepth;
+		vertex->perspectiveUV = vertex3d.uv * inverseDepth;
 		vertex->color = vertex3d.color;
 		vertex->worldVector = worldVecs[i];
 		vertex->normal = vertex3d.normal;

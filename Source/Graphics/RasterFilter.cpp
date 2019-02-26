@@ -23,7 +23,9 @@ void RasterFilter::addCover(const Triangle* triangle, int zone) {
 }
 
 void RasterFilter::addTriangle(Triangle* triangle) {
-	int zoneIndex = std::clamp((int)(triangle->averageZ() / RasterFilter::ZONE_RANGE), 0, RasterFilter::MAX_ZONES - 1);
+	int targetZoneIndex = (int)(triangle->averageZ() / RasterFilter::ZONE_RANGE);
+	int maxZoneIndex = RasterFilter::MAX_ZONES - 1;
+	int zoneIndex = FAST_CLAMP(targetZoneIndex, 0, maxZoneIndex);
 
 	if (zoneIndex > highestZoneIndex) {
 		highestZoneIndex = zoneIndex;
@@ -53,17 +55,23 @@ bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
 	const Coordinate& c1 = triangle->vertices[1].coordinate;
 	const Coordinate& c2 = triangle->vertices[2].coordinate;
 
-	int minX = std::min(c0.x, std::min(c1.x, c2.x));
-	int maxX = std::max(c0.x, std::max(c1.x, c2.x));
+	int minX = FAST_MIN(c0.x, FAST_MIN(c1.x, c2.x));
+	int maxX = FAST_MAX(c0.x, FAST_MAX(c1.x, c2.x));
 
-	int minY = std::min(c0.y, std::min(c1.y, c2.y));
-	int maxY = std::max(c0.y, std::max(c1.y, c2.y));
+	if ((maxX - minX) < MIN_COVER_SIZE) {
+		// Optimize for triangles too thin and wide
+		return false;
+	}
+
+	int minY = FAST_MIN(c0.y, FAST_MIN(c1.y, c2.y));
+	int maxY = FAST_MAX(c0.y, FAST_MAX(c1.y, c2.y));
+
+	if ((maxY - minY) < MIN_COVER_SIZE) {
+		// Optimize for triangles too thin and tall
+		return false;
+	}
 
 	return (
-		// Ensure that the triangle is over the minimum
-		// cover size along both axes
-		(maxX - minX) > MIN_COVER_SIZE &&
-		(maxY - minY) > MIN_COVER_SIZE &&
 		// Ensure that it extends far enough into the screen
 		// that distant triangles are likely to be covered by it
 		(minX < (rasterWidth - MIN_COVER_SIZE) && maxX > MIN_COVER_SIZE) &&
@@ -115,13 +123,20 @@ bool RasterFilter::isTriangleOnScreen(const Triangle* triangle) {
 	const Coordinate& c1 = triangle->vertices[1].coordinate;
 	const Coordinate& c2 = triangle->vertices[2].coordinate;
 
-	int minX = std::min(c0.x, std::min(c1.x, c2.x));
-	int maxX = std::max(c0.x, std::max(c1.x, c2.x));
+	int minX = FAST_MIN(c0.x, FAST_MIN(c1.x, c2.x));
+	int maxX = FAST_MAX(c0.x, FAST_MAX(c1.x, c2.x));
 
-	int minY = std::min(c0.y, std::min(c1.y, c2.y));
-	int maxY = std::max(c0.y, std::max(c1.y, c2.y));
+	if (minX >= rasterWidth || maxX < 0) {
+		// Optimize for horizontally offscreen triangles
+		return false;
+	}
 
-	return (minX < rasterWidth) && (maxX > 0) && (minY < rasterHeight) && (maxY > 0);
+	int minY = FAST_MIN(c0.y, FAST_MIN(c1.y, c2.y));
+	int maxY = FAST_MAX(c0.y, FAST_MAX(c1.y, c2.y));
+
+	// All we have left to check now is whether the
+	// triangle is vertically on-screen
+	return minY < rasterHeight && maxY > 0;
 }
 
 bool RasterFilter::isTriangleVisible(const Triangle* triangle) {

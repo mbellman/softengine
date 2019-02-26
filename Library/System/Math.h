@@ -22,6 +22,7 @@ struct Vec2 {
 	float y = 0.0f;
 
 	static Vec2 lerp(const Vec2& v1, const Vec2& v2, float r);
+	Vec2 operator *(float scalar) const;
 	Vec2 operator /(float divisor) const;
 };
 

@@ -63,6 +63,13 @@ Vec2 Vec2::lerp(const Vec2& v1, const Vec2& v2, float r) {
 	};
 }
 
+Vec2 Vec2::operator *(float scalar) const {
+	return {
+		x * scalar,
+		y * scalar
+	};
+}
+
 Vec2 Vec2::operator /(float divisor) const {
 	return {
 		x / divisor,
