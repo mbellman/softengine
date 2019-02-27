@@ -12,14 +12,19 @@
  */
 void Garden::load() {
 	ObjLoader treeObj("./DemoAssets/tree-model.obj");
+	ObjLoader treeObjLod2("./DemoAssets/tree-model-lod2.obj");
+	ObjLoader treeObjLod3("./DemoAssets/tree-model-lod3.obj");
+
 	ObjLoader icoObj("./DemoAssets/da-vinci.obj");
-	ObjLoader teapotObj("./DemoAssets/teapot.obj");
+	ObjLoader icoObjLod2("./DemoAssets/da-vinci-lod2.obj");
 
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
 
 	for (int i = 0; i < 60; i++) {
 		Model* tree = new Model(treeObj);
 
+		tree->addLOD(new Model(treeObjLod2));
+		tree->addLOD(new Model(treeObjLod3));
 		tree->position = { (float)(2000 - rand() % 4000), -10.0f, (float)(10000 - rand() % 9000) };
 		tree->setTexture(getTexture("tree-texture"));
 		tree->scale(100);
@@ -62,13 +67,13 @@ void Garden::load() {
 	directionalLight->setColor(255, 0, 0);
 	directionalLight->setDirection({ 0, -1, 0 });
 	directionalLight->range = 2000;
-	directionalLight->position = { 0, 150, 1500 };
+	directionalLight->position = { 0, 150, 3500 };
 
 	add("directionalLight", directionalLight);
 
 	DirectionalLight* cameraLight = new DirectionalLight();
 	cameraLight->range = 1000;
-	cameraLight->power = 0.5f;
+	cameraLight->power = 0.75f;
 
 	cameraLight->follow(camera, [=](const Vec3& cameraPosition, Vec3& lightPosition) {
 		lightPosition = cameraPosition;
@@ -77,6 +82,8 @@ void Garden::load() {
 	add("cameraLight", cameraLight);
 
 	Model* icosahedron = new Model(icoObj);
+
+	icosahedron->addLOD(new Model(icoObjLod2));
 	icosahedron->setColor(255, 255, 255);
 	icosahedron->position = { 0, 150, 4000 };
 	icosahedron->scale(200);
@@ -141,7 +148,7 @@ void Garden::load() {
 	}
 
 	settings.backgroundColor = { 0, 10, 20 };
-	settings.visibility = 5000;
+	// settings.visibility = 5000;
 	settings.brightness = 0.1;
 	settings.ambientLightColor = { 0, 0, 100 };
 	settings.ambientLightVector = { 0, -0.8f, 0.5f };

@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Model: dynamic levels of detail
 * Background color gradient/image skybox
 * KB+M input manager
 * Sectors/area zones

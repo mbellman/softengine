@@ -2,6 +2,7 @@
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
 #include <functional>
+#include <algorithm>
 
 /**
  * Object
@@ -15,12 +16,21 @@ Object::Object() {
 }
 
 Object::~Object() {
+	for (auto* lod : lods) {
+		delete lod;
+	}
+
 	for (auto* polygon : polygons) {
 		delete polygon;
 	}
 
+	lods.clear();
 	polygons.clear();
 	vertices.clear();
+}
+
+void Object::addLOD(Object* lod) {
+	lods.push_back(lod);
 }
 
 void Object::addPolygon(int v1_index, int v2_index, int v3_index) {
@@ -84,6 +94,10 @@ void Object::computeSurfaceNormals() {
 	for (auto& vertex : vertices) {
 		vertex.normal = Object::computeVertexNormal(vertex);
 	}
+
+	for (auto* lod : lods) {
+		lod->computeSurfaceNormals();
+	}
 }
 
 Vec3 Object::computeVertexNormal(const Vertex3d& vertex) {
@@ -100,6 +114,26 @@ int Object::getId() const {
 	return id;
 }
 
+const Object* Object::getLOD(float distance) const {
+	if (lods.empty()) {
+		return this;
+	}
+
+	float distanceRatio = distance / LOD_DISTANCE_THRESHOLD;
+
+	if (distanceRatio < 1) {
+		return this;
+	}
+
+	int lodIndex = std::min((int)distanceRatio - 1, (int)lods.size() - 1);
+
+	return lods.at(lodIndex);
+}
+
+const std::vector<Object*>& Object::getLODs() const {
+	return lods;
+}
+
 int Object::getPolygonCount() const {
 	return polygons.size();
 }
@@ -112,6 +146,10 @@ int Object::getVertexCount() const {
 	return vertices.size();
 }
 
+bool Object::hasLODs() const {
+	return lods.size() > 0;
+}
+
 void Object::rotate(const Vec3& rotation) {
 	RotationMatrix rotationMatrix = RotationMatrix::calculate(rotation);
 
@@ -120,6 +158,10 @@ void Object::rotate(const Vec3& rotation) {
 	}
 
 	computeSurfaceNormals();
+
+	for (auto* lod : lods) {
+		lod->rotate(rotation);
+	}
 }
 
 void Object::rotateDeg(const Vec3& rotation) {
@@ -134,6 +176,10 @@ void Object::setTexture(TextureBuffer* textureBuffer) {
 	}
 
 	setColor(0, 0, 0);
+
+	for (auto* lod : lods) {
+		lod->setTexture(textureBuffer);
+	}
 }
 
 void Object::scale(float scalar) {
@@ -144,6 +190,10 @@ void Object::scale(float scalar) {
 		vector->y *= scalar;
 		vector->z *= scalar;
 	}
+
+	for (auto* lod : lods) {
+		lod->scale(scalar);
+	}
 }
 
 void Object::scale(const Vec3& vector) {
@@ -152,11 +202,19 @@ void Object::scale(const Vec3& vector) {
 		vertex.vector.y *= vector.y;
 		vertex.vector.z *= vector.z;
 	}
+
+	for (auto* lod : lods) {
+		lod->scale(vector);
+	}
 }
 
 void Object::setColor(int R, int G, int B) {
 	for (int i = 0; i < vertices.size(); i++) {
 		vertices.at(i).color = { R, G, B };
+	}
+
+	for (auto* lod : lods) {
+		lod->setColor(R, G, B);
 	}
 }
 
@@ -164,8 +222,21 @@ void Object::setColor(const Color& color) {
 	setColor(color.R, color.G, color.B);
 }
 
+void Object::syncLODs() {
+	for (auto* lod : lods) {
+		lod->position = position;
+		lod->isStatic = isStatic;
+		lod->isFlatShaded = isFlatShaded;
+		lod->fresnelFactor = fresnelFactor;
+	}
+}
+
 void Object::update(int dt) {
 	updatePosition();
+
+	for (auto* lod : lods) {
+		lod->update(dt);
+	}
 }
 
 /**

@@ -24,11 +24,15 @@ struct Object : public Positionable {
 	Object();
 	virtual ~Object();
 
+	void addLOD(Object* lod);
 	void computeSurfaceNormals();
 	int getId() const;
+	const Object* getLOD(float distance) const;
+	const std::vector<Object*>& getLODs() const;
 	const std::vector<Polygon*>& getPolygons() const;
 	int getPolygonCount() const;
 	int getVertexCount() const;
+	bool hasLODs() const;
 
 	template<class T>
 	bool isOfType() {
@@ -42,6 +46,7 @@ struct Object : public Positionable {
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
 	void setTexture(TextureBuffer* textureBuffer);
+	void syncLODs();
 	void update(int dt);
 
 protected:
@@ -53,7 +58,10 @@ protected:
 	void addVertex(const Vec3& vector, const Vec2& color);
 
 private:
+	constexpr static float LOD_DISTANCE_THRESHOLD = 2500.0f;
+
 	std::vector<Polygon*> polygons;
+	std::vector<Object*> lods;
 	int id;
 
 	static Vec3 computePolygonNormal(const Polygon& polygon);

@@ -332,13 +332,21 @@ int Engine::handleRenderThread(void* data) {
  * avoiding the need to recalculate these values during runtime.
  */
 void Engine::precomputeStaticLightColorIntensities() {
+	auto precomputeObjectLight = [=](Object* object) {
+		for (auto* polygon : object->getPolygons()) {
+			triangleBuffer->illuminateStaticPolygon(polygon);
+		}
+	};
+
 	for (auto* object : activeLevel->getObjects()) {
 		if (!object->isStatic) {
 			continue;
 		}
 
-		for (auto* polygon : object->getPolygons()) {
-			triangleBuffer->illuminateStaticPolygon(const_cast<Polygon*>(polygon));
+		precomputeObjectLight(object);
+
+		for (auto* lod : object->getLODs()) {
+			precomputeObjectLight(lod);
 		}
 	}
 }
@@ -585,12 +593,13 @@ void Engine::updateScreenProjection() {
 
 	for (const auto* object : activeLevel->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
+		const Object* lodObject = object->hasLODs() ? object->getLOD(relativeObjectPosition.magnitude()) : object;
 
-		if (object->texture != NULL) {
-			object->texture->confirmTexture(renderer, TextureMode::SOFTWARE, ~flags & DISABLE_MIPMAPPING);
+		if (lodObject->texture != NULL) {
+			lodObject->texture->confirmTexture(renderer, TextureMode::SOFTWARE, ~flags & DISABLE_MIPMAPPING);
 		}
 
-		for (const auto* polygon : object->getPolygons()) {
+		for (const auto* polygon : lodObject->getPolygons()) {
 			Vec3 polygonPosition = relativeObjectPosition + polygon->vertices[0]->vector;
 			float normalizedDotProduct = Vec3::dotProduct(polygon->normal, polygonPosition.unit());
 
