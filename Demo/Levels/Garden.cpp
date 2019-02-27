@@ -16,7 +16,6 @@ void Garden::load() {
 	ObjLoader teapotObj("./DemoAssets/teapot.obj");
 
 	add("tree-texture", new TextureBuffer("./DemoAssets/tree-texture.png"));
-	add("ground-texture", new TextureBuffer("./DemoAssets/snowy-ground-texture.png"));
 
 	for (int i = 0; i < 60; i++) {
 		Model* tree = new Model(treeObj);
@@ -76,20 +75,9 @@ void Garden::load() {
 
 	add(icosahedron);
 
-	Model* teapot = new Model(teapotObj);
-
-	teapot->setColor(255, 255, 255);
-	teapot->position = { 1000, 50, 3000 };
-	teapot->scale(50);
-	teapot->isStatic = true;
-
-	add(teapot);
-
 	Mesh* mesh = new Mesh(100, 50, 100);
-	mesh->setColor(10, 5, 0);
+	mesh->setColor(255, 255, 255);
 	mesh->position = { -2500, -40, 0 };
-	mesh->setTexture(getTexture("ground-texture"));
-	mesh->setTextureInterval(5, 5);
 	mesh->isStatic = true;
 
 	mesh->setVertexOffsets([=](int row, int column, Vec3& vertexVector) {

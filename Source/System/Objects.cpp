@@ -15,6 +15,10 @@ Object::Object() {
 }
 
 Object::~Object() {
+	for (auto* polygon : polygons) {
+		delete polygon;
+	}
+
 	polygons.clear();
 	vertices.clear();
 }
