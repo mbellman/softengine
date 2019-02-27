@@ -5,6 +5,8 @@
 #include <UI/Alert.h>
 #include <Helpers.h>
 
+constexpr static float PI_HALF = M_PI / 2.0f;
+
 /**
  * TriangleBuffer
  * --------------
@@ -71,7 +73,7 @@ void TriangleBuffer::computeAmbientLightColorIntensity(const Vec3& normal, float
 	}
 }
 
-void TriangleBuffer::computeLightColorIntensity(const Light* light, const Vec3& vertexPosition, const Vec3& normal, float fresnelFactor, Vec3& colorIntensity) {
+void TriangleBuffer::computeLightColorIntensity(Light* light, const Vec3& vertexPosition, const Vec3& vertexNormal, float fresnelFactor, Vec3& colorIntensity) {
 	if (
 		light->isDisabled ||
 		light->power == 0 ||
@@ -80,28 +82,53 @@ void TriangleBuffer::computeLightColorIntensity(const Light* light, const Vec3& 
 		abs(light->position.z - vertexPosition.z) > light->range
 	) {
 		// Color intensity remains unaffected when lights
-		// are disabled, at 0 power, or out of range.
+		// are disabled, at 0 power, or out of axial range.
 		return;
 	}
 
 	const Settings& settings = activeLevel->getSettings();
-	Vec3 lightVector = vertexPosition - light->position;
-	float lightDistance = lightVector.magnitude();
+	Vec3 lightSourceVector = vertexPosition - light->position;
+	float lightDistance = lightSourceVector.magnitude();
 
-	if (lightDistance < light->range) {
-		float dot = Vec3::dotProduct(normal, lightVector.unit());
-
-		if (dot < 0) {
-			float incidence = cosf((1 + dot) * M_PI / 2);
-			float illuminance = pow(1.0f - lightDistance / light->range, 2);
-			float intensity = light->power * incidence * illuminance * (1.0f + fresnelFactor);
-			const Vec3& colorRatios = light->getColorRatios();
-
-			colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
-			colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
-			colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
-		}
+	if (lightDistance > light->range) {
+		return;
 	}
+
+	// Normalize for dot product checks
+	lightSourceVector /= lightDistance;
+
+	float normalDot = Vec3::dotProduct(vertexNormal, lightSourceVector);
+
+	if (normalDot >= 0) {
+		// Ignore vertices facing away from the light
+		return;
+	}
+
+	bool isDirectional = light->isOfType<DirectionalLight>();
+
+	// Directional lights use the angle between the light direction
+	// and the light-to-vertex vector to compute incidence. In this
+	// case we flip the light source vector sign to point it toward
+	// the light, rather than toward the vertex, ensuring consistency
+	// with the standard vertex normal dot product comparison.
+	float directionalDot = isDirectional
+		? Vec3::dotProduct(((DirectionalLight*)light)->getDirection(), lightSourceVector * -1.0f)
+		: 0.0f;
+
+	if (isDirectional && directionalDot >= 0) {
+		// For directional lights, ignore vertices
+		// behind the light direction vector
+		return;
+	}
+
+	float incidence = getIncidence(normalDot) * (isDirectional ? powf(directionalDot, 4) : 1.0f);
+	float illuminance = pow(1.0f - lightDistance / light->range, 2);
+	float intensity = light->power * incidence * illuminance * (1.0f + fresnelFactor);
+	const Vec3& colorRatios = light->getColorRatios();
+
+	colorIntensity.x *= (1.0f + (intensity * colorRatios.x) / settings.brightness);
+	colorIntensity.y *= (1.0f + (intensity * colorRatios.y) / settings.brightness);
+	colorIntensity.z *= (1.0f + (intensity * colorRatios.z) / settings.brightness);
 }
 
 /**
@@ -113,6 +140,10 @@ const std::vector<Triangle*>& TriangleBuffer::getBufferedTriangles() {
 	auto& secondaryBuffer = isSwapped ? triangleBufferA : triangleBufferB;
 
 	return secondaryBuffer;
+}
+
+inline float TriangleBuffer::getIncidence(float dot) {
+	return cosf((1 + dot) * PI_HALF);
 }
 
 int TriangleBuffer::getTotalRequestedTriangles() {
@@ -151,7 +182,7 @@ Vec3 TriangleBuffer::getTriangleVertexColorIntensity(Triangle* triangle, int ver
 			computeAmbientLightColorIntensity(vertexNormal, triangle->fresnelFactor, colorIntensity);
 		}
 
-		for (const auto* light : activeLevel->getLights()) {
+		for (auto* light : activeLevel->getLights()) {
 			bool shouldRecomputeLightColorIntensity = !isStaticTriangle || !light->isStatic;
 
 			if (shouldRecomputeLightColorIntensity) {

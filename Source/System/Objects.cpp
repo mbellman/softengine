@@ -506,3 +506,15 @@ void Light::setColor(int R, int G, int B) {
 void Light::setColor(const Color& color) {
 	setColor(color.R, color.G, color.B);
 }
+
+/**
+ * DirectionalLight
+ * ----------------
+ */
+const Vec3& DirectionalLight::getDirection() const {
+	return direction;
+}
+
+void DirectionalLight::setDirection(const Vec3& direction) {
+	this->direction = direction.unit();
+}

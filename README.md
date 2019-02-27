@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Conical light sources
 * Model: dynamic levels of detail
 * Background color gradient/image skybox
 * KB+M input manager
@@ -22,6 +21,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Refactoring/organization
 
+* Move illumination logic into a separate class
 * Engine::updateScreenProjection() -> Separate out near-plane clipping operations
 
 ## Development

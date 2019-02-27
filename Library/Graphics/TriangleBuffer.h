@@ -31,8 +31,9 @@ private:
 	Triangle* trianglePoolA;
 	Triangle* trianglePoolB;
 
-	void computeAmbientLightColorIntensity(const Vec3& normal, float fresnelFactor, Vec3& colorIntensity);
-	void computeLightColorIntensity(const Light* light, const Vec3& vertexPosition, const Vec3& normal, float fresnelFactor, Vec3& colorIntensity);
+	void computeAmbientLightColorIntensity(const Vec3& vertexNormal, float fresnelFactor, Vec3& colorIntensity);
+	void computeLightColorIntensity(Light* light, const Vec3& vertexPosition, const Vec3& vertexNormal, float fresnelFactor, Vec3& colorIntensity);
+	float getIncidence(float dot);
 	Vec3 getTriangleVertexColorIntensity(Triangle* triangle, int vertexIndex);
 	void illuminateColorTriangle(Triangle* triangle);
 	void illuminateTextureTriangle(Triangle* triangle);

@@ -57,15 +57,24 @@ void Garden::load() {
 
 	add("movingLight", movingLight);
 
-	Light* cameraLight = new Light();
-	cameraLight->range = 800;
+	DirectionalLight* directionalLight = new DirectionalLight();
+
+	directionalLight->setColor(255, 0, 0);
+	directionalLight->setDirection({ 0, -1, 0 });
+	directionalLight->range = 2000;
+	directionalLight->position = { 0, 150, 1500 };
+
+	add("directionalLight", directionalLight);
+
+	DirectionalLight* cameraLight = new DirectionalLight();
+	cameraLight->range = 1000;
 	cameraLight->power = 0.5f;
 
 	cameraLight->follow(camera, [=](const Vec3& cameraPosition, Vec3& lightPosition) {
 		lightPosition = cameraPosition;
 	});
 
-	add(cameraLight);
+	add("cameraLight", cameraLight);
 
 	Model* icosahedron = new Model(icoObj);
 	icosahedron->setColor(255, 255, 255);
@@ -81,7 +90,7 @@ void Garden::load() {
 	mesh->isStatic = true;
 
 	mesh->setVertexOffsets([=](int row, int column, Vec3& vertexVector) {
-		vertexVector.y = 25.0f * sinf(row) + 25.0f * sinf(column);
+		vertexVector.y = 10.0f * sinf(row) + 10.0f * sinf(column) + rand() % 40;
 	});
 
 	add(mesh);
@@ -146,4 +155,10 @@ void Garden::onUpdate(int dt, int runningTime) {
 	movingLight->position.x = 1500.0f * sinf(runningTime / 900.0f);
 	movingLight->position.z = 2000.0f + 1500.0f * cosf(runningTime / 900.0f);
 	movingLight->position.y = 300.0f + 150.0f * sinf(runningTime / 500.0f);
+
+	DirectionalLight* directionalLight = (DirectionalLight*)getObject("directionalLight");
+	directionalLight->setDirection({ 2.0f * cosf(runningTime / 600.0f), -1, 0 });
+
+	DirectionalLight* cameraLight = (DirectionalLight*)getObject("cameraLight");
+	cameraLight->setDirection({ -sinf(camera->yaw), sinf(camera->pitch), cosf(camera->yaw) });
 }

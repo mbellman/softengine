@@ -125,3 +125,14 @@ private:
 	Color color = { 255, 255, 255 };
 	Vec3 cachedColorRatios = { 1.0f, 1.0f, 1.0f };
 };
+
+/**
+ * DirectionalLight
+ * ----------------
+ */
+struct DirectionalLight : Light {
+	const Vec3& getDirection() const;
+	void setDirection(const Vec3& direction);
+private:
+	Vec3 direction = { 0, -1, 0 };
+};
