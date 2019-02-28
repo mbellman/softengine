@@ -53,7 +53,7 @@ TextureBuffer::~TextureBuffer() {
 	}
 }
 
-void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode, bool shouldUseMipmaps) {
+void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 	if (!isConfirmed) {
 		isConfirmed = true;
 
@@ -101,20 +101,12 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode, boo
 	}
 }
 
-int TextureBuffer::mipmapWidth(int level) const {
-	return level >= mipmaps.size() ? mipmaps.back()->width : mipmaps.at(level)->width;
-}
-
-int TextureBuffer::mipmapHeight(int level) const {
-	return level >= mipmaps.size() ? mipmaps.back()->height : mipmaps.at(level)->height;
-}
-
 const Color& TextureBuffer::sample(float u, float v, int level) const {
-	int totalMipmaps = mipmaps.size();
+	if (mipmaps.empty()) {
+		return BLACK;
+	}
 
-	if (totalMipmaps == 0) return BLACK;
-
-	// Wrap out-of-bounds UVs
+	// Modulo-free out-of-bounds UV wrapping
 	if (u >= 1.0f) u -= (int)u;
 	else if (u < 0.0f) u += (int)(-1.0f * (u - 1.0f));
 
@@ -122,7 +114,7 @@ const Color& TextureBuffer::sample(float u, float v, int level) const {
 	else if (v < 0.0f) v += (int)(-1.0f * (v - 1.0f));
 
 	// Select mipmap and pixel index
-	const ColorBuffer* mipmap = level >= totalMipmaps ? mipmaps.back() : mipmaps.at(level);
+	const ColorBuffer* mipmap = level >= mipmaps.size() ? mipmaps.back() : mipmaps.at(level);
 	int index = (int)(v * (mipmap->height)) * mipmap->width + (int)(u * mipmap->width);
 
 	return mipmap->read(index);

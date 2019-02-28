@@ -150,18 +150,25 @@ void Rasterizer::dispatchFlatTriangle(const Vertex2d& corner, const Vertex2d& le
 		scanline->x = startX;
 		scanline->y = y;
 		scanline->length = length;
+		scanline->texture = texture;
 
 		scanline->inverseDepth.start = Lerp::lerp(corner.inverseDepth, left.inverseDepth, progress);
 		scanline->inverseDepth.end = Lerp::lerp(corner.inverseDepth, right.inverseDepth, progress);
 
-		scanline->texture = texture;
-
 		if (texture != NULL) {
-			scanline->perspectiveUV.start = Vec2::lerp(corner.perspectiveUV, left.perspectiveUV, progress);
-			scanline->perspectiveUV.end = Vec2::lerp(corner.perspectiveUV, right.perspectiveUV, progress);
+			scanline->perspectiveUV.start.x = Lerp::lerp(corner.perspectiveUV.x, left.perspectiveUV.x, progress);
+			scanline->perspectiveUV.start.y = Lerp::lerp(corner.perspectiveUV.y, left.perspectiveUV.y, progress);
 
-			scanline->textureIntensity.start = Vec3::lerp(corner.textureIntensity, left.textureIntensity, progress);
-			scanline->textureIntensity.end = Vec3::lerp(corner.textureIntensity, right.textureIntensity, progress);
+			scanline->perspectiveUV.end.x = Lerp::lerp(corner.perspectiveUV.x, right.perspectiveUV.x, progress);
+			scanline->perspectiveUV.end.y = Lerp::lerp(corner.perspectiveUV.y, right.perspectiveUV.y, progress);
+
+			scanline->textureIntensity.start.x = Lerp::lerp(corner.textureIntensity.x, left.textureIntensity.x, progress);
+			scanline->textureIntensity.start.y = Lerp::lerp(corner.textureIntensity.y, left.textureIntensity.y, progress);
+			scanline->textureIntensity.start.z = Lerp::lerp(corner.textureIntensity.z, left.textureIntensity.z, progress);
+
+			scanline->textureIntensity.end.x = Lerp::lerp(corner.textureIntensity.x, right.textureIntensity.x, progress);
+			scanline->textureIntensity.end.y = Lerp::lerp(corner.textureIntensity.y, right.textureIntensity.y, progress);
+			scanline->textureIntensity.end.z = Lerp::lerp(corner.textureIntensity.z, right.textureIntensity.z, progress);
 		} else {
 			scanline->color.start.R = Lerp::lerp(corner.color.R, left.color.R, progress);
 			scanline->color.start.G = Lerp::lerp(corner.color.G, left.color.G, progress);
@@ -195,11 +202,7 @@ int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int l
 	return colorDelta > 0 ? FAST_MAX(Rasterizer::MIN_COLOR_LERP_INTERVAL, (int)(lineLength / colorDelta)) : lineLength;
 }
 
-inline int Rasterizer::getMipmapLevel(float averageDepth) {
-	if (flags & DISABLE_MIPMAPPING) {
-		return 0;
-	}
-
+int Rasterizer::getMipmapLevel(float averageDepth) {
 	float depthMultiple = averageDepth / Rasterizer::MIPMAP_RANGE;
 
 	for (int i = 0; i < 12; i++) {
@@ -211,18 +214,10 @@ inline int Rasterizer::getMipmapLevel(float averageDepth) {
 	return 10;
 }
 
-int Rasterizer::getTextureSampleInterval(int tex_w, int tex_h, int lineLength, float averageDepth, const Range<Vec2>& perspectiveUV) {
-	float u_delta = (float)tex_w * abs(perspectiveUV.end.x - perspectiveUV.start.x) * averageDepth;
-	float v_delta = (float)tex_h * abs(perspectiveUV.end.y - perspectiveUV.end.y) * averageDepth;
-	float sampleDelta = (u_delta + v_delta) / 2.0f;
+int Rasterizer::getTextureSampleInterval(int lineLength, float averageDepth) {
+	int interval = (int)(3000.0f / averageDepth) - (int)(100.0f / lineLength);
 
-	if (sampleDelta > 0) {
-		int interval = (int)(lineLength / sampleDelta);
-
-		return FAST_CLAMP(interval, 1, Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL);
-	} else {
-		return Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL;
-	}
+	return FAST_CLAMP(interval, 1, Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL);
 }
 
 int Rasterizer::getTotalBufferedScanlines() {
@@ -340,8 +335,8 @@ void Rasterizer::triangleScanline(
 	int end = FAST_MIN(x1 + length, width - 1);
 	int pixelIndexOffset = y1 * width;
 
-	float depthStep = (inverseDepth.end - inverseDepth.start) / length;
-	float i_depth = inverseDepth.start + (start - x1) * depthStep;
+	float i_depthStep = (inverseDepth.end - inverseDepth.start) / length;
+	float i_depth = inverseDepth.start + (start - x1) * i_depthStep;
 
 	float progressStep = 1.0f / length;
 	float progress = (float)(start - x1) * progressStep;
@@ -351,9 +346,7 @@ void Rasterizer::triangleScanline(
 
 		float averageDepth = (1.0f / inverseDepth.start + 1.0f / inverseDepth.end) / 2.0f;
 		int mipmapLevel = getMipmapLevel(averageDepth);
-		int tex_w = texture->mipmapWidth(mipmapLevel);
-		int tex_h = texture->mipmapHeight(mipmapLevel);
-		int textureSampleInterval = getTextureSampleInterval(tex_w, tex_h, length, averageDepth, perspectiveUV);
+		int textureSampleInterval = getTextureSampleInterval(length, averageDepth);
 		int textureSampleIntervalCounter = textureSampleInterval;
 
 		for (int x = start; x <= end; x++) {
@@ -370,11 +363,17 @@ void Rasterizer::triangleScanline(
 					float v = Lerp::lerp(perspectiveUV.start.y, perspectiveUV.end.y, progress) * depth;
 					const Color& sample = texture->sample(u, v, mipmapLevel);
 
-					float visibilityRatio = FAST_MIN(depth / visibility, 1.0f);
+					int R = (int)(sample.R * intensity_R);
+					int G = (int)(sample.G * intensity_G);
+					int B = (int)(sample.B * intensity_B);
 
-					int R = Lerp::lerp((int)(sample.R * intensity_R), backgroundColor.R, visibilityRatio);
-					int G = Lerp::lerp((int)(sample.G * intensity_G), backgroundColor.G, visibilityRatio);
-					int B = Lerp::lerp((int)(sample.B * intensity_B), backgroundColor.B, visibilityRatio);
+					if (visibility < INT_MAX) {
+						float visibilityRatio = FAST_MIN(depth / visibility, 1.0f);
+
+						R = Lerp::lerp(R, backgroundColor.R, visibilityRatio);
+						G = Lerp::lerp(G, backgroundColor.G, visibilityRatio);
+						B = Lerp::lerp(B, backgroundColor.B, visibilityRatio);
+					}
 
 					currentColor = ARGB(FAST_CLAMP(R, 0, 255), FAST_CLAMP(G, 0, 255), FAST_CLAMP(B, 0, 255));
 					textureSampleIntervalCounter = 0;
@@ -385,7 +384,7 @@ void Rasterizer::triangleScanline(
 			}
 
 			progress += progressStep;
-			i_depth += depthStep;
+			i_depth += i_depthStep;
 		}
 	} else {
 		int colorLerpInterval = getColorLerpInterval(color.start, color.end, length);
@@ -412,7 +411,7 @@ void Rasterizer::triangleScanline(
 					}
 
 					index++;
-					i_depth += depthStep;
+					i_depth += i_depthStep;
 				}
 
 				progress += progressStep;
@@ -438,7 +437,7 @@ void Rasterizer::triangleScanline(
 				}
 
 				progress += progressStep;
-				i_depth += depthStep;
+				i_depth += i_depthStep;
 			}
 		}
 	}

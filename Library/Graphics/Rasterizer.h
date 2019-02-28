@@ -86,8 +86,8 @@ private:
 	void dispatchFlatTopTriangle(const Vertex2d& topLeft, const Vertex2d& topRight, const Vertex2d& bottom, const TextureBuffer* texture);
 	void flushScanlines();
 	int getColorLerpInterval(const Color& start, const Color& end, int lineLength);
-	inline int getMipmapLevel(float averageDepth);
-	int getTextureSampleInterval(int tex_w, int tex_h, int lineLength, float averageDepth, const Range<Vec2>& perspectiveUV);
+	int getMipmapLevel(float averageDepth);
+	int getTextureSampleInterval(int lineLength, float averageDepth);
 	void setPixel(int x, int y);
 
 	void triangleScanline(

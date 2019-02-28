@@ -15,7 +15,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
-* Texture sampling logic cleanup
 * Staggered perspective-correct/linear UV interpolation
 
 ### Refactoring/organization

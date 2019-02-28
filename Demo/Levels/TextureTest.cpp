@@ -9,7 +9,10 @@
  * -----------
  */
 void TextureTest::load() {
-	add("blockTexture", new TextureBuffer("./DemoAssets/block.png"));
+	TextureBuffer* blockTexture = new TextureBuffer("./DemoAssets/block.png");
+	blockTexture->shouldUseMipmaps = false;
+
+	add("blockTexture", blockTexture);
 
 	Cube* cube = new Cube(100);
 	cube->position = { 0, 100, 2500 };
@@ -39,10 +42,9 @@ void TextureTest::load() {
 	settings.ambientLightVector = { 0.5, -1, 0.3 };
 	settings.ambientLightFactor = 0.7;
 	settings.hasStaticAmbientLight = true;
-	// settings.visibility = 2500;
 }
 
 void TextureTest::onUpdate(int dt, int runningTime) {
-	// getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
+	getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
 }
 

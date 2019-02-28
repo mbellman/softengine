@@ -22,14 +22,13 @@ struct TextureBuffer {
 	int width = 0;
 	int height = 0;
 	int totalPixels = 0;
+	bool shouldUseMipmaps = true;
 
 	TextureBuffer(const char* file);
 	~TextureBuffer();
 
-	void confirmTexture(SDL_Renderer* renderer, TextureMode mode, bool shouldUseMipmaps);
+	void confirmTexture(SDL_Renderer* renderer, TextureMode mode);
 	const Color& sample(float u, float v, int level) const;
-	int mipmapWidth(int level) const;
-	int mipmapHeight(int level) const;
 
 private:
 	constexpr static Color BLACK = { 0, 0, 0 };

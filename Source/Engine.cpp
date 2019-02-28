@@ -596,7 +596,7 @@ void Engine::updateScreenProjection() {
 		const Object* lodObject = object->hasLODs() ? object->getLOD(relativeObjectPosition.magnitude()) : object;
 
 		if (lodObject->texture != NULL) {
-			lodObject->texture->confirmTexture(renderer, TextureMode::SOFTWARE, ~flags & DISABLE_MIPMAPPING);
+			lodObject->texture->confirmTexture(renderer, TextureMode::SOFTWARE);
 		}
 
 		for (const auto* polygon : lodObject->getPolygons()) {
