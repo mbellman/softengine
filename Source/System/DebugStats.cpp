@@ -81,22 +81,23 @@ int DebugStats::getFPS() {
 	return (int)(1000.0f / getFrameTime());
 }
 
+void DebugStats::countPolygons(int polygons) {
+	totalPolygons += polygons;
+}
+
+void DebugStats::countVertices(int vertices) {
+	totalVertices += vertices;
+}
+
 int DebugStats::getTotalPolygons(const std::vector<Object*>& objects) {
-	int total = 0;
-
-	for (const Object* object : objects) {
-		total += object->getPolygonCount();
-	}
-
-	return total;
+	return totalPolygons;
 }
 
 int DebugStats::getTotalVertices(const std::vector<Object*>& objects) {
-	int total = 0;
+	return totalVertices;
+}
 
-	for (const Object* object : objects) {
-		total += object->getVertexCount();
-	}
-
-	return total;
+void DebugStats::reset() {
+	totalPolygons = 0;
+	totalVertices = 0;
 }

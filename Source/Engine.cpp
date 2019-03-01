@@ -487,6 +487,7 @@ void Engine::update(int dt) {
 	SDL_RenderPresent(renderer);
 
 	triangleBuffer->reset();
+	debugStats.reset();
 }
 
 void Engine::updateMovement() {
@@ -631,6 +632,9 @@ void Engine::updateScreenProjection() {
 	for (const auto* object : activeLevel->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 		const Object* lodObject = object->hasLODs() ? object->getLOD(relativeObjectPosition.magnitude()) : object;
+
+		debugStats.countPolygons(lodObject->getPolygonCount());
+		debugStats.countVertices(lodObject->getVertexCount());
 
 		if (lodObject->texture != NULL) {
 			lodObject->texture->confirmTexture(renderer, TextureMode::SOFTWARE);

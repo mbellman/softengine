@@ -166,7 +166,7 @@ void Garden::onUpdate(int dt, int runningTime) {
 	movingLight->position.y = 300.0f + 150.0f * sinf(runningTime / 500.0f);
 
 	DirectionalLight* directionalLight = (DirectionalLight*)getObject("directionalLight");
-	directionalLight->setDirection({ 2.0f * cosf(runningTime / 600.0f), -1, 0 });
+	directionalLight->setDirection({ 0, -1, 2.0f * cosf(runningTime / 600.0f) });
 
 	DirectionalLight* cameraLight = (DirectionalLight*)getObject("cameraLight");
 	cameraLight->setDirection({ -sinf(camera->yaw), sinf(camera->pitch), cosf(camera->yaw) });

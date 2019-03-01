@@ -14,9 +14,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
-* Disable texture intensity interpolation for non-lit triangles
-* Staggered perspective-correct/linear UV interpolation
-
 ### Refactoring/organization
 
 * Move illumination logic into a separate class
