@@ -254,6 +254,14 @@ void TriangleBuffer::illuminateTextureTriangle(Triangle* triangle) {
 }
 
 void TriangleBuffer::illuminateTriangle(Triangle* triangle) {
+	if (!triangle->sourcePolygon->sourceObject->hasLighting) {
+		// Clear any previous lighting values, since
+		// Triangles are recycled from the pool
+		resetTriangleLighting(triangle);
+
+		return;
+	}
+
 	if (triangle->sourcePolygon->sourceObject->texture != NULL) {
 		illuminateTextureTriangle(triangle);
 	} else {
@@ -286,6 +294,16 @@ void TriangleBuffer::reset() {
 	auto& primaryBuffer = isSwapped ? triangleBufferB : triangleBufferA;
 
 	primaryBuffer.clear();
+}
+
+void TriangleBuffer::resetTriangleLighting(Triangle* triangle) {
+	for (int i = 0; i < 3; i++) {
+		Vertex2d& vertex = triangle->vertices[i];
+
+		vertex.textureIntensity.x = 1.0f;
+		vertex.textureIntensity.y = 1.0f;
+		vertex.textureIntensity.z = 1.0f;
+	}
 }
 
 void TriangleBuffer::setActiveLevel(Level* activeLevel) {

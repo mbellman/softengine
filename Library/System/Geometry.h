@@ -54,7 +54,7 @@ struct Triangle {
 	 */
 	bool isSynthetic = false;
 
-	float averageZ() const;
+	float maxZ() const;
 };
 
 /**

@@ -23,7 +23,7 @@ void RasterFilter::addCover(const Triangle* triangle, int zone) {
 }
 
 void RasterFilter::addTriangle(Triangle* triangle) {
-	int targetZoneIndex = (int)(triangle->averageZ() / RasterFilter::ZONE_RANGE);
+	int targetZoneIndex = (int)(triangle->maxZ() / RasterFilter::ZONE_RANGE);
 	int maxZoneIndex = RasterFilter::MAX_ZONES - 1;
 	int zoneIndex = FAST_CLAMP(targetZoneIndex, 0, maxZoneIndex);
 
@@ -39,7 +39,7 @@ void RasterFilter::addTriangle(Triangle* triangle) {
 }
 
 inline bool RasterFilter::isPointInsideEdge(int x, int y, int ex1, int ey1, int ex2, int ey2) {
-	return ((x - ex1) * (ey2 - ey1) - (y - ey1) * (ex2 - ex1)) > 0;
+	return ((x - ex1) * (ey2 - ey1) - (y - ey1) * (ex2 - ex1)) >= 0;
 }
 
 bool RasterFilter::isTriangleClockwise(const Triangle* triangle) {
@@ -59,7 +59,7 @@ bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
 	int maxX = FAST_MAX(c0.x, FAST_MAX(c1.x, c2.x));
 
 	if ((maxX - minX) < MIN_COVER_SIZE) {
-		// Optimize for triangles too thin and wide
+		// Optimize for triangles too horizontally small
 		return false;
 	}
 
@@ -67,7 +67,7 @@ bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
 	int maxY = FAST_MAX(c0.y, FAST_MAX(c1.y, c2.y));
 
 	if ((maxY - minY) < MIN_COVER_SIZE) {
-		// Optimize for triangles too thin and tall
+		// Optimize for triangles too vertically small
 		return false;
 	}
 
@@ -146,7 +146,7 @@ bool RasterFilter::isTriangleVisible(const Triangle* triangle) {
 
 	for (const auto &cover : covers) {
 		if (cover.zone < currentZoneIndex && isTriangleOccluded(triangle, cover)) {
-			return false;
+  			return false;
 		}
 	}
 

@@ -17,9 +17,17 @@
 struct Object : public Positionable {
 	bool isStatic = false;
 	bool isFlatShaded = false;
-	Vec3 velocity;
+	bool hasLighting = true;
 	float fresnelFactor = 0.0f;
 	TextureBuffer* texture = NULL;
+
+	/**
+	 * Allows the default near plane clipping distance to be
+	 * overridden on a per-object basis, remedying problems
+	 * with depth range over the near-far span of extremely
+	 * large triangles.
+	 */
+	float nearClippingDistance = 30.0f;
 
 	Object();
 	virtual ~Object();

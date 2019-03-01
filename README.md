@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Background color gradient/image skybox
 * KB+M input manager
 * Sectors/area zones
 * Real-time level settings editing
@@ -15,11 +14,16 @@ A software 3D rendering engine, written as an educational exercise.
 
 **Pending optimizations:**
 
+* Disable texture intensity interpolation for non-lit triangles
 * Staggered perspective-correct/linear UV interpolation
 
 ### Refactoring/organization
 
 * Move illumination logic into a separate class
+* Constants file for easy mobility between modules
+* Clean up/delete Engine fields list
+* Convert skybox.obj into a predefined Object subclass
+* Correct triangle edge/clockwise/etc. checks to be with respect to raster space
 * Engine::updateScreenProjection() -> Separate out near-plane clipping operations
 
 ## Development

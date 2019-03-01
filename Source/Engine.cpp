@@ -339,7 +339,7 @@ void Engine::precomputeStaticLightColorIntensities() {
 	};
 
 	for (auto* object : activeLevel->getObjects()) {
-		if (!object->isStatic) {
+		if (!object->isStatic || !object->hasLighting) {
 			continue;
 		}
 
@@ -676,8 +676,8 @@ void Engine::updateScreenProjection() {
 					// (the first need not be interpolated at all)
 					float deltas[3] = {
 						0.0f,
-						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[1].vector.z),
-						(t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z)
+						(t_verts[0].vector.z - object->nearClippingDistance) / (t_verts[0].vector.z - t_verts[1].vector.z),
+						(t_verts[0].vector.z - object->nearClippingDistance) / (t_verts[0].vector.z - t_verts[2].vector.z)
 					};
 
 					// Generate new vertices and unit/world vectors for the clipped polygon
@@ -704,10 +704,10 @@ void Engine::updateScreenProjection() {
 					Vec3 w_quadVecs[4];
 
 					// Determine interpolation deltas for third and fourth vertices
-					float v2Delta = (t_verts[1].vector.z - Engine::NEAR_Z) / (t_verts[1].vector.z - t_verts[2].vector.z);
-					float v3Delta = (t_verts[0].vector.z - Engine::NEAR_Z) / (t_verts[0].vector.z - t_verts[2].vector.z);
+					float v2Delta = (t_verts[1].vector.z - object->nearClippingDistance) / (t_verts[1].vector.z - t_verts[2].vector.z);
+					float v3Delta = (t_verts[0].vector.z - object->nearClippingDistance) / (t_verts[0].vector.z - t_verts[2].vector.z);
 
-					// Define new vertices/unit + world vectors for the quad
+					// Define new vertices + unit/world vectors for the quad
 					quadVerts[0] = t_verts[0];
 					quadVerts[1] = t_verts[1];
 					quadVerts[2] = Vertex3d::lerp(t_verts[1], t_verts[2], v2Delta);

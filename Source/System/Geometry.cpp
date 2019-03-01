@@ -40,8 +40,8 @@ Vertex3d Vertex3d::lerp(const Vertex3d& v1, const Vertex3d& v2, float r) {
  * Triangle
  * --------
  */
-float Triangle::averageZ() const {
-	return (vertices[0].z + vertices[1].z + vertices[2].z) / 3.0f;
+float Triangle::maxZ() const {
+	return FAST_MAX(vertices[0].z, FAST_MAX(vertices[1].z, vertices[2].z));
 }
 
 /**

@@ -336,7 +336,7 @@ void Rasterizer::triangleScanline(
 	int pixelIndexOffset = y1 * width;
 
 	float i_depthStep = (inverseDepth.end - inverseDepth.start) / length;
-	float i_depth = inverseDepth.start + (start - x1) * i_depthStep;
+	float i_depth = inverseDepth.start + (float)(start - x1) * i_depthStep;
 
 	float progressStep = 1.0f / length;
 	float progress = (float)(start - x1) * progressStep;
