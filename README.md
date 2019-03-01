@@ -16,7 +16,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Refactoring/organization
 
-* Move illumination logic into a separate class
 * Constants file for easy mobility between modules
 * Clean up/delete Engine fields list
 * Convert skybox.obj into a predefined Object subclass

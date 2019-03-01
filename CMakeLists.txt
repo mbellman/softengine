@@ -54,6 +54,7 @@ set(SOURCE_FILES
     # -- Header files --
     Library/Graphics/Color.h
     Library/Graphics/ColorBuffer.h
+    Library/Graphics/Illuminator.h
     Library/Graphics/RasterFilter.h
     Library/Graphics/Rasterizer.h
     Library/Graphics/TextureBuffer.h
@@ -81,6 +82,7 @@ set(SOURCE_FILES
     # -- CPP Files --
     Source/Graphics/Color.cpp
     Source/Graphics/ColorBuffer.cpp
+    Source/Graphics/Illuminator.cpp
     Source/Graphics/RasterFilter.cpp
     Source/Graphics/Rasterizer.cpp
     Source/Graphics/TextureBuffer.cpp

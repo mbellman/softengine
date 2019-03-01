@@ -10,6 +10,7 @@
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterFilter.h>
 #include <Graphics/TriangleBuffer.h>
+#include <Graphics/Illuminator.h>
 #include <UI/UI.h>
 #include <System/Flags.h>
 #include <System/DebugStats.h>
@@ -86,6 +87,7 @@ private:
 	Rasterizer* rasterizer;
 	RasterFilter* rasterFilter;
 	TriangleBuffer* triangleBuffer;
+	Illuminator* illuminator;
 	AudioEngine* audioEngine;
 	UI* ui;
 	Level* activeLevel = NULL;

@@ -19,6 +19,8 @@
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterFilter.h>
 #include <Graphics/TextureBuffer.h>
+#include <Graphics/TriangleBuffer.h>
+#include <Graphics/Illuminator.h>
 #include <System/DebugStats.h>
 
 using namespace std;
@@ -48,6 +50,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
 	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
 	triangleBuffer = new TriangleBuffer();
+	illuminator = new Illuminator();
 	audioEngine = new AudioEngine();
 	ui = new UI();
 
@@ -77,6 +80,7 @@ Engine::~Engine() {
 	}
 
 	delete triangleBuffer;
+	delete illuminator;
 	delete rasterFilter;
 	delete ui;
 	delete rasterizer;
@@ -119,7 +123,7 @@ void Engine::awaitRenderStep(RenderStep renderStep) {
 }
 
 void Engine::clearActiveLevel() {
-	triangleBuffer->setActiveLevel(NULL);
+	illuminator->setActiveLevel(NULL);
 
 	if (activeLevel != NULL) {
 		delete activeLevel;
@@ -224,6 +228,7 @@ int Engine::handleRenderWorkerThread(void* data) {
 	RenderWorkerManager* manager = (RenderWorkerManager*)data;
 	Engine* engine = manager->engine;
 	TriangleBuffer* triangleBuffer = engine->triangleBuffer;
+	Illuminator* illuminator = engine->illuminator;
 	Rasterizer* rasterizer = engine->rasterizer;
 
 	while (1) {
@@ -242,7 +247,7 @@ int Engine::handleRenderWorkerThread(void* data) {
 						if (i % totalRenderWorkerThreads == manager->sectionId) {
 							Triangle* triangle = bufferedTriangles.at(i);
 
-							triangleBuffer->illuminateTriangle(triangle);
+							illuminator->illuminateTriangle(triangle);
 						}
 					}
 
@@ -287,35 +292,39 @@ int Engine::handleRenderThread(void* data) {
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
 
 	Engine* engine = (Engine*)data;
+	Rasterizer* rasterizer = engine->rasterizer;
+	TriangleBuffer* triangleBuffer = engine->triangleBuffer;
+	Illuminator* illuminator = engine->illuminator;
+	DebugStats& debugStats = engine->debugStats;
 
 	while (1) {
 		if (engine->isDone) {
 			break;
 		} else if (engine->isRendering) {
-			engine->debugStats.trackIlluminationTime();
+			debugStats.trackIlluminationTime();
 
-			if (engine->triangleBuffer->getTotalNonStaticTriangles() > Engine::SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT) {
+			if (triangleBuffer->getTotalNonStaticTriangles() > Engine::SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT) {
 				engine->awaitRenderStep(RenderStep::ILLUMINATION);
 			} else {
-				for (auto* triangle : engine->triangleBuffer->getBufferedTriangles()) {
-					engine->triangleBuffer->illuminateTriangle(triangle);
+				for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+					illuminator->illuminateTriangle(triangle);
 				}
 			}
 
-			engine->debugStats.logIlluminationTime();
-			engine->debugStats.trackDrawTime();
+			debugStats.logIlluminationTime();
+			debugStats.trackDrawTime();
 
 			// Triangles cannot be dispatched to the rasterizer in parallel,
 			// since triangles are buffered in approximate order from closest
 			// to furthest, helping to mitigate overdraw.
-			for (auto* triangle : engine->triangleBuffer->getBufferedTriangles()) {
-				engine->rasterizer->dispatchTriangle(*triangle);
+			for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+				rasterizer->dispatchTriangle(*triangle);
 			}
 
 			// Once all triangles are dispatched to the rasterizer and their
 			// scanlines queued up, we can parallelize the actual scanlines.
 			engine->awaitRenderStep(RenderStep::SCANLINE_RASTERIZATION);
-			engine->debugStats.logDrawTime();
+			debugStats.logDrawTime();
 
 			engine->isRendering = false;
 		}
@@ -334,7 +343,7 @@ int Engine::handleRenderThread(void* data) {
 void Engine::precomputeStaticLightColorIntensities() {
 	auto precomputeObjectLight = [=](Object* object) {
 		for (auto* polygon : object->getPolygons()) {
-			triangleBuffer->illuminateStaticPolygon(polygon);
+			illuminator->illuminateStaticPolygon(polygon);
 		}
 	};
 
@@ -442,7 +451,7 @@ void Engine::setActiveLevel(Level* level) {
 
 	activeLevel = level;
 
-	triangleBuffer->setActiveLevel(level);
+	illuminator->setActiveLevel(level);
 }
 
 void Engine::update(int dt) {
@@ -565,7 +574,7 @@ void Engine::updateScene_SingleThreaded() {
 	debugStats.trackIlluminationTime();
 
 	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
-		triangleBuffer->illuminateTriangle(triangle);
+		illuminator->illuminateTriangle(triangle);
 	}
 
 	debugStats.logIlluminationTime();
