@@ -3,7 +3,9 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <cmath>
 #include <System/Objects.h>
+#include <System/InputManager.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
 
@@ -11,6 +13,14 @@
  * Level
  * -----
  */
+Level::Level() {
+	inputManager = new InputManager();
+
+	inputManager->onMouseMotion([=](int dx, int dy) {
+		handleMouseMotion(dx, dy);
+	});
+}
+
 Level::~Level() {
 	if (state != LevelState::INACTIVE) {
 		quit();
@@ -109,6 +119,50 @@ const Settings& Level::getSettings() {
 	return settings;
 }
 
+void Level::handleControl() {
+	if (settings.controlMode & ControlMode::WASD) {
+		handleWASDControl();
+	}
+}
+
+void Level::handleMouseMotion(int dx, int dy) {
+	if (~settings.controlMode & ControlMode::MOUSE) {
+		return;
+	}
+
+	float deltaFactor = 1.0f / 500.0f;
+	float yawDelta = (float)-dx * deltaFactor;
+	float pitchDelta = (float)-dy * deltaFactor;
+
+	camera->yaw += yawDelta;
+	camera->pitch = std::clamp(camera->pitch + pitchDelta, -Camera::MAX_PITCH, Camera::MAX_PITCH);
+}
+
+void Level::handleWASDControl() {
+	Vec3 velocity;
+	float sy = sinf(camera->yaw);
+	float cy = cosf(camera->yaw);
+
+	if (inputManager->isKeyPressed(Keys::W)) {
+		velocity.z = Level::MOVEMENT_SPEED;
+	} else if (inputManager->isKeyPressed(Keys::S)) {
+		velocity.z = -Level::MOVEMENT_SPEED;
+	}
+
+	if (inputManager->isKeyPressed(Keys::A)) {
+		velocity.x = -Level::MOVEMENT_SPEED;
+	} else if (inputManager->isKeyPressed(Keys::D)) {
+		velocity.x = Level::MOVEMENT_SPEED;
+	}
+
+	if (inputManager->isKeyPressed(Keys::SHIFT)) {
+		velocity *= 4;
+	}
+
+	camera->position.x += cy * velocity.x + sy * -velocity.z;
+	camera->position.z += cy * velocity.z + sy * velocity.x;
+}
+
 bool Level::hasQuit() {
 	return state == LevelState::INACTIVE;
 }
@@ -140,6 +194,8 @@ void Level::quit() {
 	for (auto& [key, particleSystem] : particleSystemMap) {
 		delete particleSystem;
 	}
+
+	delete inputManager;
 
 	objects.clear();
 	lights.clear();
@@ -265,5 +321,6 @@ void Level::update(int dt) {
 		particleSystem->update(dt);
 	}
 
+	handleControl();
 	camera->update();
 }

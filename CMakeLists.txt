@@ -67,6 +67,7 @@ set(SOURCE_FILES
     Library/System/DebugStats.h
     Library/System/Flags.h
     Library/System/Geometry.h
+    Library/System/InputManager.h
     Library/System/Level.h
     Library/System/Math.h
     Library/System/Objects.h
@@ -94,6 +95,7 @@ set(SOURCE_FILES
     Source/System/Camera.cpp
     Source/System/DebugStats.cpp
     Source/System/Geometry.cpp
+    Source/System/InputManager.cpp
     Source/System/Level.cpp
     Source/System/Math.cpp
     Source/System/Objects.cpp

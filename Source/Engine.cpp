@@ -162,59 +162,6 @@ void Engine::createRenderThreads() {
 	renderThread = SDL_CreateThread(Engine::handleRenderThread, NULL, this);
 }
 
-void Engine::handleEvent(const SDL_Event& event) {
-	switch (event.type) {
-		case SDL_KEYDOWN:
-			handleKeyDown(event.key.keysym.sym);
-			break;
-		case SDL_KEYUP:
-			handleKeyUp(event.key.keysym.sym);
-			break;
-		case SDL_MOUSEMOTION:
-			handleMouseMotionEvent(event.motion);
-			break;
-		case SDL_MOUSEBUTTONDOWN:
-			if (event.button.button == SDL_BUTTON_LEFT) {
-				SDL_SetRelativeMouseMode(SDL_TRUE);
-			}
-			break;
-	}
-}
-
-void Engine::handleKeyDown(const SDL_Keycode& code) {
-	switch (code) {
-		case SDLK_w: movement.z = 1; break;
-		case SDLK_s: movement.z = -1; break;
-		case SDLK_a: movement.x = -1; break;
-		case SDLK_d: movement.x = 1; break;
-		case SDLK_LSHIFT: isRunning = true; break;
-	}
-}
-
-void Engine::handleKeyUp(const SDL_Keycode& code) {
-	switch (code) {
-		case SDLK_w: movement.z = 0; break;
-		case SDLK_s: movement.z = 0; break;
-		case SDLK_a: movement.x = 0; break;
-		case SDLK_d: movement.x = 0; break;
-		case SDLK_LSHIFT: isRunning = false; break;
-		case SDLK_ESCAPE:
-		case SDLK_SPACE:
-			SDL_SetRelativeMouseMode(SDL_FALSE);
-			break;
-	}
-}
-
-void Engine::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
-	bool isRelativeMouseMode = SDL_GetRelativeMouseMode();
-	int xDelta = isRelativeMouseMode ? -event.xrel : 0;
-	int yDelta = isRelativeMouseMode ? -event.yrel : 0;
-	float deltaFactor = 1.0f / 500;
-
-	camera.pitch = std::clamp(camera.pitch + (float)yDelta * deltaFactor, -Camera::MAX_PITCH, Camera::MAX_PITCH);
-	camera.yaw += (float)xDelta * deltaFactor;
-}
-
 /**
  * Runner for a render worker thread. Depending on the step in
  * the rendering pipeline, render workers either handle illumination
@@ -434,7 +381,7 @@ void Engine::run() {
 		SDL_Event event;
 
 		while (SDL_PollEvent(&event)) {
-			handleEvent(event);
+			activeLevel->inputManager->handleEvent(event);
 
 			if (event.type == SDL_QUIT) {
 				activeLevel->quit();
@@ -463,7 +410,6 @@ void Engine::update(int dt) {
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
 
-	updateMovement();
 	updateSounds();
 
 	if (flags & SHOW_WIREFRAME) {
@@ -497,19 +443,6 @@ void Engine::update(int dt) {
 
 	triangleBuffer->reset();
 	debugStats.reset();
-}
-
-void Engine::updateMovement() {
-	float sy = std::sin(camera.yaw);
-	float cy = std::cos(camera.yaw);
-
-	float xDelta = movement.x * cy - movement.z * sy;
-	float zDelta = movement.z * cy + movement.x * sy;
-
-	int scalar = (isRunning ? 4 : 1) * MOVEMENT_SPEED;
-
-	camera.position.x += scalar * xDelta;
-	camera.position.z += scalar * zDelta;
 }
 
 /**

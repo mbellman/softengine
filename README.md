@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* KB+M input manager
 * Sectors/area zones
 * Real-time level settings editing
 * Level layouts stored as files

@@ -9,7 +9,9 @@
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
 #include <System/Camera.h>
+#include <System/InputManager.h>
 #include <Graphics/TextureBuffer.h>
+#include <SDL.h>
 
 /**
  * LevelState
@@ -18,6 +20,16 @@
 enum LevelState {
 	ACTIVE,
 	INACTIVE
+};
+
+/**
+ * ControlMode
+ * -----------
+ */
+enum ControlMode {
+	DISABLED = 1 << 0,
+	WASD = 1 << 1,
+	MOUSE = 1 << 2
 };
 
 /**
@@ -32,6 +44,7 @@ struct Settings {
 	bool hasStaticAmbientLight = false;
 	float brightness = 1.0f;
 	int visibility = INT_MAX;
+	int controlMode = ControlMode::WASD | ControlMode::MOUSE;
 };
 
 /**
@@ -40,6 +53,9 @@ struct Settings {
  */
 class Level {
 public:
+	InputManager* inputManager = NULL;
+
+	Level();
 	~Level();
 
 	const std::vector<Object*>& getObjects();
@@ -72,6 +88,8 @@ protected:
 	void remove(const char* key);
 
 private:
+	constexpr static float MOVEMENT_SPEED = 5.0f;
+
 	std::vector<Object*> objects;
 	std::vector<Light*> lights;
 	std::vector<Sound*> sounds;
@@ -84,6 +102,9 @@ private:
 
 	template<class T>
 	T* getMapItem(std::map<const char*, T*> map, const char* key);
+	void handleControl();
+	void handleWASDControl();
+	void handleMouseMotion(int dx, int dy);
 	void removeLight(Light* light);
 	template<class T>
 	void removeMapItem(std::map<const char*, T*> map, const char* key);

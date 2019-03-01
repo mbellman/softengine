@@ -22,15 +22,6 @@
 #include <Sound/AudioEngine.h>
 
 /**
- * Movement
- * --------
- */
-struct Movement {
-	int x = 0;
-	int z = 0;
-};
-
-/**
  * FrustumCuller
  * -------------
  *
@@ -76,7 +67,6 @@ public:
 
 private:
 	constexpr static float NEAR_Z = 30.0f;
-	constexpr static int MOVEMENT_SPEED = 5;
 	constexpr static int SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT = 2500;
 
 	DebugStats debugStats;
@@ -92,9 +82,6 @@ private:
 	UI* ui;
 	Level* activeLevel = NULL;
 	Camera camera;
-	Vec3 velocity;
-	Movement movement;
-	bool isRunning = false;
 	Uint32 flags = 0;
 	int width;
 	int HALF_W;
@@ -125,10 +112,6 @@ private:
 	void awaitRenderStep(RenderStep renderStep);
 	void clearActiveLevel();
 	void createRenderThreads();
-	void handleEvent(const SDL_Event& event);
-	void handleKeyDown(const SDL_Keycode& code);
-	void handleKeyUp(const SDL_Keycode& code);
-	void handleMouseMotionEvent(const SDL_MouseMotionEvent& event);
 	void precomputeStaticLightColorIntensities();
 
 	void projectAndQueueTriangle(
@@ -142,7 +125,6 @@ private:
 	);
 
 	void update(int dt);
-	void updateMovement();
 	void updateScene_MultiThreaded();
 	void updateScene_SingleThreaded();
 	void updateScene_Wireframe();
