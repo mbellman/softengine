@@ -101,7 +101,11 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 	}
 }
 
-const Color& TextureBuffer::sample(float u, float v, int level) const {
+const ColorBuffer* TextureBuffer::getMipmap(int level) const {
+	return level >= mipmaps.size() ? mipmaps.back() : mipmaps.at(level);
+}
+
+const Color& TextureBuffer::sample(float u, float v, const ColorBuffer* mipmap) const {
 	if (mipmaps.empty()) {
 		return BLACK;
 	}
@@ -113,9 +117,7 @@ const Color& TextureBuffer::sample(float u, float v, int level) const {
 	if (v >= 1.0f) v -= (int)v;
 	else if (v < 0.0f) v += (int)(-1.0f * (v - 1.0f));
 
-	// Select mipmap and pixel index
-	const ColorBuffer* mipmap = level >= mipmaps.size() ? mipmaps.back() : mipmaps.at(level);
-	int index = (int)(v * (mipmap->height)) * mipmap->width + (int)(u * mipmap->width);
+	int pixelIndex = (int)(v * (mipmap->height)) * mipmap->width + (int)(u * mipmap->width);
 
-	return mipmap->read(index);
+	return mipmap->read(pixelIndex);
 }

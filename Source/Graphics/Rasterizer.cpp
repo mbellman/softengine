@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <Helpers.h>
 #include <Graphics/TextureBuffer.h>
+#include <Graphics/ColorBuffer.h>
 #include <System/Geometry.h>
 #include <System/Objects.h>
 #include <System/Flags.h>
@@ -346,6 +347,7 @@ void Rasterizer::triangleScanline(
 
 		float averageDepth = (1.0f / inverseDepth.start + 1.0f / inverseDepth.end) / 2.0f;
 		int mipmapLevel = getMipmapLevel(averageDepth);
+		const ColorBuffer* mipmap = texture->getMipmap(mipmapLevel);
 		int textureSampleInterval = getTextureSampleInterval(length, averageDepth);
 		int textureSampleIntervalCounter = textureSampleInterval;
 
@@ -361,7 +363,7 @@ void Rasterizer::triangleScanline(
 					float depth = 1.0f / i_depth;
 					float u = Lerp::lerp(perspectiveUV.start.x, perspectiveUV.end.x, progress) * depth;
 					float v = Lerp::lerp(perspectiveUV.start.y, perspectiveUV.end.y, progress) * depth;
-					const Color& sample = texture->sample(u, v, mipmapLevel);
+					const Color& sample = texture->sample(u, v, mipmap);
 
 					int R = (int)(sample.R * intensity_R);
 					int G = (int)(sample.G * intensity_G);
