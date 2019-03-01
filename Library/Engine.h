@@ -143,6 +143,7 @@ private:
 	void updateMovement();
 	void updateScene_MultiThreaded();
 	void updateScene_SingleThreaded();
+	void updateScene_Wireframe();
 	void updateScreenProjection();
 	void updateSounds();
 

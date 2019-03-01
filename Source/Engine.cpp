@@ -457,7 +457,9 @@ void Engine::update(int dt) {
 	updateMovement();
 	updateSounds();
 
-	if (renderWorkerThreads.size() > 0) {
+	if (flags & SHOW_WIREFRAME) {
+		updateScene_Wireframe();
+	} else if (renderWorkerThreads.size() > 0) {
 		updateScene_MultiThreaded();
 	} else {
 		updateScene_SingleThreaded();
@@ -574,6 +576,41 @@ void Engine::updateScene_SingleThreaded() {
 
 	for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
 		rasterizer->triangleScanline(rasterizer->getScanline(i));
+	}
+
+	rasterizer->render(renderer, (flags & PIXEL_FILTER) ? 2 : 1);
+	debugStats.logDrawTime();
+}
+
+/**
+ * Updates the scene with wireframes only; all illumination,
+ * coloring, and texturing steps are skipped.
+ */
+void Engine::updateScene_Wireframe() {
+	debugStats.trackScreenProjectionTime();
+
+	updateScreenProjection();
+
+	debugStats.logScreenProjectionTime();
+	debugStats.trackHiddenSurfaceRemovalTime();
+
+	Triangle* triangle;
+
+	while ((triangle = rasterFilter->next()) != NULL) {
+		triangleBuffer->bufferTriangle(triangle);
+	}
+
+	debugStats.logHiddenSurfaceRemovalTime();
+	debugStats.trackIlluminationTime();
+	debugStats.logIlluminationTime();
+	debugStats.trackDrawTime();
+
+	for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
+		rasterizer->triangle(
+			triangle->vertices[0].coordinate.x, triangle->vertices[0].coordinate.y,
+			triangle->vertices[1].coordinate.x, triangle->vertices[1].coordinate.y,
+			triangle->vertices[2].coordinate.x, triangle->vertices[2].coordinate.y
+		);
 	}
 
 	rasterizer->render(renderer, (flags & PIXEL_FILTER) ? 2 : 1);
