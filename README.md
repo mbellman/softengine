@@ -7,9 +7,9 @@ A software 3D rendering engine, written as an educational exercise.
 
 * Sectors/area zones
 * Real-time level settings editing
+* Controller support
 * Level layouts stored as files
 * Level editor
-* Precalculated static shadows
 
 **Pending optimizations:**
 

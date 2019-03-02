@@ -369,25 +369,13 @@ void Engine::run() {
 
 	precomputeStaticLightColorIntensities();
 
-	int lastStartTime = SDL_GetTicks();
+	int dt, lastStartTime = (int)SDL_GetTicks();
 
 	while (!activeLevel->hasQuit()) {
-		int dt = SDL_GetTicks() - lastStartTime;
-
-		lastStartTime = SDL_GetTicks();
+		dt = (int)SDL_GetTicks() - lastStartTime;
+		lastStartTime = (int)SDL_GetTicks();
 
 		update(dt);
-
-		SDL_Event event;
-
-		while (SDL_PollEvent(&event)) {
-			activeLevel->inputManager->handleEvent(event);
-
-			if (event.type == SDL_QUIT) {
-				activeLevel->quit();
-				break;
-			}
-		}
 	}
 
 	clearActiveLevel();
@@ -402,10 +390,12 @@ void Engine::setActiveLevel(Level* level) {
 }
 
 void Engine::update(int dt) {
-	debugStats.trackFrameTime();
-
+	int startTime = SDL_GetTicks();
 	const Settings& settings = activeLevel->getSettings();
 
+	debugStats.trackFrameTime();
+
+	// Update view
 	rasterizer->setBackgroundColor(settings.backgroundColor);
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
@@ -424,6 +414,7 @@ void Engine::update(int dt) {
 
 	debugStats.trackUpdateTime();
 
+	// Advance game logic
 	if (frame++ == 0) {
 		activeLevel->onStart();
 		audioEngine->unmute();
@@ -433,6 +424,27 @@ void Engine::update(int dt) {
 	}
 
 	debugStats.logUpdateTime();
+
+	// Handle inputs
+	SDL_Event event;
+
+	while (SDL_PollEvent(&event)) {
+		activeLevel->inputManager->handleEvent(event);
+
+		if (event.type == SDL_QUIT) {
+			activeLevel->quit();
+
+			return;
+		}
+	}
+
+	// Frame lock checks, debug stat updates, render to screen
+	if (flags & FPS_30) {
+		while ((SDL_GetTicks() - startTime) < 33) {
+			SDL_Delay(0);
+		}
+	}
+
 	debugStats.logFrameTime();
 
 	if (flags & DEBUG_STATS) {

@@ -27,9 +27,8 @@ enum LevelState {
  * -----------
  */
 enum ControlMode {
-	DISABLED = 1 << 0,
-	WASD = 1 << 1,
-	MOUSE = 1 << 2
+	WASD = 1 << 0,
+	MOUSE = 1 << 1
 };
 
 /**
@@ -102,8 +101,8 @@ private:
 
 	template<class T>
 	T* getMapItem(std::map<const char*, T*> map, const char* key);
-	void handleControl();
-	void handleWASDControl();
+	void handleControl(int dt);
+	void handleWASDControl(int dt);
 	void handleMouseMotion(int dx, int dy);
 	void removeLight(Light* light);
 	template<class T>

@@ -119,9 +119,9 @@ const Settings& Level::getSettings() {
 	return settings;
 }
 
-void Level::handleControl() {
+void Level::handleControl(int dt) {
 	if (settings.controlMode & ControlMode::WASD) {
-		handleWASDControl();
+		handleWASDControl(dt);
 	}
 }
 
@@ -138,26 +138,28 @@ void Level::handleMouseMotion(int dx, int dy) {
 	camera->pitch = std::clamp(camera->pitch + pitchDelta, -Camera::MAX_PITCH, Camera::MAX_PITCH);
 }
 
-void Level::handleWASDControl() {
+void Level::handleWASDControl(int dt) {
 	Vec3 velocity;
-	float sy = sinf(camera->yaw);
-	float cy = cosf(camera->yaw);
+	float movementDelta = Level::MOVEMENT_SPEED * (dt / 16.0f);
 
 	if (inputManager->isKeyPressed(Keys::W)) {
-		velocity.z = Level::MOVEMENT_SPEED;
+		velocity.z = movementDelta;
 	} else if (inputManager->isKeyPressed(Keys::S)) {
-		velocity.z = -Level::MOVEMENT_SPEED;
+		velocity.z = -movementDelta;
 	}
 
 	if (inputManager->isKeyPressed(Keys::A)) {
-		velocity.x = -Level::MOVEMENT_SPEED;
+		velocity.x = -movementDelta;
 	} else if (inputManager->isKeyPressed(Keys::D)) {
-		velocity.x = Level::MOVEMENT_SPEED;
+		velocity.x = movementDelta;
 	}
 
 	if (inputManager->isKeyPressed(Keys::SHIFT)) {
 		velocity *= 4;
 	}
+
+	float sy = sinf(camera->yaw);
+	float cy = cosf(camera->yaw);
 
 	camera->position.x += cy * velocity.x + sy * -velocity.z;
 	camera->position.z += cy * velocity.z + sy * velocity.x;
@@ -278,7 +280,7 @@ void Level::safelyRemoveKeyedObject(const char* key) {
  * ParticleSystem itself deleted, thus freeing the allocated
  * Particles. Since all of a ParticleSystem's Particles are stored
  * contiguously in the Object pointer list, we can erase all list
- * elements from [first particle index, particle system size].
+ * elements from [N = first particle index, N + particle system size).
  */
 void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 	auto entry = particleSystemMap.find(key);
@@ -287,12 +289,11 @@ void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 		ParticleSystem* particleSystem = particleSystemMap.at(key);
 		const std::vector<Particle*>& particles = particleSystem->getParticles();
 		Particle* firstParticle = particles.at(0);
-		int totalParticles = particles.size();
 		int idx = 0;
 
 		while (idx < objects.size()) {
 			if (objects.at(idx) == firstParticle) {
-				for (int n = 0; n < totalParticles; n++) {
+				for (int n = 0; n < particles.size(); n++) {
 					objects.erase(objects.begin() + idx);
 				}
 
@@ -321,6 +322,6 @@ void Level::update(int dt) {
 		particleSystem->update(dt);
 	}
 
-	handleControl();
+	handleControl(dt);
 	camera->update();
 }
