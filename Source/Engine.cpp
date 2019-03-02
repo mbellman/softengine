@@ -412,9 +412,9 @@ void Engine::update(int dt) {
 
 	ui->draw();
 
+	// Advance game logic
 	debugStats.trackUpdateTime();
 
-	// Advance game logic
 	if (frame++ == 0) {
 		activeLevel->onStart();
 		audioEngine->unmute();
