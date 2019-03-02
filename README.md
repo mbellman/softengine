@@ -8,15 +8,15 @@ A software 3D rendering engine, written as an educational exercise.
 * Sectors/area zones
 * Real-time level settings editing
 * Controller support
-* Level layouts stored as files
-* Level editor
+* Model animations
+* Level editor + file save/load support
+* Dynamic object loading/unloading
 
 **Pending optimizations:**
 
 ### Refactoring/organization
 
 * Constants file for easy mobility between modules
-* Clean up/delete Engine fields list
 * Convert skybox.obj into a predefined Object subclass
 * Correct triangle edge/clockwise/etc. checks to be with respect to raster space
 * Engine::updateScreenProjection() -> Separate out near-plane clipping operations
