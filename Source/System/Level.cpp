@@ -140,22 +140,24 @@ void Level::handleMouseMotion(int dx, int dy) {
 
 void Level::handleWASDControl(int dt) {
 	Vec3 velocity;
-	float movementDelta = Level::MOVEMENT_SPEED * (dt / 16.0f);
 
 	if (inputManager->isKeyPressed(Keys::W)) {
-		velocity.z = movementDelta;
+		velocity.z = 1;
 	} else if (inputManager->isKeyPressed(Keys::S)) {
-		velocity.z = -movementDelta;
+		velocity.z = -1;
 	}
 
 	if (inputManager->isKeyPressed(Keys::A)) {
-		velocity.x = -movementDelta;
+		velocity.x = -1;
 	} else if (inputManager->isKeyPressed(Keys::D)) {
-		velocity.x = movementDelta;
+		velocity.x = 1;
 	}
 
+	velocity.normalize();
+	velocity *= Level::MOVEMENT_SPEED * (dt / 16.0f);
+
 	if (inputManager->isKeyPressed(Keys::SHIFT)) {
-		velocity *= 4;
+		velocity *= 4.0f;
 	}
 
 	float sy = sinf(camera->yaw);

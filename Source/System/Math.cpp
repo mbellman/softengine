@@ -119,8 +119,20 @@ float Vec3::magnitude() const {
 	return sqrt(x * x + y * y + z * z);
 }
 
+void Vec3::normalize() {
+	Vec3 unitVector = unit();
+
+	x = unitVector.x;
+	y = unitVector.y;
+	z = unitVector.z;
+}
+
 Vec3 Vec3::unit() const {
 	float m = magnitude();
+
+	if (m == 0.0f) {
+		return *this;
+	}
 
 	return {
 		x / m,

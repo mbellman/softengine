@@ -43,6 +43,7 @@ struct Vec3 {
 	static Vec3 lerp(const Vec3& v1, const Vec3& v2, float r);
 	void clamp(float low, float high);
 	float magnitude() const;
+	void normalize();
 	void rotate(const RotationMatrix& rotationMatrix);
 	Vec3 unit() const;
 	Vec3 operator +(const Vec3& vector) const;
