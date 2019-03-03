@@ -69,3 +69,26 @@ struct Polygon {
 
 	void bindVertex(int index, Vertex3d* vertex);
 };
+
+/**
+ * Bounds
+ * -----------
+ */
+struct Bounds {
+	Vec3 cornerA;
+	Vec3 cornerB;
+
+	bool hasPointInside(const Vec3& point) const;
+	bool isColliding(const Bounds& bounds) const;
+};
+
+/**
+ * Sector
+ * ------
+ */
+struct Sector {
+	constexpr static int GLOBAL_SECTOR_ID = -1;
+
+	Bounds bounds;
+	int id;
+};

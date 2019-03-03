@@ -587,6 +587,10 @@ void Engine::updateScreenProjection() {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 		const Object* lodObject = object->hasLODs() ? object->getLOD(relativeObjectPosition.magnitude()) : object;
 
+		if (!activeLevel->isInCurrentOccupiedSector(object->sectorId)) {
+			continue;
+		}
+
 		debugStats.countPolygons(lodObject->getPolygonCount());
 		debugStats.countVertices(lodObject->getVertexCount());
 

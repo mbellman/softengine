@@ -50,6 +50,8 @@ set(SOURCE_FILES
     Demo/Levels/Garden.h
     Demo/Levels/Beach.cpp
     Demo/Levels/Beach.h
+    Demo/Levels/SectorTest.cpp
+    Demo/Levels/SectorTest.h
 
     # -- Header files --
     Library/Graphics/Color.h

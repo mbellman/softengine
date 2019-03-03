@@ -7,6 +7,7 @@
 
 #include <Sound/Sound.h>
 #include <System/Objects.h>
+#include <System/Geometry.h>
 #include <System/ParticleSystem.h>
 #include <System/Camera.h>
 #include <System/InputManager.h>
@@ -62,6 +63,7 @@ public:
 	const std::vector<Sound*>& getSounds();
 	const Settings& getSettings();
 	bool hasQuit();
+	bool isInCurrentOccupiedSector(int sectorId);
 	virtual void load() = 0;
 	virtual void onStart();
 	virtual void onUpdate(int dt, int runningTime);
@@ -75,6 +77,7 @@ protected:
 
 	void add(Object* object);
 	void add(Sound* sound);
+	void add(const Sector& sector);
 	void add(const char* key, Object* object);
 	void add(const char* key, ObjLoader* objLoader);
 	void add(const char* key, TextureBuffer* textureBuffer);
@@ -92,11 +95,13 @@ private:
 	std::vector<Object*> objects;
 	std::vector<Light*> lights;
 	std::vector<Sound*> sounds;
+	std::vector<Sector> sectors;
 	std::map<const char*, int> objectMap;
 	std::map<const char*, ObjLoader*> objLoaderMap;
 	std::map<const char*, TextureBuffer*> textureBufferMap;
 	std::map<const char*, ParticleSystem*> particleSystemMap;
 	std::map<const char*, Sound*> soundMap;
+	std::vector<int> currentOccupiedSectors;
 	LevelState state = LevelState::ACTIVE;
 
 	template<class T>
@@ -109,4 +114,5 @@ private:
 	void removeMapItem(std::map<const char*, T*> map, const char* key);
 	void safelyRemoveKeyedObject(const char* key);
 	void safelyRemoveKeyedParticleSystem(const char* key);
+	void updateCurrentOccupiedSectors();
 };

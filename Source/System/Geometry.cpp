@@ -53,3 +53,23 @@ void Polygon::bindVertex(int index, Vertex3d* vertex) {
 
 	vertex->connectedPolygons.push_back(this);
 }
+
+/**
+ * Bounds
+ * ------
+ */
+bool Bounds::hasPointInside(const Vec3& point) const {
+	return (
+		point.x > cornerA.x && point.x < cornerB.x &&
+		point.y > cornerA.y && point.y < cornerB.y &&
+		point.z > cornerA.z && point.z < cornerB.z
+	);
+}
+
+bool Bounds::isColliding(const Bounds& bounds) const {
+	return !(
+		cornerB.x < bounds.cornerA.x || cornerA.x > bounds.cornerB.x ||
+		cornerB.y < bounds.cornerA.y || cornerA.y > bounds.cornerB.y ||
+		cornerB.z < bounds.cornerA.z || cornerA.z > bounds.cornerB.z
+	);
+}

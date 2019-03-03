@@ -48,6 +48,10 @@ void Level::add(Sound* sound) {
 	sounds.push_back(sound);
 }
 
+void Level::add(const Sector& sector) {
+	sectors.push_back(sector);
+}
+
 void Level::add(const char* key, ObjLoader* objLoader) {
 	objLoaderMap.emplace(key, objLoader);
 }
@@ -171,6 +175,20 @@ bool Level::hasQuit() {
 	return state == LevelState::INACTIVE;
 }
 
+bool Level::isInCurrentOccupiedSector(int sectorId) {
+	if (sectorId == Sector::GLOBAL_SECTOR_ID) {
+		return true;
+	}
+
+	for (int occupiedSectorId : currentOccupiedSectors) {
+		if (occupiedSectorId == sectorId) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Level::onStart() {}
 void Level::onUpdate(int dt, int runningTime) {}
 
@@ -204,6 +222,7 @@ void Level::quit() {
 	objects.clear();
 	lights.clear();
 	sounds.clear();
+	sectors.clear();
 	objectMap.clear();
 	objLoaderMap.clear();
 	textureBufferMap.clear();
@@ -324,6 +343,17 @@ void Level::update(int dt) {
 		particleSystem->update(dt);
 	}
 
+	updateCurrentOccupiedSectors();
 	handleControl(dt);
 	camera->update();
+}
+
+void Level::updateCurrentOccupiedSectors() {
+	currentOccupiedSectors.clear();
+
+	for (const auto& sector : sectors) {
+		if (sector.bounds.hasPointInside(camera->position)) {
+			currentOccupiedSectors.push_back(sector.id);
+		}
+	}
 }

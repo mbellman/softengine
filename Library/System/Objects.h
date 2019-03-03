@@ -20,6 +20,7 @@ struct Object : public Positionable {
 	bool hasLighting = true;
 	float fresnelFactor = 0.0f;
 	TextureBuffer* texture = NULL;
+	int sectorId = Sector::GLOBAL_SECTOR_ID;
 
 	/**
 	 * Allows the default near plane clipping distance to be
