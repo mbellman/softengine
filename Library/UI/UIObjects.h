@@ -3,13 +3,18 @@
 #include <string>
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <System/Positionable.h>
 
-struct UIObject {
+/**
+ * UIObject
+ * --------
+ */
+struct UIObject : public Positionable2d {
 	~UIObject();
 
 	void setPosition(int x, int y);
 	void setRenderer(SDL_Renderer* renderer);
-	virtual void draw() = 0;
+	void update(int dt);
 
 protected:
 	SDL_Renderer* m_renderer = 0;
@@ -20,11 +25,14 @@ protected:
 	void setTextureFromSurface(SDL_Surface* surface);
 };
 
+/**
+ * UIText
+ * ------
+ */
 struct UIText : UIObject {
 	UIText();
 	UIText(const char* value);
 
-	void draw();
 	void setFont(TTF_Font* font);
 	void setColor(const SDL_Color &color);
 	void setValue(const char* value);

@@ -10,11 +10,6 @@ UIObject::~UIObject() {
 	}
 }
 
-void UIObject::setPosition(int x, int y) {
-	m_rect.x = x;
-	m_rect.y = y;
-}
-
 void UIObject::setRenderer(SDL_Renderer* renderer) {
 	m_renderer = renderer;
 	refresh();
@@ -24,6 +19,17 @@ void UIObject::setTextureFromSurface(SDL_Surface* surface) {
 	m_texture = SDL_CreateTextureFromSurface(m_renderer, surface);
 
 	SDL_FreeSurface(surface);
+}
+
+void UIObject::update(int dt) {
+	updatePosition(dt);
+
+	if (m_texture != NULL) {
+		m_rect.x = position.x;
+		m_rect.y = position.y;
+
+		SDL_RenderCopy(m_renderer, m_texture, NULL, &m_rect);
+	}
 }
 
 /**
@@ -61,11 +67,5 @@ void UIText::refresh() {
 
 		TTF_SizeText(m_font, m_value, &m_rect.w, &m_rect.h);
 		setTextureFromSurface(m_surface);
-	}
-}
-
-void UIText::draw() {
-	if (m_texture != NULL) {
-		SDL_RenderCopy(m_renderer, m_texture, NULL, &m_rect);
 	}
 }

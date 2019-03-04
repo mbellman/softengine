@@ -14,7 +14,7 @@
  * Object
  * ------
  */
-struct Object : public Positionable {
+struct Object : public Positionable3d {
 	bool isStatic = false;
 	bool isFlatShaded = false;
 	bool hasLighting = true;

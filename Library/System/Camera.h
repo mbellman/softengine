@@ -8,14 +8,14 @@
  * Camera
  * ------
  */
-struct Camera : public Positionable {
+struct Camera : public Positionable3d {
 	constexpr static float MAX_PITCH = 89 * M_PI / 180;
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	int fov = 90;
 
-	Camera(): Positionable({ 0, 100, 0 }) {}
+	Camera(): Positionable3d({ 0, 100, 0 }) {}
 
 	RotationMatrix getRotationMatrix();
-	void update();
+	void update(int dt);
 };

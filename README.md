@@ -5,8 +5,8 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Tweenable object + UI positions
 * Composable object transformations
+* UIGraphics with PNG support
 * Model animations
 * Level editor + file save/load support
 * Dynamic object loading/unloading

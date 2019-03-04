@@ -232,7 +232,7 @@ void Object::syncLODs() {
 }
 
 void Object::update(int dt) {
-	updatePosition();
+	updatePosition(dt);
 
 	for (auto* lod : lods) {
 		lod->update(dt);

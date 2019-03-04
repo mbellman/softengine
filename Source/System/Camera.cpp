@@ -13,6 +13,6 @@ RotationMatrix Camera::getRotationMatrix() {
 	return (q1 * q2).toRotationMatrix();
 }
 
-void Camera::update() {
-	updatePosition();
+void Camera::update(int dt) {
+	updatePosition(dt);
 }

@@ -341,7 +341,7 @@ void Level::update(int dt) {
 
 	updateCurrentOccupiedSectors();
 	handleControl(dt);
-	camera->update();
+	camera->update(dt);
 }
 
 void Level::updateCurrentOccupiedSectors() {

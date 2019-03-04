@@ -1,6 +1,21 @@
 #pragma once
 
+#include <functional>
+
 struct RotationMatrix;
+
+/**
+ * Ease
+ * ----
+ */
+namespace Ease {
+	typedef std::function<float(float)> EaseFunction;
+
+	float linear(float t);
+	float quadIn(float t);
+	float quadOut(float t);
+	float quadInOut(float t);
+};
 
 /**
  * Coordinate
@@ -76,4 +91,31 @@ template<class T>
 struct Range {
 	T start;
 	T end;
+};
+
+/**
+ * Tween
+ * -----
+ */
+template<class T>
+struct Tween {
+	Range<T> value;
+	int duration;
+	int time = 0;
+	Ease::EaseFunction easing;
+	bool isActive = false;
+
+	float progress() const {
+		return (float)time / duration;
+	}
+
+	float alpha() const {
+		float p = progress();
+
+		if (p >= 1.0f) {
+			p = 1.0f;
+		}
+
+		return easing(p);
+	}
 };

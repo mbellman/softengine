@@ -89,18 +89,6 @@ Engine::~Engine() {
 	delete audioEngine;
 	delete commandLine;
 
-	if (flags & DEBUG_STATS) {
-		for (auto& [key, uiText] : debugStatsTextMap) {
-			delete uiText;
-		}
-
-		debugStatsTextMap.clear();
-	}
-
-	if (flags & DEBUG_COMMAND_LINE) {
-		delete commandLineText;
-	}
-
 	TTF_CloseFont(debugFont);
 	TTF_Quit();
 
@@ -109,9 +97,9 @@ Engine::~Engine() {
 	SDL_Quit();
 }
 
-void Engine::addUIObject(UIObject* uiObject) {
+void Engine::addUIObject(const char* key, UIObject* uiObject) {
 	uiObject->setRenderer(renderer);
-	ui->addObject(uiObject);
+	ui->add(key, uiObject);
 }
 
 void Engine::awaitRenderStep(RenderStep renderStep) {
@@ -424,7 +412,7 @@ void Engine::update(int dt) {
 		updateScene_SingleThreaded();
 	}
 
-	ui->draw();
+	ui->update(dt);
 
 	// Advance game logic
 	debugStats.trackUpdateTime();
@@ -801,10 +789,10 @@ void Engine::addCommandLineText() {
 	UIText* text = new UIText();
 
 	text->setValue("> ");
-	text->setRenderer(renderer);
 	text->setFont(debugFont);
+	text->position = { 10, height + 30 };
 
-	commandLineText = text;
+	addUIObject("commandLineText", text);
 }
 
 void Engine::updateDebugStats() {
@@ -825,11 +813,12 @@ void Engine::updateDebugStats() {
 void Engine::addDebugStat(const char* key) {
 	UIText* text = new UIText();
 
-	text->setPosition(10, 10 + (debugStatsTextMap.size() * 25));
-	text->setRenderer(renderer);
+	text->position = { 10, 10 + totalDebugStats * 25 };
 	text->setFont(debugFont);
 
-	debugStatsTextMap.emplace(key, text);
+	addUIObject(key, text);
+
+	totalDebugStats++;
 }
 
 void Engine::updateDebugStat(const char* key, const char* label, int value) {
@@ -837,20 +826,18 @@ void Engine::updateDebugStat(const char* key, const char* label, int value) {
 
 	sprintf(statString, "%s: %d", label, value);
 
-	UIText* text = debugStatsTextMap.at(key);
+	UIText* text = (UIText*)ui->get(key);
 
 	text->setValue(statString);
-	text->draw();
 }
 
 void Engine::showCommandLine() {
 	commandLine->open();
-
-	commandLineText->setPosition(10, height - 30);
+	ui->get("commandLineText")->tweenTo({ 10, height - 30 }, 500, Ease::quadOut);
 }
 
 void Engine::hideCommandLine() {
-	commandLineText->setPosition(10, height + 30);
+	ui->get("commandLineText")->tweenTo({ 10, height + 30 }, 500, Ease::quadOut);
 	commandLine->close();
 }
 
@@ -877,6 +864,7 @@ void Engine::handleCommandLineInput(const SDL_Event& event) {
 }
 
 void Engine::updateCommandLineText() {
+	UIText* commandLineText = (UIText*)ui->get("commandLineText");
+
 	commandLineText->setValue(("> " + commandLine->getCurrentCommand()).c_str());
-	commandLineText->draw();
 }

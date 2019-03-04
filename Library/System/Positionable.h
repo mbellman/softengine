@@ -3,23 +3,45 @@
 #include <functional>
 #include <System/Math.h>
 
-typedef std::function<void(const Vec3&, Vec3&)> PositionHandler;
+typedef std::function<void(const Vec3&, Vec3&)> FollowHandler;
 
 /**
- * Positionable
- * ------------
+ * Positionable2d
+ * --------------
  */
-struct Positionable {
-	Vec3 position;
+struct Positionable2d {
+	Coordinate position;
 
-	Positionable();
-	Positionable(const Vec3& position);
+	Positionable2d();
+	Positionable2d(const Coordinate& position);
 
-	void follow(const Positionable* target, PositionHandler handler);
+	void tweenTo(const Coordinate& target, int duration, Ease::EaseFunction easeFunction);
 
 protected:
-	const Positionable* positionTarget = 0;
-	PositionHandler positionHandler;
+	void updatePosition(int dt);
 
-	void updatePosition();
+private:
+	Tween<Coordinate> tween;
+};
+
+/**
+ * Positionable3d
+ * --------------
+ */
+struct Positionable3d {
+	Vec3 position;
+
+	Positionable3d();
+	Positionable3d(const Vec3& position);
+
+	void follow(const Positionable3d* target, FollowHandler handler);
+	void tweenTo(const Vec3& target, int duration, Ease::EaseFunction easeFunction);
+
+protected:
+	void updatePosition(int dt);
+
+private:
+	const Positionable3d* followTarget = nullptr;
+	FollowHandler followHandler;
+	Tween<Vec3> tween;
 };

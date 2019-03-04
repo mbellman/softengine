@@ -13,7 +13,7 @@ int height = 720;
 int main(int argc, char* argv[]) {
 	Engine engine(width, height, DEBUG_STATS | DEBUG_COMMAND_LINE);
 
-	engine.setActiveLevel(new Garden());
+	engine.setActiveLevel(new TextureTest());
 	engine.run();
 
 	return 0;

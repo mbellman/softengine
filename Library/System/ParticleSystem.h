@@ -12,7 +12,7 @@
  * ParticleSystem
  * --------------
  */
-class ParticleSystem : public Positionable {
+class ParticleSystem : public Positionable3d {
 public:
 	ParticleSystem(int size);
 	~ParticleSystem();

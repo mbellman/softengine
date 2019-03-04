@@ -3,6 +3,7 @@
 #include <Levels/TextureTest.h>
 #include <System/Objects.h>
 #include <Graphics/TextureBuffer.h>
+#include <System/Math.h>
 
 /**
  * TextureTest
@@ -18,7 +19,8 @@ void TextureTest::load() {
 	cube->position = { 0, 100, 2500 };
 	cube->setTexture(getTexture("blockTexture"));
 	cube->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
-	cube->isStatic = true;
+
+	cube->tweenTo({ -1000, 100, 3000 }, 5000, Ease::quadInOut);
 
 	add("spinningCube", cube);
 

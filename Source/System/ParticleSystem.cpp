@@ -86,5 +86,5 @@ void ParticleSystem::update(int dt) {
 		behaviorHandler(particle, dt);
 	}
 
-	updatePosition();
+	updatePosition(dt);
 }

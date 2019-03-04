@@ -62,7 +62,7 @@ public:
 	Engine(int width, int height, Uint32 flags = 0);
 	~Engine();
 
-	void addUIObject(UIObject* uiObject);
+	void addUIObject(const char* key, UIObject* uiObject);
 	void setActiveLevel(Level* level);
 	void run();
 
@@ -134,8 +134,7 @@ private:
 
 	TTF_Font* debugFont = NULL;
 	DebugStats debugStats;
-	std::map<const char*, UIText*> debugStatsTextMap;
-	UIText* commandLineText = NULL;
+	int totalDebugStats = 0;
 
 	void addDebugStats();
 	void addCommandLineText();

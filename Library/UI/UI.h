@@ -1,17 +1,21 @@
 #pragma once
 
-#include <vector>
+#include <map>
 #include <SDL.h>
-
 #include <UI/UIObjects.h>
 
+/**
+ * UI
+ * --
+ */
 class UI {
 public:
 	~UI();
 
-	void draw();
-	void addObject(UIObject* object);
+	void add(const char* key, UIObject* object);
+	UIObject* get(const char* key);
+	void update(int dt);
 
 protected:
-	std::vector<UIObject*> m_objects;
+	std::map<const char*, UIObject*> uiObjectMap;
 };

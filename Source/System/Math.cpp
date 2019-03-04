@@ -7,6 +7,28 @@
 using namespace std;
 
 /**
+ * Ease
+ * ----
+ */
+float Ease::linear(float t) {
+	return t;
+}
+
+float Ease::quadIn(float t) {
+	return t * t;
+}
+
+float Ease::quadOut(float t) {
+	return t * (2 - t);
+}
+
+float Ease::quadInOut(float t) {
+	t *= 2.0f;
+
+	return (t < 1.0f ? quadIn(t) : 1.0f + quadOut(t - 1.0f)) / 2.0f;
+}
+
+/**
  * Coordinate
  * ----------
  */
