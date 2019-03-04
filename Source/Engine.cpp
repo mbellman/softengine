@@ -4,6 +4,7 @@
 #include <cmath>
 #include <map>
 #include <algorithm>
+#include <string>
 
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -53,6 +54,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	illuminator = new Illuminator();
 	audioEngine = new AudioEngine();
 	ui = new UI();
+	commandLine = new CommandLine();
 
 	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
 
@@ -85,6 +87,7 @@ Engine::~Engine() {
 	delete ui;
 	delete rasterizer;
 	delete audioEngine;
+	delete commandLine;
 
 	if (flags & DEBUG_STATS) {
 		for (auto& [key, uiText] : debugStatsTextMap) {
@@ -92,6 +95,10 @@ Engine::~Engine() {
 		}
 
 		debugStatsTextMap.clear();
+	}
+
+	if (flags & DEBUG_COMMAND_LINE) {
+		delete commandLineText;
 	}
 
 	TTF_CloseFont(debugFont);
@@ -124,6 +131,7 @@ void Engine::awaitRenderStep(RenderStep renderStep) {
 
 void Engine::clearActiveLevel() {
 	illuminator->setActiveLevel(NULL);
+	commandLine->setActiveLevel(NULL);
 
 	if (activeLevel != NULL) {
 		delete activeLevel;
@@ -361,6 +369,11 @@ void Engine::run() {
 		addDebugStats();
 	}
 
+	if (flags & DEBUG_COMMAND_LINE) {
+		addCommandLineText();
+		hideCommandLine();
+	}
+
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	audioEngine->mute();
@@ -387,11 +400,12 @@ void Engine::setActiveLevel(Level* level) {
 	activeLevel = level;
 
 	illuminator->setActiveLevel(level);
+	commandLine->setActiveLevel(level);
 }
 
 void Engine::update(int dt) {
 	int startTime = SDL_GetTicks();
-	const Settings& settings = activeLevel->getSettings();
+	const Settings& settings = activeLevel->settings;
 
 	debugStats.trackFrameTime();
 
@@ -429,12 +443,16 @@ void Engine::update(int dt) {
 	SDL_Event event;
 
 	while (SDL_PollEvent(&event)) {
-		activeLevel->inputManager->handleEvent(event);
-
 		if (event.type == SDL_QUIT) {
 			activeLevel->quit();
 
 			return;
+		} else if ((flags & DEBUG_COMMAND_LINE) && event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_c) {
+			showCommandLine();
+		} else if (commandLine->isOpen()) {
+			handleCommandLineInput(event);
+		} else {
+			activeLevel->inputManager->handleEvent(event);
 		}
 	}
 
@@ -449,6 +467,10 @@ void Engine::update(int dt) {
 
 	if (flags & DEBUG_STATS) {
 		updateDebugStats();
+	}
+
+	if (flags & DEBUG_COMMAND_LINE) {
+		updateCommandLineText();
 	}
 
 	SDL_RenderPresent(renderer);
@@ -623,7 +645,7 @@ void Engine::updateScreenProjection() {
 
 				if (t_verts[i].vector.z < Engine::NEAR_Z)
 					frustumCuller.near++;
-				else if (t_verts[i].vector.z > activeLevel->getSettings().visibility)
+				else if (t_verts[i].vector.z > activeLevel->settings.visibility)
 					frustumCuller.far++;
 
 				if (u_vecs[i].x < -fovAngleRange)
@@ -758,7 +780,7 @@ void Engine::updateSounds() {
 	}
 }
 
-// --------- DEBUG STATS --------- //
+// --------- DEBUGGING --------- //
 
 void Engine::addDebugStats() {
 	addDebugStat("screenProjectionTime");
@@ -773,6 +795,16 @@ void Engine::addDebugStats() {
 	addDebugStat("totalTrianglesProjected");
 	addDebugStat("totalTrianglesDrawn");
 	addDebugStat("totalScanlines");
+}
+
+void Engine::addCommandLineText() {
+	UIText* text = new UIText();
+
+	text->setValue("> ");
+	text->setRenderer(renderer);
+	text->setFont(debugFont);
+
+	commandLineText = text;
 }
 
 void Engine::updateDebugStats() {
@@ -809,4 +841,42 @@ void Engine::updateDebugStat(const char* key, const char* label, int value) {
 
 	text->setValue(statString);
 	text->draw();
+}
+
+void Engine::showCommandLine() {
+	commandLine->open();
+
+	commandLineText->setPosition(10, height - 30);
+}
+
+void Engine::hideCommandLine() {
+	commandLineText->setPosition(10, height + 30);
+	commandLine->close();
+}
+
+void Engine::handleCommandLineInput(const SDL_Event& event) {
+	if (event.type == SDL_KEYUP) {
+		switch (event.key.keysym.sym) {
+			case SDLK_BACKSPACE:
+				commandLine->backspace();
+				break;
+			case SDLK_RETURN:
+				commandLine->executeCurrentCommand();
+				precomputeStaticLightColorIntensities();
+				hideCommandLine();
+				break;
+			case SDLK_ESCAPE:
+				hideCommandLine();
+				break;
+			default:
+				break;
+		}
+	} else if (event.type == SDL_TEXTINPUT) {
+		commandLine->queueCharacter(event.text.text[0]);
+	}
+}
+
+void Engine::updateCommandLineText() {
+	commandLineText->setValue(("> " + commandLine->getCurrentCommand()).c_str());
+	commandLineText->draw();
 }

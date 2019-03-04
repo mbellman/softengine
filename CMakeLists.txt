@@ -66,6 +66,7 @@ set(SOURCE_FILES
     Library/Sound/AudioEngine.h
     Library/Sound/Sound.h
     Library/System/Camera.h
+    Library/System/CommandLine.h
     Library/System/DebugStats.h
     Library/System/Flags.h
     Library/System/Geometry.h
@@ -95,6 +96,7 @@ set(SOURCE_FILES
     Source/Sound/AudioEngine.cpp
     Source/Sound/Sound.cpp
     Source/System/Camera.cpp
+    Source/System/CommandLine.cpp
     Source/System/DebugStats.cpp
     Source/System/Geometry.cpp
     Source/System/InputManager.cpp

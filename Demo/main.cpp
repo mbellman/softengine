@@ -11,9 +11,9 @@ int width = 1200;
 int height = 720;
 
 int main(int argc, char* argv[]) {
-	Engine engine(width, height, DEBUG_STATS);
+	Engine engine(width, height, DEBUG_STATS | DEBUG_COMMAND_LINE);
 
-	engine.setActiveLevel(new SectorTest());
+	engine.setActiveLevel(new Garden());
 	engine.run();
 
 	return 0;

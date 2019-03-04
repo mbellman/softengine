@@ -19,6 +19,7 @@
 #include <System/Level.h>
 #include <System/Math.h>
 #include <System/Positionable.h>
+#include <System/CommandLine.h>
 #include <Sound/AudioEngine.h>
 
 /**
@@ -69,9 +70,6 @@ private:
 	constexpr static float NEAR_Z = 30.0f;
 	constexpr static int SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT = 2500;
 
-	DebugStats debugStats;
-	std::map<const char*, UIText*> debugStatsTextMap;
-
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	Rasterizer* rasterizer;
@@ -80,6 +78,7 @@ private:
 	Illuminator* illuminator;
 	AudioEngine* audioEngine;
 	UI* ui;
+	CommandLine* commandLine;
 	Level* activeLevel = NULL;
 	Camera camera;
 	Uint32 flags = 0;
@@ -131,12 +130,22 @@ private:
 	void updateScreenProjection();
 	void updateSounds();
 
-	/* ----- */
+	/* --- DEBUGGING -- */
 
 	TTF_Font* debugFont = NULL;
+	DebugStats debugStats;
+	std::map<const char*, UIText*> debugStatsTextMap;
+	UIText* commandLineText = NULL;
 
 	void addDebugStats();
+	void addCommandLineText();
+
 	void addDebugStat(const char* key);
 	void updateDebugStat(const char* key, const char* label, int debugValue);
 	void updateDebugStats();
+
+	void showCommandLine();
+	void hideCommandLine();
+	void handleCommandLineInput(const SDL_Event& event);
+	void updateCommandLineText();
 };

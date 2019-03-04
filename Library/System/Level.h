@@ -54,6 +54,7 @@ struct Settings {
 class Level {
 public:
 	InputManager* inputManager = NULL;
+	Settings settings;
 
 	Level();
 	~Level();
@@ -61,7 +62,6 @@ public:
 	const std::vector<Object*>& getObjects();
 	const std::vector<Light*>& getLights();
 	const std::vector<Sound*>& getSounds();
-	const Settings& getSettings();
 	bool hasQuit();
 	bool isInCurrentOccupiedSector(int sectorId);
 	virtual void load() = 0;
@@ -73,7 +73,6 @@ public:
 
 protected:
 	Camera* camera = NULL;
-	Settings settings;
 
 	void add(Object* object);
 	void add(Sound* sound);

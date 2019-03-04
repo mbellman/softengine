@@ -119,10 +119,6 @@ const std::vector<Sound*>& Level::getSounds() {
 	return sounds;
 }
 
-const Settings& Level::getSettings() {
-	return settings;
-}
-
 void Level::handleControl(int dt) {
 	if (settings.controlMode & ControlMode::WASD) {
 		handleWASDControl(dt);
