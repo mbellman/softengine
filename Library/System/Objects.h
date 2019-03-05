@@ -20,6 +20,7 @@ struct Object : public Positionable3d {
 	bool isStatic = false;
 	bool isFlatShaded = false;
 	bool hasLighting = true;
+	bool canOccludeSurfaces = true;
 	float fresnelFactor = 0.0f;
 	TextureBuffer* texture = NULL;
 	UpdateHandler onUpdate = nullptr;

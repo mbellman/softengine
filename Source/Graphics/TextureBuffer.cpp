@@ -12,25 +12,6 @@ static int getTotalMipmaps(int size) {
 	return size <=2 ? 0 : 1 + getTotalMipmaps(size >> 1);
 }
 
-static Uint32 readPixel(SDL_Surface* surface, int index) {
-	int x = index % surface->w;
-	int y = (int)(index / surface->w);
-	SDL_PixelFormat* format = surface->format;
-	Uint8* pixel = (Uint8*)surface->pixels + surface->pitch * y + format->BytesPerPixel * x;
-
-#if SDL_BYTEORDER == SDL_LIL_ENDIAN
-	int R = pixel[0];
-	int G = pixel[1];
-	int B = pixel[2];
-#else
-	int R = pixel[format->BytesPerPixel - 1];
-	int G = pixel[format->BytesPerPixel - 2];
-	int B = pixel[format->BytesPerPixel - 3];
-#endif
-
-	return ARGB(R, G, B);
-}
-
 /**
  * TextureBuffer
  * -------------
@@ -76,7 +57,7 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 			ColorBuffer* colorBuffer = new ColorBuffer(width, height);
 
 			for (int i = 0; i < totalPixels; i++) {
-				Uint32 color = readPixel(image, i);
+				Uint32 color = TextureBuffer::readPixel(image, i);
 				int x = i % width;
 				int y = (int)(i / width);
 
@@ -103,6 +84,25 @@ void TextureBuffer::confirmTexture(SDL_Renderer* renderer, TextureMode mode) {
 
 const ColorBuffer* TextureBuffer::getMipmap(int level) const {
 	return level >= mipmaps.size() ? mipmaps.back() : mipmaps.at(level);
+}
+
+Uint32 TextureBuffer::readPixel(SDL_Surface* surface, int index) {
+	int x = index % surface->w;
+	int y = (int)(index / surface->w);
+	SDL_PixelFormat* format = surface->format;
+	Uint8* pixel = (Uint8*)surface->pixels + surface->pitch * y + format->BytesPerPixel * x;
+
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+	int R = pixel[0];
+	int G = pixel[1];
+	int B = pixel[2];
+#else
+	int R = pixel[format->BytesPerPixel - 1];
+	int G = pixel[format->BytesPerPixel - 2];
+	int B = pixel[format->BytesPerPixel - 3];
+#endif
+
+	return ARGB(R, G, B);
 }
 
 const Color& TextureBuffer::sample(float u, float v, const ColorBuffer* mipmap) const {

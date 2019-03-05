@@ -10,6 +10,7 @@
  */
 class UI {
 public:
+	UI(SDL_Renderer* renderer);
 	~UI();
 
 	void add(const char* key, UIObject* object);
@@ -17,5 +18,6 @@ public:
 	void update(int dt);
 
 protected:
+	SDL_Renderer* renderer = NULL;
 	std::map<const char*, UIObject*> uiObjectMap;
 };

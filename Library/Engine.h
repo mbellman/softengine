@@ -62,7 +62,6 @@ public:
 	Engine(int width, int height, Uint32 flags = 0);
 	~Engine();
 
-	void addUIObject(const char* key, UIObject* uiObject);
 	void setActiveLevel(Level* level);
 	void run();
 

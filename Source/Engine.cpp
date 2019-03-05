@@ -53,7 +53,7 @@ Engine::Engine(int width, int height, Uint32 flags) {
 	triangleBuffer = new TriangleBuffer();
 	illuminator = new Illuminator();
 	audioEngine = new AudioEngine();
-	ui = new UI();
+	ui = new UI(renderer);
 	commandLine = new CommandLine();
 
 	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
@@ -95,11 +95,6 @@ Engine::~Engine() {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-}
-
-void Engine::addUIObject(const char* key, UIObject* uiObject) {
-	uiObject->setRenderer(renderer);
-	ui->add(key, uiObject);
 }
 
 void Engine::awaitRenderStep(RenderStep renderStep) {
@@ -366,6 +361,7 @@ void Engine::run() {
 
 	audioEngine->mute();
 	activeLevel->setCamera(&camera);
+	activeLevel->setUI(ui);
 	activeLevel->load();
 
 	precomputeStaticLightColorIntensities();
@@ -800,7 +796,7 @@ void Engine::addCommandLineText() {
 	text->setFont(debugFont);
 	text->position = { 10, height + 30 };
 
-	addUIObject("commandLineText", text);
+	ui->add("commandLineText", text);
 }
 
 void Engine::updateDebugStats() {
@@ -824,7 +820,7 @@ void Engine::addDebugStat(const char* key) {
 	text->position = { 10, 10 + totalDebugStats * 25 };
 	text->setFont(debugFont);
 
-	addUIObject(key, text);
+	ui->add(key, text);
 
 	totalDebugStats++;
 }

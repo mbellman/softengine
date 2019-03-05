@@ -4,13 +4,14 @@
 #include <System/Objects.h>
 #include <Graphics/TextureBuffer.h>
 #include <System/Math.h>
+#include <UI/UIObjects.h>
 
 /**
  * TextureTest
  * -----------
  */
 void TextureTest::load() {
-	TextureBuffer* blockTexture = new TextureBuffer("./DemoAssets/block.png");
+	TextureBuffer* blockTexture = new TextureBuffer("./DemoAssets/transparent-block.png");
 	blockTexture->shouldUseMipmaps = false;
 
 	add("blockTexture", blockTexture);
@@ -20,6 +21,7 @@ void TextureTest::load() {
 	cube->setTexture(getTexture("blockTexture"));
 	cube->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
 	cube->tweenTo({ -1000, 100, 3000 }, 5000, Ease::quadInOut);
+	cube->canOccludeSurfaces = false;
 
 	cube->onUpdate = [=](int dt, int runningTime) {
 		cube->rotate({ 0.02, -0.03, 0 });
@@ -40,6 +42,12 @@ void TextureTest::load() {
 
 		add(c);
 	}
+
+	UIGraphic* hud = new UIGraphic("./DemoAssets/hud.png");
+	hud->position.x = 1000;
+	hud->position.y = 10;
+
+	ui->add("hud", hud);
 
 	settings.backgroundColor = { 0, 0, 50 };
 	settings.brightness = 0.2;

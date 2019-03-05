@@ -6,6 +6,8 @@
 #include <cmath>
 #include <System/Objects.h>
 #include <System/InputManager.h>
+#include <System/Camera.h>
+#include <UI/UI.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
 
@@ -328,6 +330,10 @@ void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 
 void Level::setCamera(Camera* camera) {
 	this->camera = camera;
+}
+
+void Level::setUI(UI* ui) {
+	this->ui = ui;
 }
 
 void Level::update(int dt) {

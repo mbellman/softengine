@@ -10,6 +10,7 @@
 #include <System/Geometry.h>
 #include <System/ParticleSystem.h>
 #include <System/Camera.h>
+#include <UI/UI.h>
 #include <System/InputManager.h>
 #include <Graphics/TextureBuffer.h>
 #include <SDL.h>
@@ -69,10 +70,12 @@ public:
 	virtual void onUpdate(int dt, int runningTime);
 	void quit();
 	void setCamera(Camera* camera);
+	void setUI(UI* ui);
 	void update(int dt);
 
 protected:
 	Camera* camera = NULL;
+	UI* ui = NULL;
 
 	void add(Object* object);
 	void add(Sound* sound);

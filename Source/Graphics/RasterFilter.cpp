@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <Helpers.h>
 #include <System/Geometry.h>
+#include <System/Objects.h>
 
 /**
  * RasterFilter
@@ -51,6 +52,10 @@ bool RasterFilter::isTriangleClockwise(const Triangle* triangle) {
 }
 
 bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
+	if (!triangle->sourcePolygon->sourceObject->canOccludeSurfaces) {
+		return false;
+	}
+
 	const Coordinate& c0 = triangle->vertices[0].coordinate;
 	const Coordinate& c1 = triangle->vertices[1].coordinate;
 	const Coordinate& c2 = triangle->vertices[2].coordinate;

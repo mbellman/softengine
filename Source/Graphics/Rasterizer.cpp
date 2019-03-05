@@ -350,39 +350,47 @@ void Rasterizer::triangleScanline(
 		const ColorBuffer* mipmap = texture->getMipmap(mipmapLevel);
 		int textureSampleInterval = getTextureSampleInterval(length, averageDepth);
 		int textureSampleIntervalCounter = textureSampleInterval;
+		bool isTransparent = false;
 
 		for (int x = start; x <= end; x++) {
 			int index = pixelIndexOffset + x;
 
 			if (depthBuffer[index] < i_depth) {
 				if (++textureSampleIntervalCounter > textureSampleInterval) {
-					float intensity_R = Lerp::lerp(textureIntensity.start.x, textureIntensity.end.x, progress);
-					float intensity_G = Lerp::lerp(textureIntensity.start.y, textureIntensity.end.y, progress);
-					float intensity_B = Lerp::lerp(textureIntensity.start.z, textureIntensity.end.z, progress);
+					textureSampleIntervalCounter = 0;
 
 					float depth = 1.0f / i_depth;
 					float u = Lerp::lerp(perspectiveUV.start.x, perspectiveUV.end.x, progress) * depth;
 					float v = Lerp::lerp(perspectiveUV.start.y, perspectiveUV.end.y, progress) * depth;
 					const Color& sample = texture->sample(u, v, mipmap);
 
-					int R = (int)(sample.R * intensity_R);
-					int G = (int)(sample.G * intensity_G);
-					int B = (int)(sample.B * intensity_B);
+					isTransparent = sample.R == 255 && sample.G == 0 && sample.B == 255;
 
-					if (visibility < INT_MAX) {
-						float visibilityRatio = FAST_MIN(depth / visibility, 1.0f);
+					if (!isTransparent) {
+						float intensity_R = Lerp::lerp(textureIntensity.start.x, textureIntensity.end.x, progress);
+						float intensity_G = Lerp::lerp(textureIntensity.start.y, textureIntensity.end.y, progress);
+						float intensity_B = Lerp::lerp(textureIntensity.start.z, textureIntensity.end.z, progress);
 
-						R = Lerp::lerp(R, backgroundColor.R, visibilityRatio);
-						G = Lerp::lerp(G, backgroundColor.G, visibilityRatio);
-						B = Lerp::lerp(B, backgroundColor.B, visibilityRatio);
+						int R = (int)(sample.R * intensity_R);
+						int G = (int)(sample.G * intensity_G);
+						int B = (int)(sample.B * intensity_B);
+
+						if (visibility < INT_MAX) {
+							float visibilityRatio = FAST_MIN(depth / visibility, 1.0f);
+
+							R = Lerp::lerp(R, backgroundColor.R, visibilityRatio);
+							G = Lerp::lerp(G, backgroundColor.G, visibilityRatio);
+							B = Lerp::lerp(B, backgroundColor.B, visibilityRatio);
+						}
+
+						currentColor = ARGB(FAST_CLAMP(R, 0, 255), FAST_CLAMP(G, 0, 255), FAST_CLAMP(B, 0, 255));
 					}
-
-					currentColor = ARGB(FAST_CLAMP(R, 0, 255), FAST_CLAMP(G, 0, 255), FAST_CLAMP(B, 0, 255));
-					textureSampleIntervalCounter = 0;
 				}
 
-				pixelBuffer[index] = currentColor;
-				depthBuffer[index] = i_depth;
+				if (!isTransparent) {
+					pixelBuffer[index] = currentColor;
+					depthBuffer[index] = i_depth;
+				}
 			}
 
 			progress += progressStep;
