@@ -27,7 +27,7 @@ void Beach::load() {
 	add(skybox);
 	add("skytex", sky);
 
-	Mesh* water = new Mesh(100, 100, 150);
+	Mesh* water = new Mesh(75, 75, 200);
 	water->setColor({ 20, 125, 200 });
 	water->position = { -7500, -1000, 3000 };
 	water->fresnelFactor = 2.0f;
@@ -70,6 +70,6 @@ void Beach::onUpdate(int dt, int runningTime) {
 	Mesh* water = (Mesh*)getObject("water");
 
 	water->setVertexOffsets([=](int row, int column, Vec3& offset) {
-		offset.y = 25.0f * sinf(row / 1.5f + runningTime / 600.0f) + 25.0f * sinf((row * M_PI) / 2.0f + column / 1.5f + runningTime / 600.0f);
+		offset.y = 40.0f * sinf(row / 1.5f + runningTime / 600.0f) + 40.0f * sinf((row * M_PI) / 2.0f + column / 1.5f + runningTime / 600.0f);
 	});
 }
