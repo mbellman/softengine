@@ -1,5 +1,6 @@
 #include <UI/UIObjects.h>
 #include <Graphics/TextureBuffer.h>
+#include <Constants.h>
 #include <SDL.h>
 #include <SDL_image.h>
 
@@ -117,7 +118,7 @@ void UIGraphic::setTransparentPixels() {
 			int G = (color & 0x0000FF00) >> 8;
 			int B = (color & 0x000000FF);
 
-			if (R == 255 && G == 0 && B == 255) {
+			if (R == COLOR_TRANSPARENT.R && G == COLOR_TRANSPARENT.G && B == COLOR_TRANSPARENT.B) {
 				Uint8* pixel = (Uint8*)image->pixels + image->pitch * y + format->BytesPerPixel * x;
 
 			#if SDL_BYTEORDER == SDL_LIL_ENDIAN

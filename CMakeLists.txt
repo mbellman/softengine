@@ -80,6 +80,7 @@ set(SOURCE_FILES
     Library/UI/Alert.h
     Library/UI/UI.h
     Library/UI/UIObjects.h
+    Library/Constants.h
     Library/Engine.h
     Library/Helpers.h
 

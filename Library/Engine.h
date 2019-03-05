@@ -66,9 +66,6 @@ public:
 	void run();
 
 private:
-	constexpr static float NEAR_Z = 30.0f;
-	constexpr static int SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT = 2500;
-
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	Rasterizer* rasterizer;

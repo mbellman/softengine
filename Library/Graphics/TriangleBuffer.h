@@ -17,8 +17,6 @@ public:
 	void reset();
 
 private:
-	constexpr static int TRIANGLE_POOL_SIZE = 100000;
-
 	Level* activeLevel = NULL;
 	bool isSwapped = false;
 	int totalRequestedTriangles = 0;

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <System/Geometry.h>
+#include <Constants.h>
 
 /**
  * Cover
@@ -42,16 +43,12 @@ private:
 	 */
 	typedef std::vector<Triangle*> Zone;
 
-	constexpr static int MAX_ZONES = 50;
-	constexpr static int MIN_COVER_SIZE = 150;
-	constexpr static int ZONE_RANGE = 250;
-
 	int currentZoneIndex = 0;
 	int highestZoneIndex = 0;
 	int currentElementIndex = 0;
 	int rasterWidth;
 	int rasterHeight;
-	Zone zones[RasterFilter::MAX_ZONES];
+	Zone zones[MAX_RASTER_FILTER_ZONES];
 	std::vector<Cover> covers;
 
 	void addCover(const Triangle* triangle, int zone);

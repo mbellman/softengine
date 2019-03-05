@@ -1,6 +1,7 @@
 #include <Graphics/ColorBuffer.h>
 #include <algorithm>
 #include <Helpers.h>
+#include <Constants.h>
 
 /**
  * ColorBuffer
@@ -49,7 +50,7 @@ inline int ColorBuffer::getIndex(int x, int y) const {
 }
 
 const Color& ColorBuffer::read(int index) const {
-	return (index < 0 || index >= bufferSize) ? BLACK : buffer[index];
+	return (index < 0 || index >= bufferSize) ? COLOR_BLACK : buffer[index];
 }
 
 const Color& ColorBuffer::read(int x, int y) const {

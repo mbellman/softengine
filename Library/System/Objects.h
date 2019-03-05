@@ -9,6 +9,7 @@
 #include <Graphics/Color.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
+#include <Constants.h>
 
 typedef std::function<void(int, int)> UpdateHandler;
 
@@ -24,7 +25,7 @@ struct Object : public Positionable3d {
 	float fresnelFactor = 0.0f;
 	TextureBuffer* texture = NULL;
 	UpdateHandler onUpdate = nullptr;
-	int sectorId = Sector::GLOBAL_SECTOR_ID;
+	int sectorId = GLOBAL_SECTOR_ID;
 
 	/**
 	 * Allows the default near plane clipping distance to be
@@ -32,7 +33,7 @@ struct Object : public Positionable3d {
 	 * with depth range over the near-far span of extremely
 	 * large triangles.
 	 */
-	float nearClippingDistance = 30.0f;
+	float nearClippingDistance = NEAR_PLANE_DISTANCE;
 
 	Object();
 	virtual ~Object();
@@ -71,8 +72,6 @@ protected:
 	void addVertex(const Vec3& vector, const Vec2& color);
 
 private:
-	constexpr static float LOD_DISTANCE_THRESHOLD = 2500.0f;
-
 	std::vector<Polygon*> polygons;
 	std::vector<Object*> lods;
 	int id;

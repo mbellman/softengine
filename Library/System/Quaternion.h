@@ -8,6 +8,7 @@ struct Quaternion {
 	float x;
 	float y;
 	float z;
+
 	static Quaternion fromAxisAngle(float angle, float x, float y, float z);
 	RotationMatrix toRotationMatrix();
 	Quaternion operator *(const Quaternion& q2) const;

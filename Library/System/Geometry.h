@@ -87,8 +87,6 @@ struct Bounds {
  * ------
  */
 struct Sector {
-	constexpr static int GLOBAL_SECTOR_ID = -1;
-
 	Bounds bounds;
 	int id;
 };

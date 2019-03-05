@@ -24,8 +24,8 @@ void RasterFilter::addCover(const Triangle* triangle, int zone) {
 }
 
 void RasterFilter::addTriangle(Triangle* triangle) {
-	int targetZoneIndex = (int)(triangle->maxZ() / RasterFilter::ZONE_RANGE);
-	int maxZoneIndex = RasterFilter::MAX_ZONES - 1;
+	int targetZoneIndex = (int)(triangle->maxZ() / RASTER_FILTER_ZONE_RANGE);
+	int maxZoneIndex = MAX_RASTER_FILTER_ZONES - 1;
 	int zoneIndex = FAST_CLAMP(targetZoneIndex, 0, maxZoneIndex);
 
 	if (zoneIndex > highestZoneIndex) {
@@ -63,7 +63,7 @@ bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
 	int minX = FAST_MIN(c0.x, FAST_MIN(c1.x, c2.x));
 	int maxX = FAST_MAX(c0.x, FAST_MAX(c1.x, c2.x));
 
-	if ((maxX - minX) < MIN_COVER_SIZE) {
+	if ((maxX - minX) < MIN_COVER_TRIANGLE_SIZE) {
 		// Optimize for triangles too horizontally small
 		return false;
 	}
@@ -71,16 +71,16 @@ bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
 	int minY = FAST_MIN(c0.y, FAST_MIN(c1.y, c2.y));
 	int maxY = FAST_MAX(c0.y, FAST_MAX(c1.y, c2.y));
 
-	if ((maxY - minY) < MIN_COVER_SIZE) {
+	if ((maxY - minY) < MIN_COVER_TRIANGLE_SIZE) {
 		// Optimize for triangles too vertically small
 		return false;
 	}
 
 	return (
-		// Ensure that it extends far enough into the screen
+		// Ensure that the triangle extends far enough into the screen
 		// that distant triangles are likely to be covered by it
-		(minX < (rasterWidth - MIN_COVER_SIZE) && maxX > MIN_COVER_SIZE) &&
-		(minY < (rasterHeight - MIN_COVER_SIZE) && maxY > MIN_COVER_SIZE)
+		(minX < (rasterWidth - MIN_COVER_TRIANGLE_SIZE) && maxX > MIN_COVER_TRIANGLE_SIZE) &&
+		(minY < (rasterHeight - MIN_COVER_TRIANGLE_SIZE) && maxY > MIN_COVER_TRIANGLE_SIZE)
 	);
 }
 

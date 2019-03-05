@@ -4,7 +4,6 @@
 #include <vector>
 #include <climits>
 #include <functional>
-
 #include <Sound/Sound.h>
 #include <System/Objects.h>
 #include <System/Geometry.h>
@@ -92,8 +91,6 @@ protected:
 	void remove(const char* key);
 
 private:
-	constexpr static float MOVEMENT_SPEED = 5.0f;
-
 	std::vector<Object*> objects;
 	std::vector<Light*> lights;
 	std::vector<Sound*> sounds;

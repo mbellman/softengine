@@ -4,6 +4,10 @@
 #include <System/Math.h>
 #include <System/Geometry.h>
 
+/**
+ * Illuminator
+ * -----------
+ */
 class Illuminator {
 public:
 	void computeAmbientLightColorIntensity(const Vec3& vertexNormal, float fresnelFactor, Vec3& colorIntensity);

@@ -33,7 +33,6 @@ struct TextureBuffer {
 	const Color& sample(float u, float v, const ColorBuffer* mipmap) const;
 
 private:
-	constexpr static Color BLACK = { 0, 0, 0 };
 	bool isConfirmed = false;
 	const char* file;
 	std::vector<const ColorBuffer*> mipmaps;

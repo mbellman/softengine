@@ -10,6 +10,7 @@
 #include <UI/UI.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
+#include <Constants.h>
 
 /**
  * Level
@@ -137,7 +138,7 @@ void Level::handleMouseMotion(int dx, int dy) {
 	float pitchDelta = (float)-dy * deltaFactor;
 
 	camera->yaw += yawDelta;
-	camera->pitch = std::clamp(camera->pitch + pitchDelta, -Camera::MAX_PITCH, Camera::MAX_PITCH);
+	camera->pitch = std::clamp(camera->pitch + pitchDelta, -MAX_CAMERA_PITCH, MAX_CAMERA_PITCH);
 }
 
 void Level::handleWASDControl(int dt) {
@@ -156,7 +157,7 @@ void Level::handleWASDControl(int dt) {
 	}
 
 	velocity.normalize();
-	velocity *= Level::MOVEMENT_SPEED * (dt / 16.0f);
+	velocity *= MOVEMENT_SPEED * (dt / 16.0f);
 
 	if (inputManager->isKeyPressed(Keys::SHIFT)) {
 		velocity *= 4.0f;
@@ -174,7 +175,7 @@ bool Level::hasQuit() {
 }
 
 bool Level::isInCurrentOccupiedSector(int sectorId) {
-	if (sectorId == Sector::GLOBAL_SECTOR_ID) {
+	if (sectorId == GLOBAL_SECTOR_ID) {
 		return true;
 	}
 

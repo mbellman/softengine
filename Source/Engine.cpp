@@ -12,6 +12,7 @@
 
 #include <Engine.h>
 #include <Helpers.h>
+#include <Constants.h>
 #include <System/Quaternion.h>
 #include <System/Objects.h>
 #include <System/Geometry.h>
@@ -241,7 +242,7 @@ int Engine::handleRenderThread(void* data) {
 		} else if (engine->isRendering) {
 			debugStats.trackIlluminationTime();
 
-			if (triangleBuffer->getTotalNonStaticTriangles() > Engine::SERIAL_ILLUMINATION_STATIC_TRIANGLE_LIMIT) {
+			if (triangleBuffer->getTotalNonStaticTriangles() > SERIAL_ILLUMINATION_NONSTATIC_TRIANGLE_LIMIT) {
 				engine->awaitRenderStep(RenderStep::ILLUMINATION);
 			} else {
 				for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
@@ -635,20 +636,23 @@ void Engine::updateScreenProjection() {
 				u_vecs[i] = t_verts[i].vector.unit();
 				w_vecs[i] = object->position + polygon->vertices[i]->vector;
 
-				if (t_verts[i].vector.z < Engine::NEAR_Z)
+				if (t_verts[i].vector.z < NEAR_PLANE_DISTANCE) {
 					frustumCuller.near++;
-				else if (t_verts[i].vector.z > activeLevel->settings.visibility)
+				} else if (t_verts[i].vector.z > activeLevel->settings.visibility) {
 					frustumCuller.far++;
+				}
 
-				if (u_vecs[i].x < -fovAngleRange)
+				if (u_vecs[i].x < -fovAngleRange) {
 					frustumCuller.left++;
-				else if (u_vecs[i].x > fovAngleRange)
+				} else if (u_vecs[i].x > fovAngleRange) {
 					frustumCuller.right++;
+				}
 
-				if (u_vecs[i].y < -fovAngleRange)
+				if (u_vecs[i].y < -fovAngleRange) {
 					frustumCuller.bottom++;
-				else if (u_vecs[i].y > fovAngleRange)
+				} else if (u_vecs[i].y > fovAngleRange) {
 					frustumCuller.top++;
+				}
 			}
 
 			if (frustumCuller.isCulled()) {

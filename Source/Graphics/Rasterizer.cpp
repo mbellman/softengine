@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <limits.h>
 #include <Helpers.h>
+#include <Constants.h>
 #include <Graphics/TextureBuffer.h>
 #include <Graphics/ColorBuffer.h>
 #include <System/Geometry.h>
@@ -200,11 +201,11 @@ int Rasterizer::getColorLerpInterval(const Color& start, const Color& end, int l
 	int b_delta = abs(end.B - start.B);
 	float colorDelta = (float)(r_delta + g_delta + b_delta) / 3.0f;
 
-	return colorDelta > 0 ? FAST_MAX(Rasterizer::MIN_COLOR_LERP_INTERVAL, (int)(lineLength / colorDelta)) : lineLength;
+	return colorDelta > 0 ? FAST_MAX(MIN_COLOR_LERP_INTERVAL, (int)(lineLength / colorDelta)) : lineLength;
 }
 
 int Rasterizer::getMipmapLevel(float averageDepth) {
-	float depthMultiple = averageDepth / Rasterizer::MIPMAP_RANGE;
+	float depthMultiple = averageDepth / MIPMAP_DISTANCE_INTERVAL;
 
 	for (int i = 0; i < 12; i++) {
 		if (depthMultiple < LOG2_TABLE[i][0]) {
@@ -218,7 +219,7 @@ int Rasterizer::getMipmapLevel(float averageDepth) {
 int Rasterizer::getTextureSampleInterval(int lineLength, float averageDepth) {
 	int interval = (int)(3000.0f / averageDepth) - (int)(100.0f / lineLength);
 
-	return FAST_CLAMP(interval, 1, Rasterizer::MAX_TEXTURE_SAMPLE_INTERVAL);
+	return FAST_CLAMP(interval, 1, MAX_TEXTURE_SAMPLE_INTERVAL);
 }
 
 int Rasterizer::getTotalBufferedScanlines() {
@@ -364,7 +365,7 @@ void Rasterizer::triangleScanline(
 					float v = Lerp::lerp(perspectiveUV.start.y, perspectiveUV.end.y, progress) * depth;
 					const Color& sample = texture->sample(u, v, mipmap);
 
-					isTransparent = sample.R == 255 && sample.G == 0 && sample.B == 255;
+					isTransparent = sample.R == COLOR_TRANSPARENT.R && sample.G == COLOR_TRANSPARENT.G && sample.B == COLOR_TRANSPARENT.B;
 
 					if (!isTransparent) {
 						float intensity_R = Lerp::lerp(textureIntensity.start.x, textureIntensity.end.x, progress);

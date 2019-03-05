@@ -25,7 +25,6 @@ public:
 private:
 	inline int getIndex(int x, int y) const;
 
-	Color BLACK = { 0, 0, 0 };
 	Color* buffer = NULL;
 	int bufferSize;
 };

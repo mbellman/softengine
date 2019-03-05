@@ -1,6 +1,7 @@
 #include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
+#include <Constants.h>
 #include <functional>
 #include <algorithm>
 

@@ -7,6 +7,7 @@
 #include <System/Geometry.h>
 #include <Helpers.h>
 #include <Graphics/TextureBuffer.h>
+#include <Constants.h>
 
 /**
  * Scanline
@@ -47,33 +48,12 @@ public:
 	void triangleScanline(const Scanline* scanline);
 
 private:
-	constexpr static int MIN_COLOR_LERP_INTERVAL = 2;
-	constexpr static int MAX_TEXTURE_SAMPLE_INTERVAL = 4;
-	constexpr static int MAX_VISIBILITY = INT_MAX;
-	constexpr static float MIPMAP_RANGE = 800.0f;
-
-	constexpr static int LOG2_TABLE[12][2] = {
-		{ 0, 0 },
-		{ 1, 0 },
-		{ 2, 1 },
-		{ 4, 2 },
-		{ 8, 3 },
-		{ 16, 4 },
-		{ 32, 5 },
-		{ 64, 6 },
-		{ 128, 7 },
-		{ 256, 8 },
-		{ 512, 9 },
-		{ 1024, 10 }
-	};
-
 	Scanline* scanlines;
 	int totalBufferedScanlines = 0;
-
 	Uint32 flags = 0;
 	Color backgroundColor = { 0, 0, 0 };
 	Uint32 drawColor = ARGB(255, 255, 255);
-	int visibility = Rasterizer::MAX_VISIBILITY;
+	int visibility = MAX_VISIBILITY;
 	SDL_Texture* screenTexture;
 	Uint32* pixelBuffer;
 	float* depthBuffer;

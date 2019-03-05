@@ -4,6 +4,7 @@
 #include <Graphics/Color.h>
 #include <Graphics/ColorBuffer.h>
 #include <Helpers.h>
+#include <Constants.h>
 #include <stdio.h>
 #include <algorithm>
 #include <vector>
@@ -107,7 +108,7 @@ Uint32 TextureBuffer::readPixel(SDL_Surface* surface, int index) {
 
 const Color& TextureBuffer::sample(float u, float v, const ColorBuffer* mipmap) const {
 	if (mipmaps.empty()) {
-		return BLACK;
+		return COLOR_BLACK;
 	}
 
 	// Modulo-free out-of-bounds UV wrapping

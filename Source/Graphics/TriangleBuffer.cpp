@@ -4,6 +4,7 @@
 #include <System/Level.h>
 #include <UI/Alert.h>
 #include <Helpers.h>
+#include <Constants.h>
 
 /**
  * TriangleBuffer
@@ -27,8 +28,8 @@
  * with virtually no cost, but no utility either.
  */
 TriangleBuffer::TriangleBuffer() {
-	trianglePoolA = new Triangle[TriangleBuffer::TRIANGLE_POOL_SIZE];
-	trianglePoolB = new Triangle[TriangleBuffer::TRIANGLE_POOL_SIZE];
+	trianglePoolA = new Triangle[TRIANGLE_POOL_SIZE];
+	trianglePoolB = new Triangle[TRIANGLE_POOL_SIZE];
 }
 
 TriangleBuffer::~TriangleBuffer() {
@@ -81,7 +82,7 @@ int TriangleBuffer::getTotalNonStaticTriangles() {
 }
 
 Triangle* TriangleBuffer::requestTriangle() {
-	if (totalRequestedTriangles >= TriangleBuffer::TRIANGLE_POOL_SIZE) {
+	if (totalRequestedTriangles >= TRIANGLE_POOL_SIZE) {
 		Alert::error(ALERT_ERROR, "Triangle buffer overflow");
 		exit(0);
 	}
