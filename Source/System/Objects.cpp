@@ -227,6 +227,7 @@ void Object::syncLODs() {
 		lod->position = position;
 		lod->isStatic = isStatic;
 		lod->isFlatShaded = isFlatShaded;
+		lod->hasLighting = hasLighting;
 		lod->fresnelFactor = fresnelFactor;
 	}
 }

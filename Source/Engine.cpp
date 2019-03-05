@@ -421,8 +421,16 @@ void Engine::update(int dt) {
 		activeLevel->onStart();
 		audioEngine->unmute();
 	} else {
+		int runningTime = SDL_GetTicks();
+
 		activeLevel->update(dt);
-		activeLevel->onUpdate(dt, SDL_GetTicks());
+		activeLevel->onUpdate(dt, runningTime);
+
+		for (auto* object : activeLevel->getObjects()) {
+			if (object->onUpdate != nullptr) {
+				object->onUpdate(dt, runningTime);
+			}
+		}
 	}
 
 	debugStats.logUpdateTime();

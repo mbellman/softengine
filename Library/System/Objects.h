@@ -10,6 +10,8 @@
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
 
+typedef std::function<void(int, int)> UpdateHandler;
+
 /**
  * Object
  * ------
@@ -20,6 +22,7 @@ struct Object : public Positionable3d {
 	bool hasLighting = true;
 	float fresnelFactor = 0.0f;
 	TextureBuffer* texture = NULL;
+	UpdateHandler onUpdate = nullptr;
 	int sectorId = Sector::GLOBAL_SECTOR_ID;
 
 	/**

@@ -19,8 +19,11 @@ void TextureTest::load() {
 	cube->position = { 0, 100, 2500 };
 	cube->setTexture(getTexture("blockTexture"));
 	cube->setFaceUVCoordinates(0.0f, 0.0f, 1.0f, 1.0f);
-
 	cube->tweenTo({ -1000, 100, 3000 }, 5000, Ease::quadInOut);
+
+	cube->onUpdate = [=](int dt, int runningTime) {
+		cube->rotate({ 0.02, -0.03, 0 });
+	};
 
 	add("spinningCube", cube);
 
@@ -47,6 +50,5 @@ void TextureTest::load() {
 }
 
 void TextureTest::onUpdate(int dt, int runningTime) {
-	getObject("spinningCube")->rotate({ 0.02, -0.03, 0 });
-}
 
+}
