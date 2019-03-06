@@ -36,6 +36,15 @@ Vertex3d Vertex3d::lerp(const Vertex3d& v1, const Vertex3d& v2, float r) {
 	return vertex;
 }
 
+void Vertex3d::morph(int startTarget, int endTarget, float progress) {
+	const Vec3& startVector = morphTargets.at(startTarget);
+	const Vec3& endVector = morphTargets.at(endTarget);
+
+	vector.x = Lerp::lerp(startVector.x, endVector.x, progress);
+	vector.y = Lerp::lerp(startVector.y, endVector.y, progress);
+	vector.z = Lerp::lerp(startVector.z, endVector.z, progress);
+}
+
 void Vertex3d::rotate(const RotationMatrix& rotationMatrix) {
 	vector.rotate(rotationMatrix);
 

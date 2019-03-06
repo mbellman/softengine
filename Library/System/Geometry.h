@@ -36,6 +36,7 @@ struct Vertex3d : Colorable {
 	std::vector<Vec3> morphTargets;
 
 	static Vertex3d lerp(const Vertex3d& v1, const Vertex3d& v2, float r);
+	void morph(int startTarget, int endTarget, float progress);
 	void rotate(const RotationMatrix& rotationMatrix);
 	void scale(float scalar);
 	void scale(const Vec3& scaleVector);

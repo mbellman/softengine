@@ -20,6 +20,7 @@ void AnimationTest::load() {
 	person->position = { 0, 0, 1500 };
 	person->setColor({ 20, 255, 50 });
 	person->scale(70);
+	person->startMorph(1000, true);
 
 	add("person", person);
 
@@ -29,8 +30,4 @@ void AnimationTest::load() {
 	settings.hasStaticAmbientLight = true;
 }
 
-void AnimationTest::onUpdate(int dt, int runningTime) {
-	int frame = (runningTime / 250) % 3;
-
-	getObject("person")->setMorphTarget(frame);
-}
+void AnimationTest::onUpdate(int dt, int runningTime) {}

@@ -63,8 +63,10 @@ struct Object : public Positionable3d {
 	void setColor(const Color& color);
 	void setMorphTarget(int index);
 	void setTexture(TextureBuffer* textureBuffer);
+	void startMorph(int duration, bool shouldLoop);
 	void syncLODs();
 	void update(int dt);
+	void updateMorph(int dt);
 
 protected:
 	std::vector<Vertex3d> vertices;
@@ -75,10 +77,18 @@ protected:
 	void addVertex(const Vec3& vector, const Vec2& uv);
 
 private:
+	struct Morph {
+		int duration = 0;
+		int time = 0;
+		bool shouldLoop = false;
+		bool isActive = false;
+	};
+
+	int id;
 	std::vector<Polygon*> polygons;
 	std::vector<Object*> lods;
-	std::vector<Object*> morphTargets;
-	int id;
+	Morph morph;
+	int totalMorphTargets = 0;
 
 	static Vec3 computePolygonNormal(const Polygon& polygon);
 	static Vec3 computeVertexNormal(const Vertex3d& vertex);

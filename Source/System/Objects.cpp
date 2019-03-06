@@ -36,6 +36,8 @@ void Object::addLOD(Object* lod) {
 }
 
 void Object::addMorphTarget(Object* morphTarget) {
+	totalMorphTargets++;
+
 	auto& morphTargetVertices = morphTarget->getVertices();
 
 	for (int i = 0; i < morphTargetVertices.size(); i++) {
@@ -176,8 +178,8 @@ bool Object::hasLODs() const {
 void Object::rotate(const Vec3& rotation) {
 	RotationMatrix rotationMatrix = RotationMatrix::fromVec3(rotation);
 
-	for (int i = 0; i < vertices.size(); i++) {
-		vertices.at(i).rotate(rotationMatrix);
+	for (auto& vertex : vertices) {
+		vertex.rotate(rotationMatrix);
 	}
 
 	recomputeSurfaceNormals();
@@ -229,13 +231,17 @@ void Object::setColor(const Color& color) {
 	setColor(color.R, color.G, color.B);
 }
 
-void Object::setMorphTarget(int index) {
-	for (auto& vertex : vertices) {
-		const Vec3& morphTarget = vertex.morphTargets.at(index);
+void Object::setMorphTarget(int targetIndex) {
+	if (targetIndex >= totalMorphTargets) {
+		return;
+	}
 
-		vertex.vector.x = morphTarget.x;
-		vertex.vector.y = morphTarget.y;
-		vertex.vector.z = morphTarget.z;
+	for (auto& vertex : vertices) {
+		const Vec3& vertexMorphTarget = vertex.morphTargets.at(targetIndex);
+
+		vertex.vector.x = vertexMorphTarget.x;
+		vertex.vector.y = vertexMorphTarget.y;
+		vertex.vector.z = vertexMorphTarget.z;
 	}
 
 	recomputeSurfaceNormals();
@@ -253,6 +259,17 @@ void Object::setTexture(TextureBuffer* textureBuffer) {
 	}
 }
 
+void Object::startMorph(int duration, bool shouldLoop) {
+	if (totalMorphTargets == 0) {
+		return;
+	}
+
+	morph.time = 0;
+	morph.duration = duration;
+	morph.shouldLoop = shouldLoop;
+	morph.isActive = true;
+}
+
 void Object::syncLODs() {
 	for (auto* lod : lods) {
 		lod->position = position;
@@ -266,9 +283,42 @@ void Object::syncLODs() {
 void Object::update(int dt) {
 	updatePosition(dt);
 
+	if (morph.isActive) {
+		updateMorph(dt);
+	}
+
 	for (auto* lod : lods) {
 		lod->update(dt);
 	}
+}
+
+void Object::updateMorph(int dt) {
+	float morphProgress = (float)morph.time / morph.duration;
+	float frameProgress = morphProgress * (totalMorphTargets - 1);
+	int startFrame = (int)frameProgress;
+	int endFrame = startFrame + 1;
+
+	if (frameProgress >= 1.0f) {
+		frameProgress -= (int)frameProgress;
+	}
+
+	for (auto& vertex : vertices) {
+		vertex.morph(startFrame, endFrame, frameProgress);
+	}
+
+	morph.time += dt;
+
+	if (morph.time >= morph.duration) {
+		setMorphTarget(0);
+
+		morph.time = 0;
+
+		if (!morph.shouldLoop) {
+			morph.isActive = false;
+		}
+	}
+
+	recomputeSurfaceNormals();
 }
 
 /**
