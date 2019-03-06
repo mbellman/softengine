@@ -28,7 +28,7 @@ void Illuminator::computeAmbientLightColorIntensity(const Vec3& normal, float fr
 	}
 }
 
-void Illuminator::computeLightColorIntensity(Light* light, const Vec3& vertexPosition, const Vec3& vertexNormal, float fresnelFactor, Vec3& colorIntensity) {
+void Illuminator::computeLightColorIntensity(Light* light, const Vec3& vertexPosition, const Vec3& normal, float fresnelFactor, Vec3& colorIntensity) {
 	if (
 		light->isDisabled ||
 		light->power == 0 ||
@@ -52,7 +52,7 @@ void Illuminator::computeLightColorIntensity(Light* light, const Vec3& vertexPos
 	// Normalize for dot product checks
 	lightSourceVector /= lightDistance;
 
-	float normalDot = Vec3::dotProduct(vertexNormal, lightSourceVector);
+	float normalDot = Vec3::dotProduct(normal, lightSourceVector);
 
 	if (normalDot >= 0) {
 		// Ignore vertices facing away from the light
@@ -92,7 +92,7 @@ inline float Illuminator::getIncidence(float dot) {
 
 Vec3 Illuminator::getTriangleVertexColorIntensity(Triangle* triangle, int vertexIndex) {
 	const Vertex2d& vertex = triangle->vertices[vertexIndex];
-	const Vec3& vertexNormal = triangle->sourcePolygon->sourceObject->isFlatShaded ? triangle->sourcePolygon->normal : vertex.normal;
+	const Vec3& normal = triangle->sourcePolygon->sourceObject->isFlatShaded ? triangle->sourcePolygon->normal : vertex.normal;
 	const Settings& settings = activeLevel->settings;
 	bool isStaticTriangle = !triangle->isSynthetic && triangle->sourcePolygon->sourceObject->isStatic;
 	Vec3 colorIntensity;
@@ -103,18 +103,18 @@ Vec3 Illuminator::getTriangleVertexColorIntensity(Triangle* triangle, int vertex
 		colorIntensity = { settings.brightness, settings.brightness, settings.brightness };
 	}
 
-	if (settings.brightness > 0) {
+	if (settings.brightness > 0.0f) {
 		bool shouldRecomputeAmbientLightColorIntensity = settings.ambientLightFactor > 0 && (!isStaticTriangle || !settings.hasStaticAmbientLight);
 
 		if (shouldRecomputeAmbientLightColorIntensity) {
-			computeAmbientLightColorIntensity(vertexNormal, triangle->fresnelFactor, colorIntensity);
+			computeAmbientLightColorIntensity(normal, triangle->fresnelFactor, colorIntensity);
 		}
 
 		for (auto* light : activeLevel->getLights()) {
 			bool shouldRecomputeLightColorIntensity = !isStaticTriangle || !light->isStatic;
 
 			if (shouldRecomputeLightColorIntensity) {
-				computeLightColorIntensity(light, vertex.worldVector, vertexNormal, triangle->fresnelFactor, colorIntensity);
+				computeLightColorIntensity(light, vertex.worldVector, normal, triangle->fresnelFactor, colorIntensity);
 			}
 		}
 	}
@@ -154,17 +154,17 @@ void Illuminator::illuminateStaticPolygon(Polygon* polygon) {
 
 	for (int i = 0; i < 3; i++) {
 		Vec3 vertexPosition = polygon->sourceObject->position + polygon->vertices[i]->vector;
-		Vec3& vertexNormal = polygon->sourceObject->isFlatShaded ? polygon->normal : polygon->vertices[i]->normal;
+		Vec3& normal = polygon->sourceObject->isFlatShaded ? polygon->normal : polygon->vertices[i]->normal;
 		Vec3 colorIntensity = { settings.brightness, settings.brightness, settings.brightness };
 		Vec3& cachedColorIntensity = polygon->cachedVertexColorIntensities[i];
 
 		if (settings.hasStaticAmbientLight && settings.ambientLightFactor > 0) {
-			computeAmbientLightColorIntensity(vertexNormal, fresnelFactor, colorIntensity);
+			computeAmbientLightColorIntensity(normal, fresnelFactor, colorIntensity);
 		}
 
 		for (auto* light : activeLevel->getLights()) {
 			if (light->isStatic) {
-				computeLightColorIntensity(light, vertexPosition, vertexNormal, fresnelFactor, colorIntensity);
+				computeLightColorIntensity(light, vertexPosition, normal, fresnelFactor, colorIntensity);
 			}
 		}
 

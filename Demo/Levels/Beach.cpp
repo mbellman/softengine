@@ -47,10 +47,10 @@ void Beach::load() {
 
 	Light* sun = new Light();
 
-	sun->setColor({ 255, 50, 100 });
+	sun->setColor({ 255, 150, 100 });
 	sun->position = { 0, 0, 16000 };
 	sun->isStatic = true;
-	sun->range = 12500;
+	sun->range = 15000;
 	sun->power = 1.0f;
 
 	sun->follow(camera, [=](const Vec3& cameraPosition, Vec3& sunPosition) {

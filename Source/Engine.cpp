@@ -614,8 +614,8 @@ void Engine::updateScreenProjection() {
 		}
 
 		for (const auto* polygon : lodObject->getPolygons()) {
-			Vec3 polygonPosition = relativeObjectPosition + polygon->vertices[0]->vector;
-			float normalizedDotProduct = Vec3::dotProduct(polygon->normal, polygonPosition.unit());
+			Vec3 relativePolygonPosition = relativeObjectPosition + polygon->vertices[0]->vector;
+			float normalizedDotProduct = Vec3::dotProduct(polygon->normal, relativePolygonPosition.unit());
 
 			// As hack to fix polygons viewed at or near glancing angles
 			// being rendered as holes in meshes, we allow polygons through
