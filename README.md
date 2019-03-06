@@ -14,8 +14,6 @@ A software 3D rendering engine, written as an educational exercise.
 ### Refactoring/organization
 
 * Convert skybox.obj into a predefined Object subclass
-* Correct triangle edge/clockwise/etc. checks to be with respect to raster space
-* Engine::updateScreenProjection() -> Separate out near-plane clipping operations
 
 ## Development
 

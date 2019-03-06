@@ -39,16 +39,20 @@ void RasterFilter::addTriangle(Triangle* triangle) {
 	zones[zoneIndex].push_back(triangle);
 }
 
-inline bool RasterFilter::isPointInsideEdge(int x, int y, int ex1, int ey1, int ex2, int ey2) {
-	return ((x - ex1) * (ey2 - ey1) - (y - ey1) * (ex2 - ex1)) >= 0;
+inline bool RasterFilter::isPointInsideEdge(int px, int py, int ex1, int ey1, int ex2, int ey2) {
+	return ((px - ex1) * (ey2 - ey1) - (py - ey1) * (ex2 - ex1)) >= 0;
 }
 
+/**
+ * Determines whether a Triangle has a clockwise vertex
+ * winding order in screen space.
+ */
 bool RasterFilter::isTriangleClockwise(const Triangle* triangle) {
 	const Coordinate& c0 = triangle->vertices[0].coordinate;
 	const Coordinate& c1 = triangle->vertices[1].coordinate;
 	const Coordinate& c2 = triangle->vertices[2].coordinate;
 
-	return isPointInsideEdge(c2.x, c2.y, c0.x, c0.y, c1.x, c1.y);
+	return isPointInsideEdge(c2.x, c2.y, c1.x, c1.y, c0.x, c0.y);
 }
 
 bool RasterFilter::isTriangleCoverable(const Triangle* triangle) {
@@ -95,25 +99,21 @@ bool RasterFilter::isTriangleOccluded(const Triangle* triangle, const Cover& cov
 		// another triangle T*, we have to check T's vertices against
 		// T*'s edges. Clockwise/counterclockwise orientation determines
 		// the order of the edge vertices we have to compare against.
-		// Note that 'clockwise' in the context presented here means
-		// clockwise in raster space with its inverted y axis; thus
-		// vertex winding order is opposite to the apparent order
-		// displayed onscreen.
 		if (cover.isClockwise) {
-			// Compare against edges T*v0 -> T*v2, T*v2 -> T*v1, T*v1 -> T*v0
+			// Compare against edges T*v1 -> T*v0, T*v2 -> T*v1, T*v0 -> T*v2
 			if (
-				isPointInsideEdge(tc.x, tc.y, cover.c0.x, cover.c0.y, cover.c2.x, cover.c2.y) ||
-				isPointInsideEdge(tc.x, tc.y, cover.c2.x, cover.c2.y, cover.c1.x, cover.c1.y) ||
-				isPointInsideEdge(tc.x, tc.y, cover.c1.x, cover.c1.y, cover.c0.x, cover.c0.y)
+				!isPointInsideEdge(tc.x, tc.y, cover.c1.x, cover.c1.y, cover.c0.x, cover.c0.y) ||
+				!isPointInsideEdge(tc.x, tc.y, cover.c2.x, cover.c2.y, cover.c1.x, cover.c1.y) ||
+				!isPointInsideEdge(tc.x, tc.y, cover.c0.x, cover.c0.y, cover.c2.x, cover.c2.y)
 			) {
 				return false;
 			}
 		} else {
-			// Compare against edges T*v1 -> T*v3, T*v3 -> T*v2, T*v2 -> T*v1
+			// Compare against edges T*v2 -> T*v0, T*v1 -> T*v2, T*v0 -> T*v1
 			if (
-				isPointInsideEdge(tc.x, tc.y, cover.c0.x, cover.c0.y, cover.c1.x, cover.c1.y) ||
-				isPointInsideEdge(tc.x, tc.y, cover.c1.x, cover.c1.y, cover.c2.x, cover.c2.y) ||
-				isPointInsideEdge(tc.x, tc.y, cover.c2.x, cover.c2.y, cover.c0.x, cover.c0.y)
+				!isPointInsideEdge(tc.x, tc.y, cover.c2.x, cover.c2.y, cover.c0.x, cover.c0.y) ||
+				!isPointInsideEdge(tc.x, tc.y, cover.c1.x, cover.c1.y, cover.c2.x, cover.c2.y) ||
+				!isPointInsideEdge(tc.x, tc.y, cover.c0.x, cover.c0.y, cover.c1.x, cover.c1.y)
 			) {
 				return false;
 			}
