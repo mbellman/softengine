@@ -27,6 +27,7 @@ void Garden::load() {
 		tree->addLOD(new Model(treeObjLod2));
 		tree->addLOD(new Model(treeObjLod3));
 		tree->addLOD(new Model(treeObjLod4));
+
 		tree->position = { (float)(2000 - rand() % 4000), -10.0f, (float)(10000 - rand() % 9000) };
 		tree->setTexture(getTexture("tree-texture"));
 		tree->scale(100);

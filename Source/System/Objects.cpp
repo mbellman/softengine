@@ -1,6 +1,7 @@
 #include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
+#include <Helpers.h>
 #include <Constants.h>
 #include <functional>
 #include <algorithm>
@@ -32,6 +33,23 @@ Object::~Object() {
 
 void Object::addLOD(Object* lod) {
 	lods.push_back(lod);
+}
+
+void Object::addMorphTarget(Object* morphTarget) {
+	auto& morphTargetVertices = morphTarget->getVertices();
+
+	for (int i = 0; i < morphTargetVertices.size(); i++) {
+		const Vec3& morphTargetVector = morphTargetVertices.at(i).vector;
+		Vertex3d& vertex = vertices.at(i);
+
+		vertex.morphTargets.push_back({
+			morphTargetVector.x,
+			morphTargetVector.y,
+			morphTargetVector.z
+		});
+	}
+
+	delete morphTarget;
 }
 
 void Object::addPolygon(int v1_index, int v2_index, int v3_index) {
@@ -87,7 +105,7 @@ Vec3 Object::computePolygonNormal(const Polygon& polygon) {
 	return Vec3::crossProduct(*v1 - *v0, *v2 - *v0).unit();
 }
 
-void Object::computeSurfaceNormals() {
+void Object::recomputeSurfaceNormals() {
 	for (auto* polygon : polygons) {
 		polygon->normal = Object::computePolygonNormal(*polygon);
 	}
@@ -97,7 +115,7 @@ void Object::computeSurfaceNormals() {
 	}
 
 	for (auto* lod : lods) {
-		lod->computeSurfaceNormals();
+		lod->recomputeSurfaceNormals();
 	}
 }
 
@@ -147,18 +165,22 @@ int Object::getVertexCount() const {
 	return vertices.size();
 }
 
+const std::vector<Vertex3d>& Object::getVertices() const {
+	return vertices;
+}
+
 bool Object::hasLODs() const {
 	return lods.size() > 0;
 }
 
 void Object::rotate(const Vec3& rotation) {
-	RotationMatrix rotationMatrix = RotationMatrix::calculate(rotation);
+	RotationMatrix rotationMatrix = RotationMatrix::fromVec3(rotation);
 
 	for (int i = 0; i < vertices.size(); i++) {
-		vertices.at(i).vector.rotate(rotationMatrix);
+		vertices.at(i).rotate(rotationMatrix);
 	}
 
-	computeSurfaceNormals();
+	recomputeSurfaceNormals();
 
 	for (auto* lod : lods) {
 		lod->rotate(rotation);
@@ -166,30 +188,16 @@ void Object::rotate(const Vec3& rotation) {
 }
 
 void Object::rotateDeg(const Vec3& rotation) {
-	float TO_RAD = (float)(M_PI / 180);
-
-	rotate({ rotation.x * TO_RAD, rotation.y * TO_RAD, rotation.z * TO_RAD });
-}
-
-void Object::setTexture(TextureBuffer* textureBuffer) {
-	if (textureBuffer != NULL) {
-		this->texture = textureBuffer;
-	}
-
-	setColor(0, 0, 0);
-
-	for (auto* lod : lods) {
-		lod->setTexture(textureBuffer);
-	}
+	rotate({
+		(float)(DEG_TO_RAD(rotation.x)),
+		(float)(DEG_TO_RAD(rotation.y)),
+		(float)(DEG_TO_RAD(rotation.z))
+	});
 }
 
 void Object::scale(float scalar) {
-	for (int i = 0; i < vertices.size(); i++) {
-		Vec3* vector = &vertices.at(i).vector;
-
-		vector->x *= scalar;
-		vector->y *= scalar;
-		vector->z *= scalar;
+	for (auto& vertex : vertices) {
+		vertex.scale(scalar);
 	}
 
 	for (auto* lod : lods) {
@@ -199,9 +207,7 @@ void Object::scale(float scalar) {
 
 void Object::scale(const Vec3& vector) {
 	for (auto& vertex : vertices) {
-		vertex.vector.x *= vector.x;
-		vertex.vector.y *= vector.y;
-		vertex.vector.z *= vector.z;
+		vertex.scale(vector);
 	}
 
 	for (auto* lod : lods) {
@@ -221,6 +227,30 @@ void Object::setColor(int R, int G, int B) {
 
 void Object::setColor(const Color& color) {
 	setColor(color.R, color.G, color.B);
+}
+
+void Object::setMorphTarget(int index) {
+	for (auto& vertex : vertices) {
+		const Vec3& morphTarget = vertex.morphTargets.at(index);
+
+		vertex.vector.x = morphTarget.x;
+		vertex.vector.y = morphTarget.y;
+		vertex.vector.z = morphTarget.z;
+	}
+
+	recomputeSurfaceNormals();
+}
+
+void Object::setTexture(TextureBuffer* textureBuffer) {
+	if (textureBuffer != NULL) {
+		this->texture = textureBuffer;
+	}
+
+	setColor(0, 0, 0);
+
+	for (auto* lod : lods) {
+		lod->setTexture(textureBuffer);
+	}
 }
 
 void Object::syncLODs() {
@@ -414,7 +444,7 @@ void Mesh::setVertexOffsets(std::function<void(int, int, Vec3&)> offsetHandler) 
 		}
 	}
 
-	computeSurfaceNormals();
+	recomputeSurfaceNormals();
 }
 
 /**

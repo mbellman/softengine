@@ -78,7 +78,7 @@ struct Vec3 {
 struct RotationMatrix {
 	float m11, m12, m13, m21, m22, m23, m31, m32, m33;
 
-	static RotationMatrix calculate(const Vec3& rotation);
+	static RotationMatrix fromVec3(const Vec3& rotation);
 	RotationMatrix operator *(const RotationMatrix& rotationMatrix) const;
 	Vec3 operator *(const Vec3& vector) const;
 };

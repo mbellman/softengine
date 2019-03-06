@@ -38,7 +38,7 @@ void Level::add(const char* key, Object* object) {
 
 void Level::add(Object* object) {
 	object->syncLODs();
-	object->computeSurfaceNormals();
+	object->recomputeSurfaceNormals();
 
 	objects.push_back(object);
 

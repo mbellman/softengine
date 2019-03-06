@@ -36,6 +36,38 @@ Vertex3d Vertex3d::lerp(const Vertex3d& v1, const Vertex3d& v2, float r) {
 	return vertex;
 }
 
+void Vertex3d::rotate(const RotationMatrix& rotationMatrix) {
+	vector.rotate(rotationMatrix);
+
+	for (auto& morphTarget : morphTargets) {
+		morphTarget.rotate(rotationMatrix);
+	}
+}
+
+void Vertex3d::scale(float scalar) {
+	vector.x *= scalar;
+	vector.y *= scalar;
+	vector.z *= scalar;
+
+	for (auto& morphTarget : morphTargets) {
+		morphTarget.x *= scalar;
+		morphTarget.y *= scalar;
+		morphTarget.z *= scalar;
+	}
+}
+
+void Vertex3d::scale(const Vec3& scaleVector) {
+	vector.x *= scaleVector.x;
+	vector.y *= scaleVector.y;
+	vector.z *= scaleVector.z;
+
+	for (auto& morphTarget : morphTargets) {
+		morphTarget.x *= scaleVector.x;
+		morphTarget.y *= scaleVector.y;
+		morphTarget.z *= scaleVector.z;
+	}
+}
+
 /**
  * Triangle
  * --------

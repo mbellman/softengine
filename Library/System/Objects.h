@@ -39,13 +39,14 @@ struct Object : public Positionable3d {
 	virtual ~Object();
 
 	void addLOD(Object* lod);
-	void computeSurfaceNormals();
+	void addMorphTarget(Object* morphTarget);
 	int getId() const;
 	const Object* getLOD(float distance) const;
 	const std::vector<Object*>& getLODs() const;
-	const std::vector<Polygon*>& getPolygons() const;
 	int getPolygonCount() const;
+	const std::vector<Polygon*>& getPolygons() const;
 	int getVertexCount() const;
+	const std::vector<Vertex3d>& getVertices() const;
 	bool hasLODs() const;
 
 	template<class T>
@@ -53,12 +54,14 @@ struct Object : public Positionable3d {
 		return dynamic_cast<T*>(this) != NULL;
 	}
 
+	void recomputeSurfaceNormals();
 	void rotate(const Vec3& rotation);
 	void rotateDeg(const Vec3& rotation);
 	void scale(float scalar);
 	void scale(const Vec3& vector);
 	void setColor(int R, int G, int B);
 	void setColor(const Color& color);
+	void setMorphTarget(int index);
 	void setTexture(TextureBuffer* textureBuffer);
 	void syncLODs();
 	void update(int dt);
@@ -69,11 +72,12 @@ protected:
 	void addPolygon(int v1_index, int v2_index, int v3_index);
 	void addVertex(const Vec3& vector);
 	void addVertex(const Vec3& vector, const Color& color);
-	void addVertex(const Vec3& vector, const Vec2& color);
+	void addVertex(const Vec3& vector, const Vec2& uv);
 
 private:
 	std::vector<Polygon*> polygons;
 	std::vector<Object*> lods;
+	std::vector<Object*> morphTargets;
 	int id;
 
 	static Vec3 computePolygonNormal(const Polygon& polygon);

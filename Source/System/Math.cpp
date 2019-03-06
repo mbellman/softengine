@@ -51,7 +51,7 @@ RotationMatrix RotationMatrix::operator *(const RotationMatrix& rm) const {
 	};
 }
 
-RotationMatrix RotationMatrix::calculate(const Vec3& rotation) {
+RotationMatrix RotationMatrix::fromVec3(const Vec3& rotation) {
 	float sx = sin(rotation.x);
 	float sy = sin(rotation.y);
 	float sz = sin(rotation.z);
@@ -149,6 +149,14 @@ void Vec3::normalize() {
 	z = unitVector.z;
 }
 
+void Vec3::rotate(const RotationMatrix& rotationMatrix) {
+	Vec3 rotatedVector = rotationMatrix * (*this);
+
+	x = rotatedVector.x;
+	y = rotatedVector.y;
+	z = rotatedVector.z;
+}
+
 Vec3 Vec3::unit() const {
 	float m = magnitude();
 
@@ -161,14 +169,6 @@ Vec3 Vec3::unit() const {
 		y / m,
 		z / m
 	};
-}
-
-void Vec3::rotate(const RotationMatrix& rotationMatrix) {
-	Vec3 rotatedVector = rotationMatrix * (*this);
-
-	x = rotatedVector.x;
-	y = rotatedVector.y;
-	z = rotatedVector.z;
 }
 
 Vec3 Vec3::operator +(const Vec3& vector) const {

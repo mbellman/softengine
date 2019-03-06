@@ -52,6 +52,8 @@ set(SOURCE_FILES
     Demo/Levels/Beach.h
     Demo/Levels/SectorTest.cpp
     Demo/Levels/SectorTest.h
+    Demo/Levels/AnimationTest.cpp
+    Demo/Levels/AnimationTest.h
 
     # -- Header files --
     Library/Graphics/Color.h

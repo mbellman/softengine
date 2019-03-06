@@ -33,8 +33,12 @@ struct Vertex3d : Colorable {
 	Vec3 normal;
 	Vec2 uv;
 	std::vector<Polygon*> connectedPolygons;
+	std::vector<Vec3> morphTargets;
 
 	static Vertex3d lerp(const Vertex3d& v1, const Vertex3d& v2, float r);
+	void rotate(const RotationMatrix& rotationMatrix);
+	void scale(float scalar);
+	void scale(const Vec3& scaleVector);
 };
 
 /**
