@@ -363,7 +363,6 @@ void Engine::run() {
 
 void Engine::setActiveLevel(Level* level) {
 	activeLevel = level;
-	frame = 0;
 
 	level->setUI(ui);
 
