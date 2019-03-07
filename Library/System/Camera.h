@@ -14,6 +14,6 @@ struct Camera : public Positionable3d {
 
 	Camera(): Positionable3d({ 0, 100, 0 }) {}
 
-	RotationMatrix getRotationMatrix();
+	RotationMatrix getRotationMatrix() const;
 	void update(int dt);
 };

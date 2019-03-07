@@ -12,14 +12,15 @@
  * DemoController
  * --------------
  */
-void DemoController::loadDefaultLevel() {
-	loadLevel(new Default());
+void DemoController::loadAlternateLevel() {
+	switchLevel(new Beach());
 }
 
-void DemoController::loadAlternateLevel() {
-	loadLevel(new Beach());
+void DemoController::loadDefaultLevel() {
+	enterLevel(new Garden());
 }
 
 void DemoController::start() {
 	loadDefaultLevel();
+	run();
 }

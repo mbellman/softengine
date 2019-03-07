@@ -6,7 +6,7 @@
  * Camera
  * ------
  */
-RotationMatrix Camera::getRotationMatrix() {
+RotationMatrix Camera::getRotationMatrix() const {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
 	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);
 

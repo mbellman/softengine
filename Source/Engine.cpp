@@ -113,17 +113,6 @@ void Engine::awaitRenderStep(RenderStep renderStep) {
 	}
 }
 
-void Engine::clearActiveLevel() {
-	illuminator->setActiveLevel(NULL);
-	commandLine->setActiveLevel(NULL);
-
-	if (activeLevel != NULL) {
-		delete activeLevel;
-	}
-
-	activeLevel = NULL;
-}
-
 void Engine::createRenderThreads() {
 	// Adhering to a 1-active-thread-per-core limit, we can allot
 	// as many render worker threads as cores are available after
@@ -349,6 +338,8 @@ void Engine::run() {
 		return;
 	}
 
+	isRunning = true;
+
 	if (flags & DEBUG_STATS) {
 		addDebugStats();
 	}
@@ -360,32 +351,42 @@ void Engine::run() {
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	audioEngine->mute();
-	activeLevel->setCamera(&camera);
-	activeLevel->setUI(ui);
-	activeLevel->load();
-
-	precomputeStaticLightColorIntensities();
-
 	int dt, lastStartTime = (int)SDL_GetTicks();
 
-	while (!activeLevel->hasQuit()) {
+	while (isRunning) {
 		dt = (int)SDL_GetTicks() - lastStartTime;
 		lastStartTime = (int)SDL_GetTicks();
 
 		update(dt);
 	}
-
-	clearActiveLevel();
 }
 
 void Engine::setActiveLevel(Level* level) {
-	clearActiveLevel();
-
 	activeLevel = level;
+
+	level->setUI(ui);
 
 	illuminator->setActiveLevel(level);
 	commandLine->setActiveLevel(level);
+	audioEngine->mute();
+
+	if (!level->hasLoaded) {
+		level->load();
+		level->hasLoaded = true;
+	}
+
+	if (!level->hasStarted) {
+		level->onStart();
+		level->hasStarted = true;
+	}
+
+	updateSounds();
+	precomputeStaticLightColorIntensities();
+	audioEngine->unmute();
+}
+
+void Engine::stop() {
+	isRunning = false;
 }
 
 void Engine::update(int dt) {
@@ -414,19 +415,14 @@ void Engine::update(int dt) {
 	// Advance game logic
 	debugStats.trackUpdateTime();
 
-	if (frame++ == 0) {
-		activeLevel->onStart();
-		audioEngine->unmute();
-	} else {
-		int runningTime = SDL_GetTicks();
+	int runningTime = (int)SDL_GetTicks();
 
-		activeLevel->update(dt);
-		activeLevel->onUpdate(dt, runningTime);
+	activeLevel->update(dt);
+	activeLevel->onUpdate(dt, runningTime);
 
-		for (auto* object : activeLevel->getObjects()) {
-			if (object->onUpdate != nullptr) {
-				object->onUpdate(dt, runningTime);
-			}
+	for (auto* object : activeLevel->getObjects()) {
+		if (object->onUpdate != nullptr) {
+			object->onUpdate(dt, runningTime);
 		}
 	}
 
@@ -437,7 +433,7 @@ void Engine::update(int dt) {
 
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
-			activeLevel->quit();
+			isRunning = false;
 
 			return;
 		} else if ((flags & DEBUG_COMMAND_LINE) && event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_c) {
@@ -470,6 +466,8 @@ void Engine::update(int dt) {
 
 	triangleBuffer->reset();
 	debugStats.reset();
+
+	frame++;
 }
 
 /**
@@ -588,6 +586,7 @@ void Engine::updateScene_Wireframe() {
 }
 
 void Engine::updateScreenProjection() {
+	const Camera& camera = activeLevel->getCamera();
 	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
@@ -767,6 +766,7 @@ void Engine::updateScreenProjection() {
 }
 
 void Engine::updateSounds() {
+	const Camera& camera = activeLevel->getCamera();
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 
 	for (auto* sound : activeLevel->getSounds()) {

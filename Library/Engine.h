@@ -62,8 +62,9 @@ public:
 	Engine(int width, int height, Uint32 flags = 0);
 	~Engine();
 
-	void setActiveLevel(Level* level);
 	void run();
+	void setActiveLevel(Level* level);
+	void stop();
 
 private:
 	SDL_Window* window;
@@ -76,8 +77,8 @@ private:
 	UI* ui;
 	CommandLine* commandLine;
 	Level* activeLevel = NULL;
-	Camera camera;
 	Uint32 flags = 0;
+	bool isRunning = false;
 	int width;
 	int HALF_W;
 	int height;

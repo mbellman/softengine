@@ -2,6 +2,7 @@
 
 #include <Engine.h>
 #include <System/Level.h>
+#include <vector>
 
 class Controller {
 public:
@@ -11,9 +12,12 @@ public:
 	virtual void start() = 0;
 
 protected:
-	void loadLevel(Level* level);
+	void enterLevel(Level* level);
+	void exitLevel();
+	void run();
+	void switchLevel(Level* level);
 
 private:
 	Engine* engine = nullptr;
-	Level* activeLevel = nullptr;
+	std::vector<Level*> levelStack;
 };

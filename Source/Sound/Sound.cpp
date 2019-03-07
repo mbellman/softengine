@@ -62,14 +62,50 @@ void Sound::clearMixChunkCache() {
 	Sound::mixChunkCache.clear();
 }
 
+bool Sound::isOn() {
+	ALint state;
+
+	alGetSourcei(alAudioSource, AL_SOURCE_STATE, &state);
+
+	return state == AL_PLAYING || state == AL_LOOPING;
+}
+
+bool Sound::isPaused() {
+	ALint state;
+
+	alGetSourcei(alAudioSource, AL_SOURCE_STATE, &state);
+
+	return state == AL_PAUSED;
+}
+
 void Sound::loop() {
 	alSourcei(alAudioSource, AL_LOOPING, AL_TRUE);
 	alSourcePlay(alAudioSource);
+
+	playMode = PlayMode::LOOPING;
+}
+
+void Sound::pause() {
+	if (isOn()) {
+		alSourcePause(alAudioSource);
+	}
 }
 
 void Sound::play() {
 	alSourcei(alAudioSource, AL_LOOPING, AL_FALSE);
 	alSourcePlay(alAudioSource);
+
+	playMode = PlayMode::PLAYING;
+}
+
+void Sound::resume() {
+	if (isPaused()) {
+		if (playMode == PlayMode::PLAYING) {
+			play();
+		} else if (playMode == PlayMode::LOOPING) {
+			loop();
+		}
+	}
 }
 
 void Sound::setApparentPosition(const Vec3& apparentPosition) {

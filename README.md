@@ -8,6 +8,7 @@ A software 3D rendering engine, written as an educational exercise.
 * Finish Controller architecture
 * UIRect for solid-color UI elements
 * UIObject alpha blending
+* InputManager: generic key press hook for alternate control schemes
 
 ## Development
 

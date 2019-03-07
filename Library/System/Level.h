@@ -55,20 +55,24 @@ class Level {
 public:
 	InputManager* inputManager = NULL;
 	Settings settings;
+	bool hasStarted = false;
+	bool hasLoaded = false;
 
 	Level();
 	~Level();
 
-	const std::vector<Object*>& getObjects();
+	const Camera& getCamera() const;
 	const std::vector<Light*>& getLights();
+	const std::vector<Object*>& getObjects();
 	const std::vector<Sound*>& getSounds();
 	bool hasQuit();
 	bool isInCurrentOccupiedSector(int sectorId);
 	virtual void load() = 0;
 	virtual void onStart();
 	virtual void onUpdate(int dt, int runningTime);
+	void pause();
 	void quit();
-	void setCamera(Camera* camera);
+	void resume();
 	void setUI(UI* ui);
 	void update(int dt);
 
@@ -109,8 +113,10 @@ private:
 	void handleWASDControl(int dt);
 	void handleMouseMotion(int dx, int dy);
 	void removeLight(Light* light);
+
 	template<class T>
 	void removeMapItem(std::map<const char*, T*> map, const char* key);
+
 	void safelyRemoveKeyedObject(const char* key);
 	void safelyRemoveKeyedParticleSystem(const char* key);
 	void updateCurrentOccupiedSectors();

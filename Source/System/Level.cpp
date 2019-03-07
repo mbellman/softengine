@@ -18,6 +18,7 @@
  */
 Level::Level() {
 	inputManager = new InputManager();
+	camera = new Camera();
 
 	inputManager->onMouseMotion([=](int dx, int dy) {
 		handleMouseMotion(dx, dy);
@@ -110,6 +111,10 @@ T* Level::getMapItem(std::map<const char*, T*> map, const char* key) {
 	return NULL;
 }
 
+const Camera& Level::getCamera() const {
+	return *camera;
+}
+
 const std::vector<Object*>& Level::getObjects() {
 	return objects;
 }
@@ -191,6 +196,12 @@ bool Level::isInCurrentOccupiedSector(int sectorId) {
 void Level::onStart() {}
 void Level::onUpdate(int dt, int runningTime) {}
 
+void Level::pause() {
+	for (auto* sound : sounds) {
+		sound->pause();
+	}
+}
+
 void Level::quit() {
 	for (auto* object : objects) {
 		if (!object->isOfType<Particle>()) {
@@ -217,6 +228,7 @@ void Level::quit() {
 	}
 
 	delete inputManager;
+	delete camera;
 
 	objects.clear();
 	lights.clear();
@@ -263,6 +275,12 @@ void Level::removeMapItem(std::map<const char*, T*> map, const char* key) {
 		map.erase(key);
 
 		return;
+	}
+}
+
+void Level::resume() {
+	for (auto* sound : sounds) {
+		sound->resume();
 	}
 }
 
@@ -327,10 +345,6 @@ void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 
 		particleSystemMap.erase(key);
 	}
-}
-
-void Level::setCamera(Camera* camera) {
-	this->camera = camera;
 }
 
 void Level::setUI(UI* ui) {

@@ -7,9 +7,9 @@ class DemoController : public Controller {
 public:
 	DemoController(Engine* engine): Controller(engine) {}
 
-	void start();
+	void start() override;
 
 private:
-	void loadDefaultLevel();
 	void loadAlternateLevel();
+	void loadDefaultLevel();
 };

@@ -2,9 +2,11 @@
 #include <Engine.h>
 
 int main(int argc, char* argv[]) {
-	DemoController* demo = new DemoController(new Engine(1200, 720, DEBUG_STATS | DEBUG_COMMAND_LINE));
+	Engine* engine = new Engine(1200, 720, DEBUG_STATS | DEBUG_COMMAND_LINE);
+	DemoController* demo = new DemoController(engine);
 
 	demo->start();
 
+	delete demo;
 	return 0;
 }
