@@ -1,6 +1,6 @@
-#include <Controller.h>
-#include <Engine.h>
+#include <System/Controller.h>
 #include <System/Level.h>
+#include <Engine.h>
 
 /**
  * Controller
@@ -22,11 +22,12 @@ Controller::~Controller() {
 
 void Controller::enterLevel(Level* level) {
 	if (levelStack.size() > 0) {
-		levelStack.back()->pause();
+		levelStack.back()->suspend();
 	}
 
 	levelStack.push_back(level);
 
+	level->setController(this);
 	engine->setActiveLevel(level);
 }
 
@@ -55,5 +56,6 @@ void Controller::switchLevel(Level* level) {
 	levelStack.pop_back();
 	levelStack.push_back(level);
 
+	level->setController(this);
 	engine->setActiveLevel(level);
 }

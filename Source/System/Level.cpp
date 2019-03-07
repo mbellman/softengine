@@ -1,12 +1,13 @@
 #include <System/Level.h>
+#include <System/Objects.h>
+#include <System/InputManager.h>
+#include <System/Camera.h>
+#include <System/Controller.h>
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <functional>
 #include <cmath>
-#include <System/Objects.h>
-#include <System/InputManager.h>
-#include <System/Camera.h>
 #include <UI/UI.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
@@ -196,12 +197,6 @@ bool Level::isInCurrentOccupiedSector(int sectorId) {
 void Level::onStart() {}
 void Level::onUpdate(int dt, int runningTime) {}
 
-void Level::pause() {
-	for (auto* sound : sounds) {
-		sound->pause();
-	}
-}
-
 void Level::quit() {
 	for (auto* object : objects) {
 		if (!object->isOfType<Particle>()) {
@@ -347,8 +342,18 @@ void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 	}
 }
 
+void Level::setController(Controller* controller) {
+	this->controller = controller;
+}
+
 void Level::setUI(UI* ui) {
 	this->ui = ui;
+}
+
+void Level::suspend() {
+	for (auto* sound : sounds) {
+		sound->pause();
+	}
 }
 
 void Level::update(int dt) {

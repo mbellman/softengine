@@ -334,7 +334,7 @@ void Engine::projectAndQueueTriangle(
 }
 
 void Engine::run() {
-	if (activeLevel == NULL) {
+	if (activeLevel == NULL || isRunning) {
 		return;
 	}
 

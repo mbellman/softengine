@@ -1,17 +1,15 @@
 #pragma once
 
-#include <Engine.h>
-#include <System/Level.h>
 #include <vector>
+
+class Engine;
+class Level;
 
 class Controller {
 public:
 	Controller(Engine* engine);
 	~Controller();
 
-	virtual void start() = 0;
-
-protected:
 	void enterLevel(Level* level);
 	void exitLevel();
 	void run();

@@ -12,6 +12,7 @@
 #include <UI/UI.h>
 #include <System/InputManager.h>
 #include <Graphics/TextureBuffer.h>
+#include <System/Controller.h>
 #include <SDL.h>
 
 /**
@@ -70,13 +71,15 @@ public:
 	virtual void load() = 0;
 	virtual void onStart();
 	virtual void onUpdate(int dt, int runningTime);
-	void pause();
 	void quit();
 	void resume();
+	void setController(Controller* controller);
 	void setUI(UI* ui);
+	void suspend();
 	void update(int dt);
 
 protected:
+	Controller* controller = NULL;
 	Camera* camera = NULL;
 	UI* ui = NULL;
 
