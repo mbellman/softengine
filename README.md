@@ -6,6 +6,8 @@ A software 3D rendering engine, written as an educational exercise.
 ### Features
 
 * Finish Controller architecture
+* UIRect for solid-color UI elements
+* UIObject alpha blending
 
 ## Development
 
