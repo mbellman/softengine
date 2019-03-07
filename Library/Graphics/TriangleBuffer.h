@@ -15,9 +15,9 @@ public:
 	int getTotalNonStaticTriangles();
 	Triangle* requestTriangle();
 	void reset();
+	void resetAll();
 
 private:
-	Level* activeLevel = NULL;
 	bool isSwapped = false;
 	int totalRequestedTriangles = 0;
 

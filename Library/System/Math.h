@@ -54,6 +54,7 @@ struct Vec3 {
 	Vec3(float x, float y, float z);
 
 	static Vec3 crossProduct(const Vec3& v1, const Vec3& v2);
+	static float distance(const Vec3& v1, const Vec3& v2);
 	static float dotProduct(const Vec3& v1, const Vec3& v2);
 	static Vec3 lerp(const Vec3& v1, const Vec3& v2, float r);
 	void clamp(float low, float high);

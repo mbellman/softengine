@@ -107,3 +107,15 @@ void TriangleBuffer::reset() {
 
 	primaryBuffer.clear();
 }
+
+/**
+ * Complete resets state, resetting the requested triangle counter
+ * and clearing both primary and secondary buffers.
+ */
+void TriangleBuffer::resetAll() {
+	totalRequestedTriangles = 0;
+	isSwapped = false;
+
+	triangleBufferA.clear();
+	triangleBufferB.clear();
+}

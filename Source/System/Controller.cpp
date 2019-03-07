@@ -1,5 +1,6 @@
 #include <System/Controller.h>
 #include <System/Level.h>
+#include <UI/Alert.h>
 #include <Engine.h>
 
 /**
@@ -23,6 +24,11 @@ Controller::~Controller() {
 void Controller::enterLevel(Level* level) {
 	if (levelStack.size() > 0) {
 		levelStack.back()->suspend();
+
+		if (levelStack.size() > 10) {
+			Alert::error(ALERT_ERROR, "Level stack size limit exceeded");
+			exit(0);
+		}
 	}
 
 	levelStack.push_back(level);

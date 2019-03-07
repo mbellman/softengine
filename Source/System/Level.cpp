@@ -351,6 +351,8 @@ void Level::setUI(UI* ui) {
 }
 
 void Level::suspend() {
+	inputManager->resetKeyState();
+
 	for (auto* sound : sounds) {
 		sound->pause();
 	}

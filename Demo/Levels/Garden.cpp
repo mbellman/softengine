@@ -3,6 +3,7 @@
 #include <Sound/Sound.h>
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
+#include <System/Math.h>
 #include <Helpers.h>
 #include <cmath>
 
@@ -92,7 +93,7 @@ void Garden::load() {
 	icosahedron->scale(200);
 	icosahedron->isStatic = true;
 
-	add(icosahedron);
+	add("icosahedron", icosahedron);
 
 	Mesh* mesh = new Mesh(100, 50, 100);
 	mesh->setColor(255, 255, 255);
@@ -171,4 +172,8 @@ void Garden::onUpdate(int dt, int runningTime) {
 
 	DirectionalLight* cameraLight = (DirectionalLight*)getObject("cameraLight");
 	cameraLight->setDirection({ -sinf(camera->yaw), sinf(camera->pitch), cosf(camera->yaw) });
+
+	if (Vec3::distance(camera->position, getObject("icosahedron")->position) < 200) {
+		controller->exitLevel();
+	}
 }

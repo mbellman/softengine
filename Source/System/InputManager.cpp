@@ -47,19 +47,19 @@ void InputManager::handleKeyDown(const SDL_Keycode& code) {
 void InputManager::handleKeyUp(const SDL_Keycode& code) {
 	switch (code) {
 		case SDLK_w:
-			keyState ^= Keys::W;
+			keyState &= ~Keys::W;
 			break;
 		case SDLK_s:
-			keyState ^= Keys::S;
+			keyState &= ~Keys::S;
 			break;
 		case SDLK_a:
-			keyState ^= Keys::A;
+			keyState &= ~Keys::A;
 			break;
 		case SDLK_d:
-			keyState ^= Keys::D;
+			keyState &= ~Keys::D;
 			break;
 		case SDLK_LSHIFT:
-			keyState ^= Keys::SHIFT;
+			keyState &= ~Keys::SHIFT;
 			break;
 		case SDLK_ESCAPE:
 		case SDLK_SPACE:
@@ -80,4 +80,8 @@ bool InputManager::isKeyPressed(Keys key) {
 
 void InputManager::onMouseMotion(MouseMotionHandler handler) {
 	mouseMotionHandler = handler;
+}
+
+void InputManager::resetKeyState() {
+	keyState = 0;
 }

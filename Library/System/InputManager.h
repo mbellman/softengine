@@ -26,6 +26,7 @@ public:
 	void handleEvent(const SDL_Event& event);
 	bool isKeyPressed(Keys key);
 	void onMouseMotion(MouseMotionHandler handler);
+	void resetKeyState();
 
 private:
 	int keyState = 0;

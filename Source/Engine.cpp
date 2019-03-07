@@ -363,9 +363,11 @@ void Engine::run() {
 
 void Engine::setActiveLevel(Level* level) {
 	activeLevel = level;
+	frame = 0;
 
 	level->setUI(ui);
 
+	triangleBuffer->resetAll();
 	illuminator->setActiveLevel(level);
 	commandLine->setActiveLevel(level);
 	audioEngine->mute();
@@ -382,6 +384,7 @@ void Engine::setActiveLevel(Level* level) {
 
 	updateSounds();
 	precomputeStaticLightColorIntensities();
+
 	audioEngine->unmute();
 }
 
@@ -412,22 +415,6 @@ void Engine::update(int dt) {
 
 	ui->update(dt);
 
-	// Advance game logic
-	debugStats.trackUpdateTime();
-
-	int runningTime = (int)SDL_GetTicks();
-
-	activeLevel->update(dt);
-	activeLevel->onUpdate(dt, runningTime);
-
-	for (auto* object : activeLevel->getObjects()) {
-		if (object->onUpdate != nullptr) {
-			object->onUpdate(dt, runningTime);
-		}
-	}
-
-	debugStats.logUpdateTime();
-
 	// Handle inputs
 	SDL_Event event;
 
@@ -444,6 +431,23 @@ void Engine::update(int dt) {
 			activeLevel->inputManager->handleEvent(event);
 		}
 	}
+
+	// Advance game logic
+	debugStats.trackUpdateTime();
+
+	int runningTime = (int)SDL_GetTicks();
+
+	activeLevel->update(dt);
+
+	for (auto* object : activeLevel->getObjects()) {
+		if (object->onUpdate != nullptr) {
+			object->onUpdate(dt, runningTime);
+		}
+	}
+
+	activeLevel->onUpdate(dt, runningTime);
+
+	debugStats.logUpdateTime();
 
 	// Frame lock checks, debug stat updates, render to screen
 	if (flags & FPS_30) {

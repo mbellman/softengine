@@ -1,5 +1,8 @@
-#include <cmath>
 #include <Levels/Default.h>
+#include <Levels/Garden.h>
+#include <System/Math.h>
+#include <Helpers.h>
+#include <cmath>
 
 /**
  * Default
@@ -44,7 +47,7 @@ void Default::load() {
 	add(cube);
 	add(cube2);
 	add(cube3);
-	add(icosahedron);
+	add("icosahedron", icosahedron);
 	add("oscillatingCube", oscillatingCube);
 
 	Light* light = new Light();
@@ -69,4 +72,18 @@ void Default::onUpdate(int dt, int runningTime) {
 	light->position.z = 2000 + 500.0f * cosf(runningTime / 400.0f);
 
 	settings.ambientLightVector.x = sinf(runningTime / 300.f);
+
+	Object* ico = getObject("icosahedron");
+
+	float icoDistance = Vec3::distance(ico->position, camera->position);
+
+	if (icoDistance < 200) {
+		ico->position = {
+			ico->position.x + RNG::random(-1000.0f, 1000.0f),
+			ico->position.y,
+			ico->position.z + RNG::random(-1000.0f, 1000.0f)
+		};
+
+		controller->enterLevel(new Garden());
+	}
 }
