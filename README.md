@@ -5,14 +5,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Level editor + file save/load support
-* Dynamic object loading/unloading
-
-**Pending optimizations:**
-
-### Refactoring/organization
-
-* Convert skybox.obj into a predefined Object subclass
+* Dynamic Level switching
 
 ## Development
 

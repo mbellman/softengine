@@ -9,12 +9,10 @@
  * -----
  */
 void Beach::load() {
-	ObjLoader skyboxObj("./DemoAssets/skybox.obj");
-
 	TextureBuffer* sky = new TextureBuffer("./DemoAssets/sky.png");
 	sky->shouldUseMipmaps = false;
 
-	Model* skybox = new Model(skyboxObj);
+	Skybox* skybox = new Skybox();
 	skybox->scale(20000);
 	skybox->setTexture(sky);
 	skybox->hasLighting = false;
