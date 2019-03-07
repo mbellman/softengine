@@ -38,6 +38,8 @@ include_directories(${OPENAL_INCLUDE_DIR})
 set(SOURCE_FILES
     # -- Demo files --
     Demo/main.cpp
+    Demo/DemoController.h
+    Demo/DemoController.cpp
     Demo/Levels/Default.cpp
     Demo/Levels/Default.h
     Demo/Levels/StressTest.cpp
@@ -83,6 +85,7 @@ set(SOURCE_FILES
     Library/UI/UI.h
     Library/UI/UIObjects.h
     Library/Constants.h
+    Library/Controller.h
     Library/Engine.h
     Library/Helpers.h
 
@@ -112,6 +115,7 @@ set(SOURCE_FILES
     Source/UI/Alert.cpp
     Source/UI/UI.cpp
     Source/UI/UIObjects.cpp
+    Source/Controller.cpp
     Source/Engine.cpp
     Source/Helpers.cpp
 )
