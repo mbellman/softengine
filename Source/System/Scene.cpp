@@ -52,6 +52,7 @@ Scene::~Scene() {
 	}
 
 	delete inputManager;
+	delete ui;
 	delete camera;
 
 	objects.clear();
@@ -225,6 +226,10 @@ bool Scene::isInCurrentOccupiedSector(int sectorId) {
 void Scene::onStart() {}
 void Scene::onUpdate(int dt, int runningTime) {}
 
+void Scene::provideUI(UI* ui) {
+	this->ui = ui;
+}
+
 void Scene::remove(const char* key) {
 	safelyRemoveKeyedObject(key);
 	safelyRemoveKeyedParticleSystem(key);
@@ -330,10 +335,6 @@ void Scene::safelyRemoveKeyedParticleSystem(const char* key) {
 
 void Scene::setController(Controller* controller) {
 	this->controller = controller;
-}
-
-void Scene::setUI(UI* ui) {
-	this->ui = ui;
 }
 
 void Scene::suspend() {

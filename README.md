@@ -5,7 +5,9 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Unique UI instance per Scene
+* Configurable window title/icon
+* Morph behavior adjustments
+* Live window size changes/flag toggling
 
 ## Development
 

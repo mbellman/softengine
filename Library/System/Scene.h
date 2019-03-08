@@ -46,9 +46,9 @@ struct Settings {
 class Scene {
 public:
 	InputManager* inputManager = NULL;
+	UI* ui = NULL;
 	Settings settings;
-	bool hasStarted = false;
-	bool hasLoaded = false;
+	bool hasInitialized = false;
 
 	Scene();
 	~Scene();
@@ -61,16 +61,15 @@ public:
 	virtual void load() = 0;
 	virtual void onStart();
 	virtual void onUpdate(int dt, int runningTime);
+	void provideUI(UI* ui);
 	void resume();
 	void setController(Controller* controller);
-	void setUI(UI* ui);
 	void suspend();
 	void update(int dt);
 
 protected:
 	Controller* controller = NULL;
 	Camera* camera = NULL;
-	UI* ui = NULL;
 
 	void add(Object* object);
 	void add(Sound* sound);

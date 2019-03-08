@@ -365,21 +365,17 @@ void Engine::run() {
 void Engine::setActiveScene(Scene* scene) {
 	activeScene = scene;
 
-	scene->setUI(ui);
-
 	triangleBuffer->resetAll();
 	illuminator->setActiveScene(scene);
 	commandLine->setActiveScene(scene);
 	audioEngine->mute();
 
-	if (!scene->hasLoaded) {
+	if (!scene->hasInitialized) {
+		scene->provideUI(new UI(renderer));
 		scene->load();
-		scene->hasLoaded = true;
-	}
-
-	if (!scene->hasStarted) {
 		scene->onStart();
-		scene->hasStarted = true;
+
+		scene->hasInitialized = true;
 	}
 
 	updateSounds();
@@ -413,6 +409,7 @@ void Engine::update(int dt) {
 		updateScene_SingleThreaded();
 	}
 
+	activeScene->ui->update(dt);
 	ui->update(dt);
 
 	// Handle inputs
