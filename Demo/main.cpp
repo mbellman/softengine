@@ -1,6 +1,7 @@
 #include <System/Controller.h>
 #include <Scenes/Default.h>
 #include <Scenes/LightTest.h>
+#include <Scenes/AnimationTest.h>
 #include <Engine.h>
 
 int main(int argc, char* argv[]) {
@@ -13,7 +14,7 @@ int main(int argc, char* argv[]) {
 
 	Controller* demo = new Controller(engine);
 
-	demo->enterScene(new Default());
+	demo->enterScene(new AnimationTest());
 	demo->run();
 
 	delete demo;

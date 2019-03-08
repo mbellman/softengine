@@ -51,6 +51,8 @@ void Object::addMorphTarget(Object* morphTarget) {
 		});
 	}
 
+	// Free the original Object used as the morph target,
+	// since its vertices were the only information we needed
 	delete morphTarget;
 }
 
@@ -175,6 +177,10 @@ bool Object::hasLODs() const {
 	return lods.size() > 0;
 }
 
+bool Object::isMorphing() const {
+	return morph.isActive;
+}
+
 void Object::rotate(const Vec3& rotation) {
 	RotationMatrix rotationMatrix = RotationMatrix::fromVec3(rotation);
 
@@ -270,6 +276,10 @@ void Object::startMorph(int duration, bool shouldLoop) {
 	morph.isActive = true;
 }
 
+void Object::stopMorph() {
+	morph.isActive = false;
+}
+
 void Object::syncLODs() {
 	for (auto* lod : lods) {
 		lod->position = position;
@@ -306,14 +316,18 @@ void Object::updateMorph(int dt) {
 		vertex.morph(startFrame, endFrame, frameProgress);
 	}
 
-	morph.time += dt;
+	morph.time += (morph.isReversed ? -dt : dt);
 
-	if (morph.time >= morph.duration) {
-		setMorphTarget(0);
+	bool isMorphComplete = morph.isReversed ? morph.time <= 0 : morph.time >= morph.duration;
 
-		morph.time = 0;
+	if (isMorphComplete) {
+		if (morph.shouldLoop) {
+			morph.time = morph.isReversed ? 0 : morph.duration - dt;
+			morph.isReversed = !morph.isReversed;
+		} else {
+			setMorphTarget(0);
 
-		if (!morph.shouldLoop) {
+			morph.time = 0;
 			morph.isActive = false;
 		}
 	}

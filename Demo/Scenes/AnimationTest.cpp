@@ -30,4 +30,10 @@ void AnimationTest::load() {
 	settings.hasStaticAmbientLight = true;
 }
 
-void AnimationTest::onUpdate(int dt, int runningTime) {}
+void AnimationTest::onUpdate(int dt, int runningTime) {
+	Object* person = getObject("person");
+
+	if (runningTime > 5000 && person->isMorphing()) {
+		person->stopMorph();
+	}
+}

@@ -48,6 +48,7 @@ struct Object : public Positionable3d {
 	int getVertexCount() const;
 	const std::vector<Vertex3d>& getVertices() const;
 	bool hasLODs() const;
+	bool isMorphing() const;
 
 	template<class T>
 	bool isOfType() {
@@ -64,6 +65,7 @@ struct Object : public Positionable3d {
 	void setMorphTarget(int index);
 	void setTexture(TextureBuffer* textureBuffer);
 	void startMorph(int duration, bool shouldLoop);
+	void stopMorph();
 	void syncLODs();
 	void update(int dt);
 	void updateMorph(int dt);
@@ -82,6 +84,7 @@ private:
 		int time = 0;
 		bool shouldLoop = false;
 		bool isActive = false;
+		bool isReversed = false;
 	};
 
 	int id;
