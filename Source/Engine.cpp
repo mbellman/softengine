@@ -17,6 +17,7 @@
 #include <System/Objects.h>
 #include <System/Geometry.h>
 #include <System/Camera.h>
+#include <System/Scene.h>
 #include <UI/UIObjects.h>
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterFilter.h>
@@ -275,7 +276,7 @@ void Engine::precomputeStaticLightColorIntensities() {
 		}
 	};
 
-	for (auto* object : activeLevel->getObjects()) {
+	for (auto* object : activeScene->getObjects()) {
 		if (!object->isStatic || !object->hasLighting) {
 			continue;
 		}
@@ -334,7 +335,7 @@ void Engine::projectAndQueueTriangle(
 }
 
 void Engine::run() {
-	if (activeLevel == NULL || isRunning) {
+	if (activeScene == NULL || isRunning) {
 		return;
 	}
 
@@ -361,24 +362,24 @@ void Engine::run() {
 	}
 }
 
-void Engine::setActiveLevel(Level* level) {
-	activeLevel = level;
+void Engine::setActiveScene(Scene* scene) {
+	activeScene = scene;
 
-	level->setUI(ui);
+	scene->setUI(ui);
 
 	triangleBuffer->resetAll();
-	illuminator->setActiveLevel(level);
-	commandLine->setActiveLevel(level);
+	illuminator->setActiveScene(scene);
+	commandLine->setActiveScene(scene);
 	audioEngine->mute();
 
-	if (!level->hasLoaded) {
-		level->load();
-		level->hasLoaded = true;
+	if (!scene->hasLoaded) {
+		scene->load();
+		scene->hasLoaded = true;
 	}
 
-	if (!level->hasStarted) {
-		level->onStart();
-		level->hasStarted = true;
+	if (!scene->hasStarted) {
+		scene->onStart();
+		scene->hasStarted = true;
 	}
 
 	updateSounds();
@@ -393,7 +394,7 @@ void Engine::stop() {
 
 void Engine::update(int dt) {
 	int startTime = SDL_GetTicks();
-	const Settings& settings = activeLevel->settings;
+	const Settings& settings = activeScene->settings;
 
 	debugStats.trackFrameTime();
 
@@ -427,7 +428,7 @@ void Engine::update(int dt) {
 		} else if (commandLine->isOpen()) {
 			handleCommandLineInput(event);
 		} else {
-			activeLevel->inputManager->handleEvent(event);
+			activeScene->inputManager->handleEvent(event);
 		}
 	}
 
@@ -436,15 +437,15 @@ void Engine::update(int dt) {
 
 	int runningTime = (int)SDL_GetTicks();
 
-	activeLevel->update(dt);
+	activeScene->update(dt);
 
-	for (auto* object : activeLevel->getObjects()) {
+	for (auto* object : activeScene->getObjects()) {
 		if (object->onUpdate != nullptr) {
 			object->onUpdate(dt, runningTime);
 		}
 	}
 
-	activeLevel->onUpdate(dt, runningTime);
+	activeScene->onUpdate(dt, runningTime);
 
 	debugStats.logUpdateTime();
 
@@ -589,7 +590,7 @@ void Engine::updateScene_Wireframe() {
 }
 
 void Engine::updateScreenProjection() {
-	const Camera& camera = activeLevel->getCamera();
+	const Camera& camera = activeScene->getCamera();
 	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
@@ -600,11 +601,11 @@ void Engine::updateScreenProjection() {
 	Vec3 u_vecs[3];
 	Vec3 w_vecs[3];
 
-	for (const auto* object : activeLevel->getObjects()) {
+	for (const auto* object : activeScene->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 		const Object* lodObject = object->hasLODs() ? object->getLOD(relativeObjectPosition.magnitude()) : object;
 
-		if (!activeLevel->isInCurrentOccupiedSector(object->sectorId)) {
+		if (!activeScene->isInCurrentOccupiedSector(object->sectorId)) {
 			continue;
 		}
 
@@ -640,7 +641,7 @@ void Engine::updateScreenProjection() {
 
 				if (t_verts[i].vector.z < NEAR_PLANE_DISTANCE) {
 					frustumCuller.near++;
-				} else if (t_verts[i].vector.z > activeLevel->settings.visibility) {
+				} else if (t_verts[i].vector.z > activeScene->settings.visibility) {
 					frustumCuller.far++;
 				}
 
@@ -769,10 +770,10 @@ void Engine::updateScreenProjection() {
 }
 
 void Engine::updateSounds() {
-	const Camera& camera = activeLevel->getCamera();
+	const Camera& camera = activeScene->getCamera();
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 
-	for (auto* sound : activeLevel->getSounds()) {
+	for (auto* sound : activeScene->getSounds()) {
 		Vec3 relativeSoundPosition = cameraRotationMatrix * (sound->position - camera.position);
 
 		sound->setApparentPosition(relativeSoundPosition * 0.1f);
@@ -814,8 +815,8 @@ void Engine::updateDebugStats() {
 	updateDebugStat("updateTime", "Update time", debugStats.getUpdateTime());
 	updateDebugStat("frameTime", "Frame time", debugStats.getFrameTime());
 	updateDebugStat("fps", "FPS", debugStats.getFPS());
-	updateDebugStat("totalVertices", "Vertices", debugStats.getTotalVertices(activeLevel->getObjects()));
-	updateDebugStat("totalTriangles", "Triangles", debugStats.getTotalPolygons(activeLevel->getObjects()));
+	updateDebugStat("totalVertices", "Vertices", debugStats.getTotalVertices(activeScene->getObjects()));
+	updateDebugStat("totalTriangles", "Triangles", debugStats.getTotalPolygons(activeScene->getObjects()));
 	updateDebugStat("totalTrianglesProjected", "Triangles projected", triangleBuffer->getTotalRequestedTriangles());
 	updateDebugStat("totalTrianglesDrawn", "Triangles drawn", triangleBuffer->getBufferedTriangles().size());
 	updateDebugStat("totalScanlines", "Scanlines", rasterizer->getTotalBufferedScanlines());

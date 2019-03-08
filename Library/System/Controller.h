@@ -3,19 +3,19 @@
 #include <vector>
 
 class Engine;
-class Level;
+class Scene;
 
 class Controller {
 public:
 	Controller(Engine* engine);
 	~Controller();
 
-	void enterLevel(Level* level);
-	void exitLevel();
+	void enterScene(Scene* scene);
+	void exitScene();
 	void run();
-	void switchLevel(Level* level);
+	void switchScene(Scene* scene);
 
 private:
 	Engine* engine = nullptr;
-	std::vector<Level*> levelStack;
+	std::vector<Scene*> sceneStack;
 };

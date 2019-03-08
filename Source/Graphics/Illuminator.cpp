@@ -11,7 +11,7 @@ constexpr static float PI_HALF = M_PI / 2.0f;
  * -----------
  */
 void Illuminator::computeAmbientLightColorIntensity(const Vec3& normal, float fresnelFactor, Vec3& colorIntensity) {
-	const Settings& settings = activeLevel->settings;
+	const Settings& settings = activeScene->settings;
 
 	if (settings.ambientLightFactor > 0) {
 		float dot = Vec3::dotProduct(normal, settings.ambientLightVector.unit());
@@ -41,7 +41,7 @@ void Illuminator::computeLightColorIntensity(Light* light, const Vec3& vertexPos
 		return;
 	}
 
-	const Settings& settings = activeLevel->settings;
+	const Settings& settings = activeScene->settings;
 	Vec3 lightSourceVector = vertexPosition - light->position;
 	float lightDistance = lightSourceVector.magnitude();
 
@@ -93,7 +93,7 @@ inline float Illuminator::getIncidence(float dot) {
 Vec3 Illuminator::getTriangleVertexColorIntensity(Triangle* triangle, int vertexIndex) {
 	const Vertex2d& vertex = triangle->vertices[vertexIndex];
 	const Vec3& normal = triangle->sourcePolygon->sourceObject->isFlatShaded ? triangle->sourcePolygon->normal : vertex.normal;
-	const Settings& settings = activeLevel->settings;
+	const Settings& settings = activeScene->settings;
 	bool isStaticTriangle = !triangle->isSynthetic && triangle->sourcePolygon->sourceObject->isStatic;
 	Vec3 colorIntensity;
 
@@ -110,7 +110,7 @@ Vec3 Illuminator::getTriangleVertexColorIntensity(Triangle* triangle, int vertex
 			computeAmbientLightColorIntensity(normal, triangle->fresnelFactor, colorIntensity);
 		}
 
-		for (auto* light : activeLevel->getLights()) {
+		for (auto* light : activeScene->getLights()) {
 			bool shouldRecomputeLightColorIntensity = !isStaticTriangle || !light->isStatic;
 
 			if (shouldRecomputeLightColorIntensity) {
@@ -123,7 +123,7 @@ Vec3 Illuminator::getTriangleVertexColorIntensity(Triangle* triangle, int vertex
 }
 
 void Illuminator::illuminateColorTriangle(Triangle* triangle) {
-	const Settings& settings = activeLevel->settings;
+	const Settings& settings = activeScene->settings;
 
 	for (int i = 0; i < 3; i++) {
 		Vertex2d* vertex = &triangle->vertices[i];
@@ -149,7 +149,7 @@ void Illuminator::illuminateColorTriangle(Triangle* triangle) {
  * recalculated during runtime.
  */
 void Illuminator::illuminateStaticPolygon(Polygon* polygon) {
-	const Settings& settings = activeLevel->settings;
+	const Settings& settings = activeScene->settings;
 	float fresnelFactor = 0.0f;
 
 	for (int i = 0; i < 3; i++) {
@@ -162,7 +162,7 @@ void Illuminator::illuminateStaticPolygon(Polygon* polygon) {
 			computeAmbientLightColorIntensity(normal, fresnelFactor, colorIntensity);
 		}
 
-		for (auto* light : activeLevel->getLights()) {
+		for (auto* light : activeScene->getLights()) {
 			if (light->isStatic) {
 				computeLightColorIntensity(light, vertexPosition, normal, fresnelFactor, colorIntensity);
 			}
@@ -207,6 +207,6 @@ void Illuminator::resetTriangleLighting(Triangle* triangle) {
 	}
 }
 
-void Illuminator::setActiveLevel(Level* activeLevel) {
-	this->activeLevel = activeLevel;
+void Illuminator::setActiveScene(Scene* scene) {
+	activeScene = scene;
 }

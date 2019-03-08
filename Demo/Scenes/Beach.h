@@ -1,8 +1,8 @@
 #pragma once
 
-#include <System/Level.h>
+#include <System/Scene.h>
 
-class TextureTest : public Level {
+class Beach : public Scene {
 public:
 	void load() override;
 	void onUpdate(int dt, int runningTime) override;

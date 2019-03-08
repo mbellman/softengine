@@ -1,5 +1,5 @@
 #include <System/Controller.h>
-#include <System/Level.h>
+#include <System/Scene.h>
 #include <UI/Alert.h>
 #include <Engine.h>
 
@@ -12,43 +12,43 @@ Controller::Controller(Engine* engine) {
 }
 
 Controller::~Controller() {
-	for (auto* level : levelStack) {
-		delete level;
+	for (auto* scene : sceneStack) {
+		delete scene;
 	}
 
-	levelStack.clear();
+	sceneStack.clear();
 
 	delete engine;
 }
 
-void Controller::enterLevel(Level* level) {
-	if (levelStack.size() > 0) {
-		levelStack.back()->suspend();
+void Controller::enterScene(Scene* scene) {
+	if (sceneStack.size() > 0) {
+		sceneStack.back()->suspend();
 
-		if (levelStack.size() > 10) {
-			Alert::error(ALERT_ERROR, "Level stack size limit exceeded");
+		if (sceneStack.size() > 10) {
+			Alert::error(ALERT_ERROR, "Scene stack size limit exceeded");
 			exit(0);
 		}
 	}
 
-	levelStack.push_back(level);
+	sceneStack.push_back(scene);
 
-	level->setController(this);
-	engine->setActiveLevel(level);
+	scene->setController(this);
+	engine->setActiveScene(scene);
 }
 
-void Controller::exitLevel() {
-	delete levelStack.back();
+void Controller::exitScene() {
+	delete sceneStack.back();
 
-	levelStack.pop_back();
+	sceneStack.pop_back();
 
-	if (levelStack.empty()) {
+	if (sceneStack.empty()) {
 		engine->stop();
 	} else {
-		Level* level = levelStack.back();
+		Scene* scene = sceneStack.back();
 
-		level->resume();
-		engine->setActiveLevel(level);
+		scene->resume();
+		engine->setActiveScene(scene);
 	}
 }
 
@@ -56,12 +56,12 @@ void Controller::run() {
 	engine->run();
 }
 
-void Controller::switchLevel(Level* level) {
-	delete levelStack.back();
+void Controller::switchScene(Scene* scene) {
+	delete sceneStack.back();
 
-	levelStack.pop_back();
-	levelStack.push_back(level);
+	sceneStack.pop_back();
+	sceneStack.push_back(scene);
 
-	level->setController(this);
-	engine->setActiveLevel(level);
+	scene->setController(this);
+	engine->setActiveScene(scene);
 }

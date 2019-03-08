@@ -39,25 +39,25 @@ void CommandLine::executeCurrentCommand() {
 
 		parseColor(value, color);
 
-		activeLevel->settings.ambientLightColor = color;
+		activeScene->settings.ambientLightColor = color;
 	} else if (term == AMBIENT_LIGHT_FACTOR) {
-		activeLevel->settings.ambientLightFactor = stof(value);
+		activeScene->settings.ambientLightFactor = stof(value);
 	} else if (term == AMBIENT_LIGHT_VECTOR) {
 		Vec3 vector;
 
 		parseVec3(value, vector);
 
-		activeLevel->settings.ambientLightVector = vector;
+		activeScene->settings.ambientLightVector = vector;
 	} else if (term == BACKGROUND_COLOR) {
 		Color backgroundColor;
 
 		parseColor(value, backgroundColor);
 
-		activeLevel->settings.backgroundColor = backgroundColor;
+		activeScene->settings.backgroundColor = backgroundColor;
 	} else if (term == BRIGHTNESS) {
-		activeLevel->settings.brightness = stof(value);
+		activeScene->settings.brightness = stof(value);
 	} else if (term == VISIBILITY) {
-		activeLevel->settings.visibility = stoi(value);
+		activeScene->settings.visibility = stoi(value);
 	}
 
 	close();
@@ -124,6 +124,6 @@ void CommandLine::queueCharacter(char character) {
 	}
 }
 
-void CommandLine::setActiveLevel(Level* level) {
-	activeLevel = level;
+void CommandLine::setActiveScene(Scene* scene) {
+	activeScene = scene;
 }

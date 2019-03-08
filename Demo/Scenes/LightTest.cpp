@@ -1,6 +1,6 @@
 #include <SDL.h>
 #include <math.h>
-#include <Levels/LightTest.h>
+#include <Scenes/LightTest.h>
 #include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>

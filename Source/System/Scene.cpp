@@ -1,4 +1,4 @@
-#include <System/Level.h>
+#include <System/Scene.h>
 #include <System/Objects.h>
 #include <System/InputManager.h>
 #include <System/Camera.h>
@@ -14,10 +14,10 @@
 #include <Constants.h>
 
 /**
- * Level
+ * Scene
  * -----
  */
-Level::Level() {
+Scene::Scene() {
 	inputManager = new InputManager();
 	camera = new Camera();
 
@@ -26,7 +26,7 @@ Level::Level() {
 	});
 }
 
-Level::~Level() {
+Scene::~Scene() {
 	for (auto* object : objects) {
 		if (!object->isOfType<Particle>()) {
 			// Only delete Objects other than Particles, which
@@ -64,13 +64,13 @@ Level::~Level() {
 	particleSystemMap.clear();
 }
 
-void Level::add(const char* key, Object* object) {
+void Scene::add(const char* key, Object* object) {
 	add(object);
 
 	objectMap.emplace(key, objects.size() - 1);
 }
 
-void Level::add(Object* object) {
+void Scene::add(Object* object) {
 	object->syncLODs();
 	object->recomputeSurfaceNormals();
 
@@ -81,29 +81,29 @@ void Level::add(Object* object) {
 	}
 }
 
-void Level::add(Sound* sound) {
+void Scene::add(Sound* sound) {
 	sounds.push_back(sound);
 }
 
-void Level::add(const Sector& sector) {
+void Scene::add(const Sector& sector) {
 	sectors.push_back(sector);
 }
 
-void Level::add(const char* key, ObjLoader* objLoader) {
+void Scene::add(const char* key, ObjLoader* objLoader) {
 	objLoaderMap.emplace(key, objLoader);
 }
 
-void Level::add(const char* key, TextureBuffer* textureBuffer) {
+void Scene::add(const char* key, TextureBuffer* textureBuffer) {
 	textureBufferMap.emplace(key, textureBuffer);
 }
 
-void Level::add(const char* key, Sound* sound) {
+void Scene::add(const char* key, Sound* sound) {
 	soundMap.emplace(key, sound);
 
 	add(sound);
 }
 
-void Level::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
+void Scene::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
 	particleSystemMap.emplace(key, particleSystem);
 
 	for (auto* particle : particleSystem->getParticles()) {
@@ -111,7 +111,7 @@ void Level::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
 	}
 }
 
-Object* Level::getObject(const char* key) {
+Object* Scene::getObject(const char* key) {
 	auto it = objectMap.find(key);
 
 	if (it != objectMap.end()) {
@@ -121,52 +121,52 @@ Object* Level::getObject(const char* key) {
 	return NULL;
 }
 
-Sound* Level::getSound(const char* key) {
+Sound* Scene::getSound(const char* key) {
 	return getMapItem(soundMap, key);
 }
 
-ObjLoader* Level::getObjLoader(const char* key) {
+ObjLoader* Scene::getObjLoader(const char* key) {
 	return getMapItem(objLoaderMap, key);
 }
 
-TextureBuffer* Level::getTexture(const char* key) {
+TextureBuffer* Scene::getTexture(const char* key) {
 	return getMapItem(textureBufferMap, key);
 }
 
 template<class T>
-T* Level::getMapItem(std::map<const char*, T*> map, const char* key) {
+T* Scene::getMapItem(std::map<const char*, T*> map, const char* key) {
 	try {
 		return map.at(key);
 	} catch (const std::out_of_range& error) {
-		printf("Level: Could not find item '%s'\n", key);
+		printf("Scene: Could not find item '%s'\n", key);
 	}
 
 	return NULL;
 }
 
-const Camera& Level::getCamera() const {
+const Camera& Scene::getCamera() const {
 	return *camera;
 }
 
-const std::vector<Object*>& Level::getObjects() {
+const std::vector<Object*>& Scene::getObjects() {
 	return objects;
 }
 
-const std::vector<Light*>& Level::getLights() {
+const std::vector<Light*>& Scene::getLights() {
 	return lights;
 }
 
-const std::vector<Sound*>& Level::getSounds() {
+const std::vector<Sound*>& Scene::getSounds() {
 	return sounds;
 }
 
-void Level::handleControl(int dt) {
+void Scene::handleControl(int dt) {
 	if (settings.controlMode & ControlMode::WASD) {
 		handleWASDControl(dt);
 	}
 }
 
-void Level::handleMouseMotion(int dx, int dy) {
+void Scene::handleMouseMotion(int dx, int dy) {
 	if (~settings.controlMode & ControlMode::MOUSE) {
 		return;
 	}
@@ -179,7 +179,7 @@ void Level::handleMouseMotion(int dx, int dy) {
 	camera->pitch = std::clamp(camera->pitch + pitchDelta, -MAX_CAMERA_PITCH, MAX_CAMERA_PITCH);
 }
 
-void Level::handleWASDControl(int dt) {
+void Scene::handleWASDControl(int dt) {
 	Vec3 velocity;
 
 	if (inputManager->isKeyPressed(Keys::W)) {
@@ -208,7 +208,7 @@ void Level::handleWASDControl(int dt) {
 	camera->position.z += cy * velocity.z + sy * velocity.x;
 }
 
-bool Level::isInCurrentOccupiedSector(int sectorId) {
+bool Scene::isInCurrentOccupiedSector(int sectorId) {
 	if (sectorId == GLOBAL_SECTOR_ID) {
 		return true;
 	}
@@ -222,10 +222,10 @@ bool Level::isInCurrentOccupiedSector(int sectorId) {
 	return false;
 }
 
-void Level::onStart() {}
-void Level::onUpdate(int dt, int runningTime) {}
+void Scene::onStart() {}
+void Scene::onUpdate(int dt, int runningTime) {}
 
-void Level::remove(const char* key) {
+void Scene::remove(const char* key) {
 	safelyRemoveKeyedObject(key);
 	safelyRemoveKeyedParticleSystem(key);
 
@@ -234,7 +234,7 @@ void Level::remove(const char* key) {
 	removeMapItem(particleSystemMap, key);
 }
 
-void Level::removeLight(Light* light) {
+void Scene::removeLight(Light* light) {
 	int index = 0;
 
 	while (index < lights.size()) {
@@ -247,7 +247,7 @@ void Level::removeLight(Light* light) {
 }
 
 template<class T>
-void Level::removeMapItem(std::map<const char*, T*> map, const char* key) {
+void Scene::removeMapItem(std::map<const char*, T*> map, const char* key) {
 	auto entry = map.find(key);
 
 	if (entry != map.end()) {
@@ -259,7 +259,7 @@ void Level::removeMapItem(std::map<const char*, T*> map, const char* key) {
 	}
 }
 
-void Level::resume() {
+void Scene::resume() {
 	for (auto* sound : sounds) {
 		sound->resume();
 	}
@@ -273,7 +273,7 @@ void Level::resume() {
  *  B) From the Object pointer list
  *  C) If it is a Light, from the Lights pointer list
  */
-void Level::safelyRemoveKeyedObject(const char* key) {
+void Scene::safelyRemoveKeyedObject(const char* key) {
 	auto entry = objectMap.find(key);
 
 	if (entry != objectMap.end()) {
@@ -301,7 +301,7 @@ void Level::safelyRemoveKeyedObject(const char* key) {
  * contiguously in the Object pointer list, we can erase all list
  * elements from [N = first particle index, N + particle system size).
  */
-void Level::safelyRemoveKeyedParticleSystem(const char* key) {
+void Scene::safelyRemoveKeyedParticleSystem(const char* key) {
 	auto entry = particleSystemMap.find(key);
 
 	if (entry != particleSystemMap.end()) {
@@ -328,15 +328,15 @@ void Level::safelyRemoveKeyedParticleSystem(const char* key) {
 	}
 }
 
-void Level::setController(Controller* controller) {
+void Scene::setController(Controller* controller) {
 	this->controller = controller;
 }
 
-void Level::setUI(UI* ui) {
+void Scene::setUI(UI* ui) {
 	this->ui = ui;
 }
 
-void Level::suspend() {
+void Scene::suspend() {
 	inputManager->resetKeyState();
 
 	for (auto* sound : sounds) {
@@ -344,7 +344,7 @@ void Level::suspend() {
 	}
 }
 
-void Level::update(int dt) {
+void Scene::update(int dt) {
 	for (auto* object : objects) {
 		object->update(dt);
 	}
@@ -358,7 +358,7 @@ void Level::update(int dt) {
 	camera->update(dt);
 }
 
-void Level::updateCurrentOccupiedSectors() {
+void Scene::updateCurrentOccupiedSectors() {
 	currentOccupiedSectors.clear();
 
 	for (const auto& sector : sectors) {

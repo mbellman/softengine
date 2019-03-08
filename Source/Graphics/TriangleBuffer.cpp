@@ -1,7 +1,6 @@
 #include <Graphics/TriangleBuffer.h>
 #include <System/Geometry.h>
 #include <System/Objects.h>
-#include <System/Level.h>
 #include <UI/Alert.h>
 #include <Helpers.h>
 #include <Constants.h>

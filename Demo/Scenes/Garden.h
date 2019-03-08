@@ -1,8 +1,8 @@
 #pragma once
 
-#include <System/Level.h>
+#include <System/Scene.h>
 
-class Beach : public Level {
+class Garden : public Scene {
 public:
 	void load() override;
 	void onUpdate(int dt, int runningTime) override;

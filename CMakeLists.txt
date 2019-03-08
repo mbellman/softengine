@@ -38,22 +38,22 @@ include_directories(${OPENAL_INCLUDE_DIR})
 set(SOURCE_FILES
     # -- Demo files --
     Demo/main.cpp
-    Demo/Levels/Default.cpp
-    Demo/Levels/Default.h
-    Demo/Levels/StressTest.cpp
-    Demo/Levels/StressTest.h
-    Demo/Levels/LightTest.cpp
-    Demo/Levels/LightTest.h
-    Demo/Levels/TextureTest.cpp
-    Demo/Levels/TextureTest.h
-    Demo/Levels/Garden.cpp
-    Demo/Levels/Garden.h
-    Demo/Levels/Beach.cpp
-    Demo/Levels/Beach.h
-    Demo/Levels/SectorTest.cpp
-    Demo/Levels/SectorTest.h
-    Demo/Levels/AnimationTest.cpp
-    Demo/Levels/AnimationTest.h
+    Demo/Scenes/Default.cpp
+    Demo/Scenes/Default.h
+    Demo/Scenes/StressTest.cpp
+    Demo/Scenes/StressTest.h
+    Demo/Scenes/LightTest.cpp
+    Demo/Scenes/LightTest.h
+    Demo/Scenes/TextureTest.cpp
+    Demo/Scenes/TextureTest.h
+    Demo/Scenes/Garden.cpp
+    Demo/Scenes/Garden.h
+    Demo/Scenes/Beach.cpp
+    Demo/Scenes/Beach.h
+    Demo/Scenes/SectorTest.cpp
+    Demo/Scenes/SectorTest.h
+    Demo/Scenes/AnimationTest.cpp
+    Demo/Scenes/AnimationTest.h
 
     # -- Header files --
     Library/Graphics/Color.h
@@ -74,12 +74,12 @@ set(SOURCE_FILES
     Library/System/Flags.h
     Library/System/Geometry.h
     Library/System/InputManager.h
-    Library/System/Level.h
     Library/System/Math.h
     Library/System/Objects.h
     Library/System/ParticleSystem.h
     Library/System/Positionable.h
     Library/System/Quaternion.h
+    Library/System/Scene.h
     Library/UI/Alert.h
     Library/UI/UI.h
     Library/UI/UIObjects.h
@@ -105,12 +105,12 @@ set(SOURCE_FILES
     Source/System/DebugStats.cpp
     Source/System/Geometry.cpp
     Source/System/InputManager.cpp
-    Source/System/Level.cpp
     Source/System/Math.cpp
     Source/System/Objects.cpp
     Source/System/ParticleSystem.cpp
     Source/System/Positionable.cpp
     Source/System/Quaternion.cpp
+    Source/System/Scene.cpp
     Source/UI/Alert.cpp
     Source/UI/UI.cpp
     Source/UI/UIObjects.cpp

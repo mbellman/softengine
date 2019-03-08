@@ -40,18 +40,18 @@ struct Settings {
 };
 
 /**
- * Level
+ * Scene
  * -----
  */
-class Level {
+class Scene {
 public:
 	InputManager* inputManager = NULL;
 	Settings settings;
 	bool hasStarted = false;
 	bool hasLoaded = false;
 
-	Level();
-	~Level();
+	Scene();
+	~Scene();
 
 	const Camera& getCamera() const;
 	const std::vector<Light*>& getLights();
@@ -100,6 +100,7 @@ private:
 
 	template<class T>
 	T* getMapItem(std::map<const char*, T*> map, const char* key);
+
 	void handleControl(int dt);
 	void handleWASDControl(int dt);
 	void handleMouseMotion(int dx, int dy);

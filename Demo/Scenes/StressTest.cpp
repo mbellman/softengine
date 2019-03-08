@@ -1,6 +1,6 @@
 #include <System/Objects.h>
 #include <Loaders/ObjLoader.h>
-#include <Levels/StressTest.h>
+#include <Scenes/StressTest.h>
 
 /**
  * StressTest

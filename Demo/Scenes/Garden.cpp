@@ -1,4 +1,4 @@
-#include <Levels/Garden.h>
+#include <Scenes/Garden.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
 #include <System/Objects.h>
@@ -174,6 +174,6 @@ void Garden::onUpdate(int dt, int runningTime) {
 	cameraLight->setDirection({ -sinf(camera->yaw), sinf(camera->pitch), cosf(camera->yaw) });
 
 	if (Vec3::distance(camera->position, getObject("icosahedron")->position) < 200) {
-		controller->exitLevel();
+		controller->exitScene();
 	}
 }

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <map>
-#include <System/Level.h>
+#include <System/Scene.h>
 #include <System/Math.h>
 #include <Graphics/Color.h>
 #include <SDL.h>
@@ -20,11 +20,11 @@ public:
 	bool isOpen() const;
 	void open();
 	void queueCharacter(char character);
-	void setActiveLevel(Level* level);
+	void setActiveScene(Scene* scene);
 
 private:
 	std::string currentCommand = "";
-	Level* activeLevel = nullptr;
+	Scene* activeScene = nullptr;
 	bool isQueueingCommand = false;
 
 	void parseCurrentCommand(std::string& term, std::string& value);

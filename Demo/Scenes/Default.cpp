@@ -1,5 +1,5 @@
-#include <Levels/Default.h>
-#include <Levels/Garden.h>
+#include <Scenes/Default.h>
+#include <Scenes/Garden.h>
 #include <System/Math.h>
 #include <UI/UIObjects.h>
 #include <Helpers.h>
@@ -94,6 +94,6 @@ void Default::onUpdate(int dt, int runningTime) {
 			ico->position.z + RNG::random(-1000.0f, 1000.0f)
 		};
 
-		controller->enterLevel(new Garden());
+		controller->enterScene(new Garden());
 	}
 }

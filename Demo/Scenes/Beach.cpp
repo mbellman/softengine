@@ -1,4 +1,4 @@
-#include <Levels/Beach.h>
+#include <Scenes/Beach.h>
 #include <System/Objects.h>
 #include <SDL.h>
 #include <cmath>

@@ -16,7 +16,7 @@
 #include <System/DebugStats.h>
 #include <System/Objects.h>
 #include <System/Geometry.h>
-#include <System/Level.h>
+#include <System/Scene.h>
 #include <System/Math.h>
 #include <System/Positionable.h>
 #include <System/CommandLine.h>
@@ -63,7 +63,7 @@ public:
 	~Engine();
 
 	void run();
-	void setActiveLevel(Level* level);
+	void setActiveScene(Scene* scene);
 	void stop();
 
 private:
@@ -76,7 +76,7 @@ private:
 	AudioEngine* audioEngine;
 	UI* ui;
 	CommandLine* commandLine;
-	Level* activeLevel = NULL;
+	Scene* activeScene = NULL;
 	Uint32 flags = 0;
 	bool isRunning = false;
 	int width;
@@ -106,7 +106,6 @@ private:
 	static int handleRenderWorkerThread(void* data);
 	static int handleRenderThread(void* data);
 	void awaitRenderStep(RenderStep renderStep);
-	void clearActiveLevel();
 	void createRenderThreads();
 	void precomputeStaticLightColorIntensities();
 

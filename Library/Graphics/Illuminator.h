@@ -1,6 +1,6 @@
 #pragma once
 
-#include <System/Level.h>
+#include <System/Scene.h>
 #include <System/Math.h>
 #include <System/Geometry.h>
 
@@ -14,10 +14,10 @@ public:
 	void computeLightColorIntensity(Light* light, const Vec3& vertexPosition, const Vec3& vertexNormal, float fresnelFactor, Vec3& colorIntensity);
 	void illuminateTriangle(Triangle* triangle);
 	void illuminateStaticPolygon(Polygon* polygon);
-	void setActiveLevel(Level* activeLevel);
+	void setActiveScene(Scene* scene);
 
 private:
-	Level* activeLevel = 0;
+	Scene* activeScene = 0;
 
 	float getIncidence(float dot);
 	Vec3 getTriangleVertexColorIntensity(Triangle* triangle, int vertexIndex);

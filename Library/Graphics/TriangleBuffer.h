@@ -1,7 +1,6 @@
 #pragma once
 
 #include <System/Geometry.h>
-#include <System/Level.h>
 #include <vector>
 
 class TriangleBuffer {
