@@ -59,7 +59,7 @@ struct FrustumCuller {
  */
 class Engine {
 public:
-	Engine(int width, int height, const char* title, Uint32 flags = 0);
+	Engine(int width, int height, const char* title, const char* icon, Uint32 flags = 0);
 	~Engine();
 
 	void run();
@@ -119,6 +119,7 @@ private:
 		bool isSynthetic
 	);
 
+	void setWindowIcon(const char* icon);
 	void update(int dt);
 	void updateScene_MultiThreaded();
 	void updateScene_SingleThreaded();

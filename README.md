@@ -5,7 +5,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Configurable window title/icon
+* UIObject clip()/unclip()
 * Morph behavior adjustments
 * Live window size changes/flag toggling
 

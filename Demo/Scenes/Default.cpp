@@ -67,6 +67,13 @@ void Default::load() {
 
 	ui->add("blueRect", blueRect);
 
+	UIGraphic* hud = new UIGraphic("./DemoAssets/hud.png");
+
+	hud->position = { 1000, 100 };
+	hud->setAlpha(0.5f);
+
+	ui->add("hud", hud);
+
 	inputManager->onKeyPress([=](const SDL_Keycode& code) {
 		onKeyPress(code);
 	});

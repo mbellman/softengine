@@ -30,7 +30,7 @@ struct Scanline {
  */
 class Rasterizer {
 public:
-	Rasterizer(SDL_Renderer* renderer, int width, int height, Uint32 flags = 0);
+	Rasterizer(SDL_Renderer* renderer, int width, int height);
 	~Rasterizer();
 
 	void clear();
@@ -50,7 +50,6 @@ public:
 private:
 	Scanline* scanlines;
 	int totalBufferedScanlines = 0;
-	Uint32 flags = 0;
 	Color backgroundColor = { 0, 0, 0 };
 	Uint32 drawColor = ARGB(255, 255, 255);
 	int visibility = MAX_VISIBILITY;

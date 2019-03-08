@@ -1,5 +1,6 @@
 #include <UI/UIObjects.h>
 #include <Graphics/TextureBuffer.h>
+#include <UI/Alert.h>
 #include <Constants.h>
 #include <SDL.h>
 #include <SDL_image.h>
@@ -21,7 +22,10 @@ Uint8 UIObject::getAlphaMod() {
 
 void UIObject::setAlpha(float alpha) {
 	this->alpha = alpha;
-	refresh();
+
+	if (m_texture != NULL) {
+		refreshAlpha();
+	}
 }
 
 void UIObject::refreshAlpha() {
@@ -31,6 +35,7 @@ void UIObject::refreshAlpha() {
 
 void UIObject::setRenderer(SDL_Renderer* renderer) {
 	m_renderer = renderer;
+
 	refresh();
 }
 
@@ -134,6 +139,15 @@ void UIText::setValue(const char* value) {
  */
 UIGraphic::UIGraphic(const char* filename) {
 	image = IMG_Load(filename);
+
+	if (!image) {
+		char errorMessage[60];
+
+		sprintf(errorMessage, "Unable to load image: %s", filename);
+		Alert::error(ALERT_ASSET_ERROR, errorMessage);
+		exit(0);
+	}
+
 	width = image->w;
 	height = image->h;
 

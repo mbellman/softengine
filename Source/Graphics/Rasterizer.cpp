@@ -9,7 +9,6 @@
 #include <Graphics/ColorBuffer.h>
 #include <System/Geometry.h>
 #include <System/Objects.h>
-#include <System/Flags.h>
 #include <UI/Alert.h>
 
 using namespace std;
@@ -18,10 +17,9 @@ using namespace std;
  * Rasterizer
  * ----------
  */
-Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height, Uint32 flags) {
+Rasterizer::Rasterizer(SDL_Renderer* renderer, int width, int height) {
 	this->width = width;
 	this->height = height;
-	this->flags = flags;
 
 	screenTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
 	pixelBuffer = new Uint32[width * height];

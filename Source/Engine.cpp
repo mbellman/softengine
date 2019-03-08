@@ -19,6 +19,7 @@
 #include <System/Camera.h>
 #include <System/Scene.h>
 #include <UI/UIObjects.h>
+#include <UI/Alert.h>
 #include <Graphics/Rasterizer.h>
 #include <Graphics/RasterFilter.h>
 #include <Graphics/TextureBuffer.h>
@@ -32,7 +33,7 @@ using namespace std;
  * Engine
  * ------
  */
-Engine::Engine(int width, int height, const char* title, Uint32 flags) {
+Engine::Engine(int width, int height, const char* title, const char* icon, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
 	IMG_Init(IMG_INIT_PNG);
@@ -45,12 +46,16 @@ Engine::Engine(int width, int height, const char* title, Uint32 flags) {
 		SDL_WINDOW_SHOWN
 	);
 
+	if (icon != NULL) {
+		setWindowIcon(icon);
+	}
+
 	bool hasPixelFilter = flags & PIXEL_FILTER;
 	int rasterWidth = hasPixelFilter ? width / 2 : width;
 	int rasterHeight = hasPixelFilter ? height / 2 : height;
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
-	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight, flags);
+	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight);
 	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
 	triangleBuffer = new TriangleBuffer();
 	illuminator = new Illuminator();
@@ -382,6 +387,21 @@ void Engine::setActiveScene(Scene* scene) {
 	precomputeStaticLightColorIntensities();
 
 	audioEngine->unmute();
+}
+
+void Engine::setWindowIcon(const char* icon) {
+	SDL_Surface* image = IMG_Load(icon);
+
+	if (!image) {
+		char errorMessage[60];
+
+		sprintf(errorMessage, "Unable to load icon: %s", icon);
+		Alert::error(ALERT_ASSET_ERROR, errorMessage);
+		exit(0);
+	}
+
+	SDL_SetWindowIcon(window, image);
+	SDL_FreeSurface(image);
 }
 
 void Engine::stop() {

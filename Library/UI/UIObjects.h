@@ -10,10 +10,10 @@
  * UIObject
  * --------
  */
-struct UIObject : public Positionable2d {
+class UIObject : public Positionable2d {
+public:
 	~UIObject();
 
-	virtual void refresh() = 0;
 	void setAlpha(float alpha);
 	void setPosition(int x, int y);
 	void setRenderer(SDL_Renderer* renderer);
@@ -24,6 +24,7 @@ protected:
 	SDL_Texture* m_texture = 0;
 	SDL_Rect m_rect;
 
+	virtual void refresh() = 0;
 	void refreshAlpha();
 	void setTextureFromSurface(SDL_Surface* surface);
 
@@ -37,10 +38,13 @@ private:
  * UIRect
  * ------
  */
-struct UIRect : UIObject {
-	void refresh();
+class UIRect : public UIObject {
+public:
 	void setColor(const Color& color);
 	void setSize(int w, int h);
+
+protected:
+	void refresh();
 
 private:
 	int width = 0;
@@ -52,14 +56,17 @@ private:
  * UIText
  * ------
  */
-struct UIText : UIObject {
+class UIText : public UIObject {
+public:
 	UIText();
 	UIText(const char* value);
 
-	void refresh();
 	void setFont(TTF_Font* font);
 	void setColor(const SDL_Color &color);
 	void setValue(const char* value);
+
+protected:
+	void refresh();
 
 private:
 	const char* m_value = 0;
@@ -71,12 +78,15 @@ private:
  * UIGraphic
  * ---------
  */
-struct UIGraphic : UIObject {
+class UIGraphic : public UIObject {
+public:
 	UIGraphic(const char* filename);
 
 	void clip(int w, int h);
-	void refresh();
 	void unclip();
+
+protected:
+	void refresh();
 
 private:
 	SDL_Surface* image = NULL;
