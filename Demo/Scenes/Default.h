@@ -11,5 +11,6 @@ public:
 private:
 	bool isPaused = false;
 
-	void onKeyPress(const SDL_Keycode& code);
+	void onKeyDown(const SDL_Keycode& code);
+	void onKeyUp(const SDL_Keycode& code);
 };

@@ -2,6 +2,7 @@
 #include <Scenes/Default.h>
 #include <Scenes/LightTest.h>
 #include <Scenes/AnimationTest.h>
+#include <Scenes/Beach.h>
 #include <Engine.h>
 
 int main(int argc, char* argv[]) {
@@ -14,7 +15,7 @@ int main(int argc, char* argv[]) {
 
 	Controller* demo = new Controller(engine);
 
-	demo->enterScene(new AnimationTest());
+	demo->enterScene(new Default());
 	demo->run();
 
 	delete demo;

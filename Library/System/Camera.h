@@ -8,6 +8,7 @@
  * ------
  */
 struct Camera : public Positionable3d {
+	float roll = 0.0f;
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	int fov = 90;

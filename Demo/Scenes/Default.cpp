@@ -75,8 +75,12 @@ void Default::load() {
 
 	ui->add("hud", hud);
 
-	inputManager->onKeyPress([=](const SDL_Keycode& code) {
-		onKeyPress(code);
+	inputManager->onKeyDown([=](const SDL_Keycode& code) {
+		onKeyDown(code);
+	});
+
+	inputManager->onKeyUp([=](const SDL_Keycode& code) {
+		onKeyUp(code);
 	});
 
 	settings.backgroundColor = { 75, 0, 50 };
@@ -86,7 +90,15 @@ void Default::load() {
 	settings.ambientLightFactor = 0.6;
 }
 
-void Default::onKeyPress(const SDL_Keycode& code) {
+void Default::onKeyDown(const SDL_Keycode& code) {
+	if (code == SDLK_q) {
+		camera->roll -= 0.01f;
+	} else if (code == SDLK_e) {
+		camera->roll += 0.01f;
+	}
+}
+
+void Default::onKeyUp(const SDL_Keycode& code) {
 	if (code == SDLK_p) {
 		isPaused = !isPaused;
 

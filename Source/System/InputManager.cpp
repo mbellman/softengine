@@ -25,6 +25,10 @@ void InputManager::handleEvent(const SDL_Event& event) {
 }
 
 void InputManager::handleKeyDown(const SDL_Keycode& code) {
+	if (keyDownHandler != nullptr) {
+		keyDownHandler(code);
+	}
+
 	switch (code) {
 		case SDLK_w:
 			keyState |= Keys::W;
@@ -45,8 +49,8 @@ void InputManager::handleKeyDown(const SDL_Keycode& code) {
 }
 
 void InputManager::handleKeyUp(const SDL_Keycode& code) {
-	if (keyPressHandler != nullptr) {
-		keyPressHandler(code);
+	if (keyUpHandler != nullptr) {
+		keyUpHandler(code);
 	}
 
 	switch (code) {
@@ -82,8 +86,12 @@ bool InputManager::isKeyPressed(Keys key) {
 	return keyState & key;
 }
 
-void InputManager::onKeyPress(KeyPressHandler handler) {
-	keyPressHandler = handler;
+void InputManager::onKeyDown(KeyHandler handler) {
+	keyDownHandler = handler;
+}
+
+void InputManager::onKeyUp(KeyHandler handler) {
+	keyUpHandler = handler;
 }
 
 void InputManager::onMouseMotion(MouseMotionHandler handler) {
