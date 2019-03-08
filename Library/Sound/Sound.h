@@ -3,13 +3,12 @@
 #include <al.h>
 #include <alc.h>
 #include <System/Geometry.h>
+#include <System/Positionable.h>
 #include <SDL_mixer.h>
 #include <map>
 
-class Sound {
+class Sound : public Positionable3d {
 public:
-	Vec3 position;
-
 	Sound(const char* filename);
 	~Sound();
 

@@ -95,6 +95,12 @@ void Garden::load() {
 
 	add("icosahedron", icosahedron);
 
+	Sound* bells = new Sound("./DemoAssets/bells.wav");
+	bells->position = icosahedron->position;
+	bells->loop();
+
+	add("bells", bells);
+
 	Mesh* mesh = new Mesh(100, 50, 100);
 	mesh->setColor(255, 255, 255);
 	mesh->position = { -2500, -40, 0 };
@@ -130,12 +136,6 @@ void Garden::load() {
 	});
 
 	addParticleSystem("snow", snow);
-
-	Sound* bells = new Sound("./DemoAssets/bells.wav");
-	bells->position = icosahedron->position;
-	bells->loop();
-
-	add("bells", bells);
 
 	for (int i = 0; i < 6; i++) {
 		Sound* crickets = new Sound("./DemoAssets/crickets.wav");
