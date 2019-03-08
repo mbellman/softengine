@@ -4,6 +4,7 @@
 #include <functional>
 
 typedef std::function<void(int, int)> MouseMotionHandler;
+typedef std::function<void(const SDL_Keycode&)> KeyPressHandler;
 
 /**
  * Keys
@@ -25,12 +26,14 @@ class InputManager {
 public:
 	void handleEvent(const SDL_Event& event);
 	bool isKeyPressed(Keys key);
+	void onKeyPress(KeyPressHandler handler);
 	void onMouseMotion(MouseMotionHandler handler);
 	void resetKeyState();
 
 private:
 	int keyState = 0;
-	MouseMotionHandler mouseMotionHandler;
+	KeyPressHandler keyPressHandler = nullptr;
+	MouseMotionHandler mouseMotionHandler = nullptr;
 
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);

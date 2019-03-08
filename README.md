@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* InputManager: generic key press hook for alternate control schemes
 * Unique UI instance per Scene
 
 ## Development

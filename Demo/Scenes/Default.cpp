@@ -67,6 +67,10 @@ void Default::load() {
 
 	ui->add("blueRect", blueRect);
 
+	inputManager->onKeyPress([=](const SDL_Keycode& code) {
+		onKeyPress(code);
+	});
+
 	settings.backgroundColor = { 75, 0, 50 };
 	settings.brightness = 0.2;
 	settings.ambientLightColor = { 255, 0, 200 };
@@ -74,7 +78,23 @@ void Default::load() {
 	settings.ambientLightFactor = 0.6;
 }
 
+void Default::onKeyPress(const SDL_Keycode& code) {
+	if (code == SDLK_p) {
+		isPaused = !isPaused;
+
+		if (isPaused) {
+			settings.controlMode = 0;
+		} else {
+			settings.controlMode = ControlMode::MOUSE | ControlMode::WASD;
+		}
+	}
+}
+
 void Default::onUpdate(int dt, int runningTime) {
+	if (isPaused) {
+		return;
+	}
+
 	getObject("oscillatingCube")->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
 
 	Light* light = (Light*)getObject("light");
