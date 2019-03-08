@@ -16,15 +16,6 @@
 #include <SDL.h>
 
 /**
- * LevelState
- * ----------
- */
-enum LevelState {
-	ACTIVE,
-	INACTIVE
-};
-
-/**
  * ControlMode
  * -----------
  */
@@ -66,12 +57,10 @@ public:
 	const std::vector<Light*>& getLights();
 	const std::vector<Object*>& getObjects();
 	const std::vector<Sound*>& getSounds();
-	bool hasQuit();
 	bool isInCurrentOccupiedSector(int sectorId);
 	virtual void load() = 0;
 	virtual void onStart();
 	virtual void onUpdate(int dt, int runningTime);
-	void quit();
 	void resume();
 	void setController(Controller* controller);
 	void setUI(UI* ui);
@@ -108,7 +97,6 @@ private:
 	std::map<const char*, ParticleSystem*> particleSystemMap;
 	std::map<const char*, Sound*> soundMap;
 	std::vector<int> currentOccupiedSectors;
-	LevelState state = LevelState::ACTIVE;
 
 	template<class T>
 	T* getMapItem(std::map<const char*, T*> map, const char* key);

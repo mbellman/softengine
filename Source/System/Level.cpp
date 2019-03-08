@@ -27,9 +27,41 @@ Level::Level() {
 }
 
 Level::~Level() {
-	if (state != LevelState::INACTIVE) {
-		quit();
+	for (auto* object : objects) {
+		if (!object->isOfType<Particle>()) {
+			// Only delete Objects other than Particles, which
+			// are managed by their source ParticleSystems
+			delete object;
+		}
 	}
+
+	for (auto* sound : sounds) {
+		delete sound;
+	}
+
+	for (auto& [key, objLoader] : objLoaderMap) {
+		delete objLoader;
+	}
+
+	for (auto& [key, textureBuffer] : textureBufferMap) {
+		delete textureBuffer;
+	}
+
+	for (auto& [key, particleSystem] : particleSystemMap) {
+		delete particleSystem;
+	}
+
+	delete inputManager;
+	delete camera;
+
+	objects.clear();
+	lights.clear();
+	sounds.clear();
+	sectors.clear();
+	objectMap.clear();
+	objLoaderMap.clear();
+	textureBufferMap.clear();
+	particleSystemMap.clear();
 }
 
 void Level::add(const char* key, Object* object) {
@@ -176,10 +208,6 @@ void Level::handleWASDControl(int dt) {
 	camera->position.z += cy * velocity.z + sy * velocity.x;
 }
 
-bool Level::hasQuit() {
-	return state == LevelState::INACTIVE;
-}
-
 bool Level::isInCurrentOccupiedSector(int sectorId) {
 	if (sectorId == GLOBAL_SECTOR_ID) {
 		return true;
@@ -196,48 +224,6 @@ bool Level::isInCurrentOccupiedSector(int sectorId) {
 
 void Level::onStart() {}
 void Level::onUpdate(int dt, int runningTime) {}
-
-void Level::quit() {
-	for (auto* object : objects) {
-		if (!object->isOfType<Particle>()) {
-			// Only delete Objects other than Particles, which
-			// are managed by their source ParticleSystems
-			delete object;
-		}
-	}
-
-	for (auto* sound : sounds) {
-		delete sound;
-	}
-
-	for (auto& [key, objLoader] : objLoaderMap) {
-		delete objLoader;
-	}
-
-	for (auto& [key, textureBuffer] : textureBufferMap) {
-		delete textureBuffer;
-	}
-
-	for (auto& [key, particleSystem] : particleSystemMap) {
-		delete particleSystem;
-	}
-
-	delete inputManager;
-	delete camera;
-
-	objects.clear();
-	lights.clear();
-	sounds.clear();
-	sectors.clear();
-	objectMap.clear();
-	objLoaderMap.clear();
-	textureBufferMap.clear();
-	particleSystemMap.clear();
-
-	Sound::clearMixChunkCache();
-
-	state = LevelState::INACTIVE;
-}
 
 void Level::remove(const char* key) {
 	safelyRemoveKeyedObject(key);

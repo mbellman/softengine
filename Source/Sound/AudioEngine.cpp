@@ -1,4 +1,5 @@
 #include <Sound/AudioEngine.h>
+#include <Sound/Sound.h>
 #include <SDL_mixer.h>
 #include <al.h>
 #include <alc.h>
@@ -33,6 +34,8 @@ AudioEngine::AudioEngine() {
 }
 
 AudioEngine::~AudioEngine() {
+	Sound::clearMixChunkCache();
+
 	alcCloseDevice(device);
 	alcDestroyContext(context);
 
