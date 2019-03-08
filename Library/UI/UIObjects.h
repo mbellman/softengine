@@ -14,6 +14,7 @@ struct UIObject : public Positionable2d {
 	~UIObject();
 
 	virtual void refresh() = 0;
+	void setAlpha(float alpha);
 	void setPosition(int x, int y);
 	void setRenderer(SDL_Renderer* renderer);
 	void update(int dt);
@@ -23,10 +24,13 @@ protected:
 	SDL_Texture* m_texture = 0;
 	SDL_Rect m_rect;
 
+	void refreshAlpha();
 	void setTextureFromSurface(SDL_Surface* surface);
 
 private:
 	float alpha = 1.0f;
+
+	Uint8 getAlphaMod();
 };
 
 /**

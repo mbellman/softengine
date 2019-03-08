@@ -62,6 +62,7 @@ void Default::load() {
 
 	blueRect->setColor({ 0, 0, 255 });
 	blueRect->setSize(200, 50);
+	blueRect->setAlpha(0.5f);
 	blueRect->position = { 990, 10 };
 
 	ui->add("blueRect", blueRect);

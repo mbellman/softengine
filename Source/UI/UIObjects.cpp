@@ -15,6 +15,20 @@ UIObject::~UIObject() {
 	}
 }
 
+Uint8 UIObject::getAlphaMod() {
+	return alpha * 255;
+}
+
+void UIObject::setAlpha(float alpha) {
+	this->alpha = alpha;
+	refresh();
+}
+
+void UIObject::refreshAlpha() {
+	SDL_SetTextureBlendMode(m_texture, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureAlphaMod(m_texture, getAlphaMod());
+}
+
 void UIObject::setRenderer(SDL_Renderer* renderer) {
 	m_renderer = renderer;
 	refresh();
@@ -53,6 +67,7 @@ void UIRect::refresh() {
 
 		std::fill(pixels, pixels + width * height, fillColor);
 		SDL_UpdateTexture(m_texture, NULL, pixels, width * sizeof(Uint32));
+		refreshAlpha();
 
 		delete[] pixels;
 	}
@@ -94,6 +109,7 @@ void UIText::refresh() {
 
 		TTF_SizeText(m_font, m_value, &m_rect.w, &m_rect.h);
 		setTextureFromSurface(m_surface);
+		refreshAlpha();
 	}
 }
 
@@ -133,6 +149,7 @@ void UIGraphic::clip(int w, int h) {
 void UIGraphic::refresh() {
 	if (image != NULL) {
 		setTextureFromSurface(image);
+		refreshAlpha();
 
 		// We can safely reset the pointer since
 		// the surface data is now freed
