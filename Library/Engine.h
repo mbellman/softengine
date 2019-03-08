@@ -59,7 +59,7 @@ struct FrustumCuller {
  */
 class Engine {
 public:
-	Engine(int width, int height, Uint32 flags = 0);
+	Engine(int width, int height, const char* title, Uint32 flags = 0);
 	~Engine();
 
 	void run();

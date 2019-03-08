@@ -32,13 +32,13 @@ using namespace std;
  * Engine
  * ------
  */
-Engine::Engine(int width, int height, Uint32 flags) {
+Engine::Engine(int width, int height, const char* title, Uint32 flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
 	IMG_Init(IMG_INIT_PNG);
 
 	window = SDL_CreateWindow(
-		"Engine Test",
+		title,
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		width, height,
