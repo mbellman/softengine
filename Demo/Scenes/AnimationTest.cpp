@@ -11,18 +11,25 @@ void AnimationTest::load() {
 	ObjLoader step2("./DemoAssets/animation/step2.obj");
 	ObjLoader step3("./DemoAssets/animation/step3.obj");
 
-	Model* person = new Model(step1);
+	for (int i = 0; i < 10; i++) {
+		Model* person = new Model(step1);
 
-	person->addMorphTarget(new Model(step1));
-	person->addMorphTarget(new Model(step2));
-	person->addMorphTarget(new Model(step3));
+		person->addMorphTarget(new Model(step1));
+		person->addMorphTarget(new Model(step2));
+		person->addMorphTarget(new Model(step3));
 
-	person->position = { 0, 0, 1500 };
-	person->setColor({ 20, 255, 50 });
-	person->scale(70);
-	person->startMorph(1000, true);
+		person->position = { -3250.0f + 750.0f * i, 0, 1500.0f };
+		person->transformOrigin = { 200, 0, 0 };
+		person->setColor({ 20, 255, 50 });
+		person->scale(70);
+		person->startMorph(1000, true);
 
-	add("person", person);
+		person->onUpdate = [=](int dt, int runningTime) {
+			person->rotateDeg({ 0, 1.0f, 0 });
+		};
+
+		add(person);
+	}
 
 	settings.ambientLightColor = { 0, 50, 255 };
 	settings.ambientLightVector = { 0, -1, 1 };
@@ -31,9 +38,11 @@ void AnimationTest::load() {
 }
 
 void AnimationTest::onUpdate(int dt, int runningTime) {
-	Object* person = getObject("person");
+	// Object* person = getObject("person");
 
-	if (runningTime > 5000 && person->isMorphing()) {
-		person->stopMorph();
-	}
+	// person->rotateDeg({ 0, 1.0f, 0 });
+
+	// if (runningTime > 5000 && person->isMorphing()) {
+	// 	person->stopMorph();
+	// }
 }

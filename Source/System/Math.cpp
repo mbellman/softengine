@@ -199,6 +199,14 @@ Vec3 Vec3::operator -(const Vec3& vector) const {
 	};
 }
 
+Vec3 Vec3::operator -=(const Vec3& vector) {
+	x -= vector.x;
+	y -= vector.y;
+	z -= vector.z;
+
+	return *this;
+}
+
 Vec3 Vec3::operator *(float scalar) const {
 	return {
 		x * scalar,

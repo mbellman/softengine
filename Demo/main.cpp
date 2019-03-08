@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 
 	Controller* demo = new Controller(engine);
 
-	demo->enterScene(new LightTest());
+	demo->enterScene(new AnimationTest());
 	demo->run();
 
 	delete demo;

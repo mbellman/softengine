@@ -185,7 +185,19 @@ void Object::rotate(const Vec3& rotation) {
 	RotationMatrix rotationMatrix = RotationMatrix::fromVec3(rotation);
 
 	for (auto& vertex : vertices) {
+		vertex.vector += transformOrigin;
+
+		for (auto& morphTarget : vertex.morphTargets) {
+			morphTarget += transformOrigin;
+		}
+
 		vertex.rotate(rotationMatrix);
+
+		vertex.vector -= transformOrigin;
+
+		for (auto& morphTarget : vertex.morphTargets) {
+			morphTarget -= transformOrigin;
+		}
 	}
 
 	recomputeSurfaceNormals();

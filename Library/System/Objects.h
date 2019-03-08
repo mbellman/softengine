@@ -26,11 +26,12 @@ struct Object : public Positionable3d {
 	TextureBuffer* texture = NULL;
 	UpdateHandler onUpdate = nullptr;
 	int sectorId = GLOBAL_SECTOR_ID;
+	Vec3 transformOrigin;
 
 	/**
 	 * Allows the default near plane clipping distance to be
 	 * overridden on a per-object basis, remedying problems
-	 * with depth range over the near-far span of extremely
+	 * with depth range over the near -> far span of extremely
 	 * large triangles.
 	 */
 	float nearClippingDistance = NEAR_PLANE_DISTANCE;

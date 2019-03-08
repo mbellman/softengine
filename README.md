@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Configurable object transform origin
 * Configurable debug font path/UIText accepts a font path argument
 
 ## Development
