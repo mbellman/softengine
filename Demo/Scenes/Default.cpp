@@ -71,6 +71,7 @@ void Default::load() {
 
 	hud->position = { 1000, 100 };
 	hud->setAlpha(0.5f);
+	hud->clip(120, 59);
 
 	ui->add("hud", hud);
 
@@ -101,6 +102,12 @@ void Default::onUpdate(int dt, int runningTime) {
 	if (isPaused) {
 		return;
 	}
+
+	int hudXClip = (int)(191.0f * (1.0f + sinf(runningTime / 500.0f)) / 2.0f);
+	int blueRectXClip = (int)(200.0f * (1.0f + cosf(runningTime / 500.0f)) / 2.0f);
+
+	ui->get("hud")->clip(hudXClip, 59);
+	ui->get("blueRect")->clip(blueRectXClip, 50);
 
 	getObject("oscillatingCube")->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
 

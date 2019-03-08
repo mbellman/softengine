@@ -16,6 +16,14 @@ UIObject::~UIObject() {
 	}
 }
 
+void UIObject::clip(int w, int h) {
+	sourceRect.w = w;
+	sourceRect.h = h;
+
+	destRect.w = w;
+	destRect.h = h;
+}
+
 Uint8 UIObject::getAlphaMod() {
 	return alpha * 255;
 }
@@ -45,14 +53,22 @@ void UIObject::setTextureFromSurface(SDL_Surface* surface) {
 	SDL_FreeSurface(surface);
 }
 
+void UIObject::unclip() {
+	sourceRect.w = width;
+	sourceRect.h = height;
+
+	destRect.w = width;
+	destRect.h = height;
+}
+
 void UIObject::update(int dt) {
 	updatePosition(dt);
 
 	if (m_texture != NULL) {
-		m_rect.x = position.x;
-		m_rect.y = position.y;
+		destRect.x = position.x;
+		destRect.y = position.y;
 
-		SDL_RenderCopy(m_renderer, m_texture, NULL, &m_rect);
+		SDL_RenderCopy(m_renderer, m_texture, &sourceRect, &destRect);
 	}
 }
 
@@ -88,9 +104,7 @@ void UIRect::setSize(int w, int h) {
 	width = w;
 	height = h;
 
-	m_rect.w = w;
-	m_rect.h = h;
-
+	unclip();
 	refresh();
 }
 
@@ -112,9 +126,10 @@ void UIText::refresh() {
 
 		SDL_Surface* m_surface = TTF_RenderText_Solid(m_font, m_value, m_color);
 
-		TTF_SizeText(m_font, m_value, &m_rect.w, &m_rect.h);
+		TTF_SizeText(m_font, m_value, &width, &height);
 		setTextureFromSurface(m_surface);
 		refreshAlpha();
+		unclip();
 	}
 }
 
@@ -155,11 +170,6 @@ UIGraphic::UIGraphic(const char* filename) {
 	setTransparentPixels();
 }
 
-void UIGraphic::clip(int w, int h) {
-	m_rect.w = w;
-	m_rect.h = h;
-}
-
 void UIGraphic::refresh() {
 	if (image != NULL) {
 		setTextureFromSurface(image);
@@ -198,9 +208,4 @@ void UIGraphic::setTransparentPixels() {
 			}
 		}
 	}
-}
-
-void UIGraphic::unclip() {
-	m_rect.w = width;
-	m_rect.h = height;
 }

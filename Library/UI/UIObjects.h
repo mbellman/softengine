@@ -14,15 +14,20 @@ class UIObject : public Positionable2d {
 public:
 	~UIObject();
 
+	void clip(int w, int h);
 	void setAlpha(float alpha);
 	void setPosition(int x, int y);
 	void setRenderer(SDL_Renderer* renderer);
+	void unclip();
 	void update(int dt);
 
 protected:
 	SDL_Renderer* m_renderer = 0;
 	SDL_Texture* m_texture = 0;
-	SDL_Rect m_rect;
+	SDL_Rect sourceRect = { 0, 0, 0, 0 };
+	SDL_Rect destRect = { 0, 0, 0, 0 };
+	int width = 0;
+	int height = 0;
 
 	virtual void refresh() = 0;
 	void refreshAlpha();
@@ -47,8 +52,6 @@ protected:
 	void refresh();
 
 private:
-	int width = 0;
-	int height = 0;
 	Color color;
 };
 
@@ -82,16 +85,11 @@ class UIGraphic : public UIObject {
 public:
 	UIGraphic(const char* filename);
 
-	void clip(int w, int h);
-	void unclip();
-
 protected:
 	void refresh();
 
 private:
 	SDL_Surface* image = NULL;
-	int width;
-	int height;
 
 	void setTransparentPixels();
 };
