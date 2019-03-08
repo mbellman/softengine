@@ -43,34 +43,24 @@ Engine::Engine(int width, int height, const char* title, const char* icon, Uint3
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		width, height,
-		SDL_WINDOW_SHOWN
+		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 	);
 
 	if (icon != NULL) {
 		setWindowIcon(icon);
 	}
 
-	bool hasPixelFilter = flags & PIXEL_FILTER;
-	int rasterWidth = hasPixelFilter ? width / 2 : width;
-	int rasterHeight = hasPixelFilter ? height / 2 : height;
-
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
-	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight);
-	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
+	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
+
 	triangleBuffer = new TriangleBuffer();
 	illuminator = new Illuminator();
 	audioEngine = new AudioEngine();
 	ui = new UI(renderer);
 	commandLine = new CommandLine();
-
-	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
-
-	this->width = width;
-	this->height = height;
 	this->flags = flags;
 
-	HALF_W = (int)(width / (hasPixelFilter ? 4 : 2));
-	HALF_H = (int)(height / (hasPixelFilter ? 4 : 2));
+	resize(width, height);
 
 	if (~flags & DISABLE_MULTITHREADING) {
 		createRenderThreads();
@@ -339,6 +329,29 @@ void Engine::projectAndQueueTriangle(
 	rasterFilter->addTriangle(triangle);
 }
 
+void Engine::resize(int width, int height) {
+	bool hasPixelFilter = flags & PIXEL_FILTER;
+	int rasterWidth = hasPixelFilter ? width / 2 : width;
+	int rasterHeight = hasPixelFilter ? height / 2 : height;
+
+	this->width = width;
+	this->height = height;
+
+	HALF_W = (int)(rasterWidth / 2);
+	HALF_H = (int)(rasterHeight / 2);
+
+	if (rasterizer != NULL) {
+		delete rasterizer;
+	}
+
+	if (rasterFilter != NULL) {
+		delete rasterFilter;
+	}
+
+	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight);
+	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
+}
+
 void Engine::run() {
 	if (activeScene == NULL || isRunning) {
 		return;
@@ -440,6 +453,8 @@ void Engine::update(int dt) {
 			isRunning = false;
 
 			return;
+		} else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
+			resize(event.window.data1, event.window.data2);
 		} else if ((flags & DEBUG_COMMAND_LINE) && event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_c) {
 			showCommandLine();
 		} else if (commandLine->isOpen()) {

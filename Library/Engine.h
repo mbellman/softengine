@@ -69,8 +69,8 @@ public:
 private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
-	Rasterizer* rasterizer;
-	RasterFilter* rasterFilter;
+	Rasterizer* rasterizer = NULL;
+	RasterFilter* rasterFilter = NULL;
 	TriangleBuffer* triangleBuffer;
 	Illuminator* illuminator;
 	AudioEngine* audioEngine;
@@ -119,6 +119,7 @@ private:
 		bool isSynthetic
 	);
 
+	void resize(int width, int height);
 	void setWindowIcon(const char* icon);
 	void update(int dt);
 	void updateScene_MultiThreaded();
