@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <System/Positionable.h>
+#include <Graphics/Color.h>
 
 /**
  * UIObject
@@ -23,6 +24,24 @@ protected:
 	SDL_Rect m_rect;
 
 	void setTextureFromSurface(SDL_Surface* surface);
+
+private:
+	float alpha = 1.0f;
+};
+
+/**
+ * UIRect
+ * ------
+ */
+struct UIRect : UIObject {
+	void refresh();
+	void setColor(const Color& color);
+	void setSize(int w, int h);
+
+private:
+	int width = 0;
+	int height = 0;
+	Color color;
 };
 
 /**

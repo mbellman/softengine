@@ -3,6 +3,7 @@
 #include <Constants.h>
 #include <SDL.h>
 #include <SDL_image.h>
+#include <algorithm>
 
 /**
  * UIObject
@@ -34,6 +35,43 @@ void UIObject::update(int dt) {
 
 		SDL_RenderCopy(m_renderer, m_texture, NULL, &m_rect);
 	}
+}
+
+/**
+ * UIRect
+ * ------
+ */
+void UIRect::refresh() {
+	if (m_renderer != NULL && width > 0 && height > 0) {
+		if (m_texture != NULL) {
+			SDL_DestroyTexture(m_texture);
+		}
+
+		Uint32* pixels = new Uint32[width * height];
+		Uint32 fillColor = ARGB(color.R, color.G, color.B);
+		m_texture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
+
+		std::fill(pixels, pixels + width * height, fillColor);
+		SDL_UpdateTexture(m_texture, NULL, pixels, width * sizeof(Uint32));
+
+		delete[] pixels;
+	}
+}
+
+void UIRect::setColor(const Color& color) {
+	this->color = color;
+
+	refresh();
+}
+
+void UIRect::setSize(int w, int h) {
+	width = w;
+	height = h;
+
+	m_rect.w = w;
+	m_rect.h = h;
+
+	refresh();
 }
 
 /**

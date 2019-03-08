@@ -1,6 +1,7 @@
 #include <Levels/Default.h>
 #include <Levels/Garden.h>
 #include <System/Math.h>
+#include <UI/UIObjects.h>
 #include <Helpers.h>
 #include <cmath>
 
@@ -56,6 +57,14 @@ void Default::load() {
 	light->range = 1000;
 
 	add("light", light);
+
+	UIRect* blueRect = new UIRect();
+
+	blueRect->setColor({ 0, 0, 255 });
+	blueRect->setSize(200, 50);
+	blueRect->position = { 990, 10 };
+
+	ui->add("blueRect", blueRect);
 
 	settings.backgroundColor = { 75, 0, 50 };
 	settings.brightness = 0.2;
