@@ -37,12 +37,4 @@ void AnimationTest::load() {
 	settings.hasStaticAmbientLight = true;
 }
 
-void AnimationTest::onUpdate(int dt, int runningTime) {
-	// Object* person = getObject("person");
-
-	// person->rotateDeg({ 0, 1.0f, 0 });
-
-	// if (runningTime > 5000 && person->isMorphing()) {
-	// 	person->stopMorph();
-	// }
-}
+void AnimationTest::onUpdate(int dt, int runningTime) {}
