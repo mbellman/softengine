@@ -20,7 +20,7 @@ public:
 	int getWindowHeight();
 	int getWindowWidth();
 	bool isMouseFocused();
-	void start();
+	void start(Scene* scene);
 	void switchScene(Scene* scene);
 	void toggleFlag(Flags flag);
 

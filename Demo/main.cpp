@@ -17,8 +17,7 @@ int main(int argc, char* argv[]) {
 
 	Controller* demo = new Controller(engine);
 
-	demo->enterScene(new Default());
-	demo->start();
+	demo->start(new Default());
 
 	delete demo;
 	return 0;

@@ -127,6 +127,7 @@ void Default::onUpdate(int dt) {
 		};
 
 		controller->enterScene(new Garden());
+		reset();
 	}
 
 	if (controller->isMouseFocused()) {

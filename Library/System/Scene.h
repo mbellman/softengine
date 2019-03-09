@@ -87,6 +87,7 @@ protected:
 	Sound* getSound(const char* key);
 	TextureBuffer* getTexture(const char* key);
 	void remove(const char* key);
+	void reset();
 
 private:
 	std::vector<Object*> objects;
@@ -101,13 +102,16 @@ private:
 	std::vector<int> currentOccupiedSectors;
 	int runningTime = 0;
 	bool isPaused = false;
+	bool shouldReset = false;
+
+	void boot();
 
 	template<class T>
 	T* getMapItem(std::map<const char*, T*> map, const char* key);
 
 	void handleControl(int dt);
-	void handleWASDControl(int dt);
 	void handleMouseMotion(int dx, int dy);
+	void handleWASDControl(int dt);
 	void removeLight(Light* light);
 
 	template<class T>
@@ -115,5 +119,6 @@ private:
 
 	void safelyRemoveKeyedObject(const char* key);
 	void safelyRemoveKeyedParticleSystem(const char* key);
+	void unload();
 	void updateCurrentOccupiedSectors();
 };

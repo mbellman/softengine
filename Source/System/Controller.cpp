@@ -114,7 +114,8 @@ bool Controller::isMouseFocused() {
 	return SDL_GetRelativeMouseMode();
 }
 
-void Controller::start() {
+void Controller::start(Scene* scene) {
+	enterScene(scene);
 	engine->initialize();
 
 	int dt, lastStartTime = (int)SDL_GetTicks();
@@ -124,6 +125,17 @@ void Controller::start() {
 
 		if (pendingSceneChange != SceneChange::NONE) {
 			handlePendingSceneChange();
+		}
+
+		if (sceneStack.size() > 0) {
+			Scene* activeScene = sceneStack.back();
+
+			if (!activeScene->hasInitialized) {
+				// If we get here, the Scene was reset without
+				// a Scene change, requiring that we reload/restart
+				// it before continuing the update cycle.
+				engine->setActiveScene(activeScene);
+			}
 		}
 
 		lastStartTime = (int)SDL_GetTicks();

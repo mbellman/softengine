@@ -18,51 +18,11 @@
  * -----
  */
 Scene::Scene() {
-	inputManager = new InputManager();
-	camera = new Camera();
-
-	inputManager->onMouseMotion([=](int dx, int dy) {
-		handleMouseMotion(dx, dy);
-	});
+	boot();
 }
 
 Scene::~Scene() {
-	for (auto* object : objects) {
-		if (!object->isOfType<Particle>()) {
-			// Only delete Objects other than Particles, which
-			// are managed by their source ParticleSystems
-			delete object;
-		}
-	}
-
-	for (auto* sound : sounds) {
-		delete sound;
-	}
-
-	for (auto& [key, objLoader] : objLoaderMap) {
-		delete objLoader;
-	}
-
-	for (auto& [key, textureBuffer] : textureBufferMap) {
-		delete textureBuffer;
-	}
-
-	for (auto& [key, particleSystem] : particleSystemMap) {
-		delete particleSystem;
-	}
-
-	delete inputManager;
-	delete ui;
-	delete camera;
-
-	objects.clear();
-	lights.clear();
-	sounds.clear();
-	sectors.clear();
-	objectMap.clear();
-	objLoaderMap.clear();
-	textureBufferMap.clear();
-	particleSystemMap.clear();
+	unload();
 }
 
 void Scene::add(const char* key, Object* object) {
@@ -188,6 +148,15 @@ void Scene::handleMouseMotion(int dx, int dy) {
 	camera->pitch = std::clamp(camera->pitch + pitchDelta, -MAX_CAMERA_PITCH, MAX_CAMERA_PITCH);
 }
 
+void Scene::boot() {
+	inputManager = new InputManager();
+	camera = new Camera();
+
+	inputManager->onMouseMotion([=](int dx, int dy) {
+		handleMouseMotion(dx, dy);
+	});
+}
+
 void Scene::handleWASDControl(int dt) {
 	Vec3 velocity;
 
@@ -276,6 +245,19 @@ void Scene::removeMapItem(std::map<const char*, T*> map, const char* key) {
 	}
 }
 
+/**
+ * Flags the Scene to reset at the end of its update cycle.
+ * A reset returns the Scene to its instantiation-time state,
+ * prior to load() or onStart() calls. Reload/restart will
+ * occur only once the Scene becomes the active one again,
+ * either at the beginning of the next Controller update cycle
+ * if no Scene change occurs, or if the changed Scene(s) are
+ * exited.
+ */
+void Scene::reset() {
+	shouldReset = true;
+}
+
 void Scene::resume() {
 	for (auto* sound : sounds) {
 		sound->resume();
@@ -360,7 +342,7 @@ void Scene::togglePause() {
 }
 
 void Scene::update(int dt) {
-	if (isPaused) {
+	if (isPaused || !hasInitialized) {
 		return;
 	}
 
@@ -382,6 +364,62 @@ void Scene::update(int dt) {
 	for (auto* object : objects) {
 		object->syncLODs();
 	}
+
+	if (shouldReset) {
+		unload();
+		boot();
+
+		shouldReset = false;
+		hasInitialized = false;
+	}
+}
+
+void Scene::unload() {
+	for (auto* object : objects) {
+		if (!object->isOfType<Particle>()) {
+			// Only delete Objects other than Particles, which
+			// are managed by their source ParticleSystems
+			delete object;
+		}
+	}
+
+	for (auto* sound : sounds) {
+		delete sound;
+	}
+
+	for (auto& [key, objLoader] : objLoaderMap) {
+		delete objLoader;
+	}
+
+	for (auto& [key, textureBuffer] : textureBufferMap) {
+		delete textureBuffer;
+	}
+
+	for (auto& [key, particleSystem] : particleSystemMap) {
+		delete particleSystem;
+	}
+
+	delete inputManager;
+	delete camera;
+
+	if (ui != NULL) {
+		// If a reset but not reloaded/restarted Scene is further back
+		// in the Scene stack, its 'ui' field will be deleted already.
+		// Quitting the application in this state would cause a double
+		// free if we didn't guard the deletion with a NULL check.
+		delete ui;
+
+		ui = NULL;
+	}
+
+	objects.clear();
+	lights.clear();
+	sounds.clear();
+	sectors.clear();
+	objectMap.clear();
+	objLoaderMap.clear();
+	textureBufferMap.clear();
+	particleSystemMap.clear();
 }
 
 void Scene::updateCurrentOccupiedSectors() {
