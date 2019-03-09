@@ -1,12 +1,10 @@
 #pragma once
 
-#include <SDL.h>
-
 /**
  * Flags
  * -----
  */
-enum Flags : Uint32 {
+enum Flags {
 	DEBUG_STATS = 1 << 0,
 	DEBUG_COMMAND_LINE = 1 << 1,
 	SHOW_WIREFRAME = 1 << 2,

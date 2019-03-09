@@ -1,5 +1,6 @@
 #include <System/Controller.h>
 #include <System/Scene.h>
+#include <System/Flags.h>
 #include <UI/Alert.h>
 #include <Engine.h>
 
@@ -52,6 +53,18 @@ void Controller::exitScene() {
 	}
 }
 
+int Controller::getFlags() {
+	return engine->getFlags();
+}
+
+int Controller::getWindowHeight() {
+	return engine->getWindowHeight();
+}
+
+int Controller::getWindowWidth() {
+	return engine->getWindowWidth();
+}
+
 void Controller::run() {
 	engine->run();
 }
@@ -64,4 +77,8 @@ void Controller::switchScene(Scene* scene) {
 
 	scene->setController(this);
 	engine->setActiveScene(scene);
+}
+
+void Controller::toggleFlag(Flags flag) {
+	engine->toggleFlag(flag);
 }

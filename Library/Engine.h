@@ -59,12 +59,16 @@ struct FrustumCuller {
  */
 class Engine {
 public:
-	Engine(int width, int height, const char* title, const char* icon, Uint32 flags = 0);
+	Engine(int width, int height, const char* title, const char* iconPath, const char* debugFontPath, int flags = 0);
 	~Engine();
 
+	int getFlags();
+	int getWindowHeight();
+	int getWindowWidth();
 	void run();
 	void setActiveScene(Scene* scene);
 	void stop();
+	void toggleFlag(Flags flag);
 
 private:
 	SDL_Window* window;
@@ -77,7 +81,7 @@ private:
 	UI* ui;
 	CommandLine* commandLine;
 	Scene* activeScene = NULL;
-	Uint32 flags = 0;
+	int flags = 0;
 	bool isRunning = false;
 	int width;
 	int HALF_W;

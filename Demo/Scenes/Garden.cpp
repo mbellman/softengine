@@ -4,8 +4,10 @@
 #include <System/Objects.h>
 #include <System/ParticleSystem.h>
 #include <System/Math.h>
+#include <System/Flags.h>
 #include <Helpers.h>
 #include <cmath>
+#include <SDL.h>
 
 /**
  * Garden
@@ -150,6 +152,14 @@ void Garden::load() {
 
 		add(crickets);
 	}
+
+	inputManager->onKeyUp([=](const SDL_Keycode& code) {
+		if (code == SDLK_f) {
+			controller->toggleFlag(FPS_30);
+		} else if (code == SDLK_g) {
+			controller->toggleFlag(SHOW_WIREFRAME);
+		}
+	});
 
 	settings.backgroundColor = { 0, 10, 20 };
 	settings.visibility = 5000;

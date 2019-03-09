@@ -1,9 +1,11 @@
 #include <Scenes/Default.h>
 #include <Scenes/Garden.h>
 #include <System/Math.h>
+#include <System/Flags.h>
 #include <UI/UIObjects.h>
 #include <Helpers.h>
 #include <cmath>
+#include <SDL.h>
 
 /**
  * Default
@@ -108,6 +110,10 @@ void Default::onKeyUp(const SDL_Keycode& code) {
 			settings.controlMode = ControlMode::MOUSE | ControlMode::WASD;
 		}
 	}
+
+	if (code == SDLK_f) {
+		controller->toggleFlag(PIXEL_FILTER);
+	}
 }
 
 void Default::onUpdate(int dt, int runningTime) {
@@ -118,8 +124,14 @@ void Default::onUpdate(int dt, int runningTime) {
 	int hudXClip = (int)(191.0f * (1.0f + sinf(runningTime / 500.0f)) / 2.0f);
 	int blueRectXClip = (int)(200.0f * (1.0f + cosf(runningTime / 500.0f)) / 2.0f);
 
-	ui->get("hud")->clip(hudXClip, 59);
-	ui->get("blueRect")->clip(blueRectXClip, 50);
+	UIGraphic* hud = (UIGraphic*)ui->get("hud");
+	UIRect* blueRect = (UIRect*)ui->get("blueRect");
+
+	hud->clip(hudXClip, 59);
+	blueRect->clip(blueRectXClip, 50);
+
+	hud->position.x = controller->getWindowWidth() - 200;
+	blueRect->position.x = controller->getWindowWidth() - 220;
 
 	getObject("oscillatingCube")->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
 

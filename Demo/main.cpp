@@ -10,6 +10,7 @@ int main(int argc, char* argv[]) {
 		1200, 720,
 		"Engine Demo",
 		"./DemoAssets/icon.png",
+		"./DemoAssets/FreeMono.ttf",
 		DEBUG_STATS | DEBUG_COMMAND_LINE
 	);
 

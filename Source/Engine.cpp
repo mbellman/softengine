@@ -18,6 +18,7 @@
 #include <System/Geometry.h>
 #include <System/Camera.h>
 #include <System/Scene.h>
+#include <System/Flags.h>
 #include <UI/UIObjects.h>
 #include <UI/Alert.h>
 #include <Graphics/Rasterizer.h>
@@ -33,7 +34,7 @@ using namespace std;
  * Engine
  * ------
  */
-Engine::Engine(int width, int height, const char* title, const char* icon, Uint32 flags) {
+Engine::Engine(int width, int height, const char* title, const char* iconPath, const char* debugFontPath, int flags) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
 	IMG_Init(IMG_INIT_PNG);
@@ -46,13 +47,23 @@ Engine::Engine(int width, int height, const char* title, const char* icon, Uint3
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 	);
 
-	if (icon != NULL) {
-		setWindowIcon(icon);
+	if (iconPath != NULL) {
+		setWindowIcon(iconPath);
+	}
+
+	if (debugFontPath != NULL) {
+		debugFont = TTF_OpenFont(debugFontPath, 15);
+
+		if (!debugFont) {
+			char errorMessage[60];
+
+			sprintf(errorMessage, "Unable to load font: %s", debugFontPath);
+			Alert::error(ALERT_ASSET_ERROR, errorMessage);
+			exit(0);
+		}
 	}
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
-	debugFont = TTF_OpenFont("./DemoAssets/FreeMono.ttf", 15);
-
 	triangleBuffer = new TriangleBuffer();
 	illuminator = new Illuminator();
 	audioEngine = new AudioEngine();
@@ -137,6 +148,18 @@ void Engine::createRenderThreads() {
 
 	// Create main render thread
 	renderThread = SDL_CreateThread(Engine::handleRenderThread, NULL, this);
+}
+
+int Engine::getFlags() {
+	return flags;
+}
+
+int Engine::getWindowHeight() {
+	return height;
+}
+
+int Engine::getWindowWidth() {
+	return width;
 }
 
 /**
@@ -359,11 +382,11 @@ void Engine::run() {
 
 	isRunning = true;
 
-	if (flags & DEBUG_STATS) {
+	if (debugFont != NULL && (flags & DEBUG_STATS)) {
 		addDebugStats();
 	}
 
-	if (flags & DEBUG_COMMAND_LINE) {
+	if (debugFont != NULL && (flags & DEBUG_COMMAND_LINE)) {
 		addCommandLineText();
 		hideCommandLine();
 	}
@@ -490,11 +513,11 @@ void Engine::update(int dt) {
 
 	debugStats.logFrameTime();
 
-	if (flags & DEBUG_STATS) {
+	if (debugFont != NULL && (flags & DEBUG_STATS)) {
 		updateDebugStats();
 	}
 
-	if (flags & DEBUG_COMMAND_LINE) {
+	if (debugFont != NULL && (flags & DEBUG_COMMAND_LINE)) {
 		updateCommandLineText();
 	}
 
@@ -504,6 +527,18 @@ void Engine::update(int dt) {
 	debugStats.reset();
 
 	frame++;
+}
+
+void Engine::toggleFlag(Flags flag) {
+	if (flags & flag) {
+		flags &= ~flag;
+	} else {
+		flags |= flag;
+	}
+
+	if (flag == PIXEL_FILTER) {
+		resize(width, height);
+	}
 }
 
 /**

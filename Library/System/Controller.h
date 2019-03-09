@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <functional>
+#include <System/Flags.h>
 
 class Engine;
 class Scene;
@@ -12,8 +14,12 @@ public:
 
 	void enterScene(Scene* scene);
 	void exitScene();
+	int getFlags();
+	int getWindowHeight();
+	int getWindowWidth();
 	void run();
 	void switchScene(Scene* scene);
+	void toggleFlag(Flags flag);
 
 private:
 	Engine* engine = nullptr;
