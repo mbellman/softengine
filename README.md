@@ -7,6 +7,7 @@ A software 3D rendering engine, written as an educational exercise.
 
 * Window resizable flag
 * Configurable render target area
+* Controller::getRunningTime()
 
 ## Development
 

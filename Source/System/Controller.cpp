@@ -1,8 +1,10 @@
 #include <System/Controller.h>
 #include <System/Scene.h>
 #include <System/Flags.h>
+#include <System/Math.h>
 #include <UI/Alert.h>
 #include <Engine.h>
+#include <SDL.h>
 
 /**
  * Controller
@@ -57,12 +59,24 @@ int Controller::getFlags() {
 	return engine->getFlags();
 }
 
+Coordinate Controller::getMousePosition() {
+	Coordinate mousePosition;
+
+	SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
+
+	return mousePosition;
+}
+
 int Controller::getWindowHeight() {
 	return engine->getWindowHeight();
 }
 
 int Controller::getWindowWidth() {
 	return engine->getWindowWidth();
+}
+
+bool Controller::isMouseFocused() {
+	return SDL_GetRelativeMouseMode();
 }
 
 void Controller::run() {

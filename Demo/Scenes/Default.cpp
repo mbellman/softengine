@@ -60,6 +60,10 @@ void Default::load() {
 
 	add("light", light);
 
+	UIGraphic* icon = new UIGraphic("./DemoAssets/icon.png");
+
+	ui->add("icon", icon);
+
 	UIRect* blueRect = new UIRect();
 
 	blueRect->setColor({ 0, 0, 255 });
@@ -117,6 +121,13 @@ void Default::onKeyUp(const SDL_Keycode& code) {
 }
 
 void Default::onUpdate(int dt, int runningTime) {
+	if (controller->isMouseFocused()) {
+		Coordinate mousePosition = controller->getMousePosition();
+
+		ui->get("icon")->position.x = mousePosition.x;
+		ui->get("icon")->position.y = mousePosition.y;
+	}
+
 	if (isPaused) {
 		return;
 	}
