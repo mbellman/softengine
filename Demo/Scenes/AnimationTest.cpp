@@ -24,7 +24,7 @@ void AnimationTest::load() {
 		person->scale(70);
 		person->startMorph(1000, true);
 
-		person->onUpdate = [=](int dt, int runningTime) {
+		person->onUpdate = [=](int dt) {
 			person->rotateDeg({ 0, 1.0f, 0 });
 		};
 
@@ -36,5 +36,3 @@ void AnimationTest::load() {
 	settings.brightness = 0.3f;
 	settings.hasStaticAmbientLight = true;
 }
-
-void AnimationTest::onUpdate(int dt, int runningTime) {}

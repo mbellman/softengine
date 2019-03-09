@@ -36,7 +36,7 @@ void Controller::enterScene(Scene* scene) {
 
 	sceneStack.push_back(scene);
 
-	scene->setController(this);
+	scene->provideController(this);
 	engine->setActiveScene(scene);
 }
 
@@ -89,7 +89,7 @@ void Controller::switchScene(Scene* scene) {
 	sceneStack.pop_back();
 	sceneStack.push_back(scene);
 
-	scene->setController(this);
+	scene->provideController(this);
 	engine->setActiveScene(scene);
 }
 

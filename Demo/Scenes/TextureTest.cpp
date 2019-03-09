@@ -23,7 +23,7 @@ void TextureTest::load() {
 	cube->tweenTo({ -1000, 100, 3000 }, 5000, Ease::quadInOut);
 	cube->canOccludeSurfaces = false;
 
-	cube->onUpdate = [=](int dt, int runningTime) {
+	cube->onUpdate = [=](int dt) {
 		cube->rotate({ 0.02, -0.03, 0 });
 	};
 
@@ -55,8 +55,4 @@ void TextureTest::load() {
 	settings.ambientLightVector = { 0.5, -1, 0.3 };
 	settings.ambientLightFactor = 0.7;
 	settings.hasStaticAmbientLight = true;
-}
-
-void TextureTest::onUpdate(int dt, int runningTime) {
-
 }

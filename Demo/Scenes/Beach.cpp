@@ -64,10 +64,10 @@ void Beach::load() {
 	settings.hasStaticAmbientLight = true;
 }
 
-void Beach::onUpdate(int dt, int runningTime) {
+void Beach::onUpdate(int dt) {
 	Mesh* water = (Mesh*)getObject("water");
 
 	water->setVertexOffsets([=](int row, int column, Vec3& offset) {
-		offset.y = 40.0f * sinf(row / 1.5f + runningTime / 600.0f) + 40.0f * sinf((row * M_PI) / 2.0f + column / 1.5f + runningTime / 600.0f);
+		offset.y = 40.0f * sinf(row / 1.5f + getRunningTime() / 600.0f) + 40.0f * sinf((row * M_PI) / 2.0f + column / 1.5f + getRunningTime() / 600.0f);
 	});
 }

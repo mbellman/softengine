@@ -5,5 +5,5 @@
 class Garden : public Scene {
 public:
 	void load() override;
-	void onUpdate(int dt, int runningTime) override;
+	void onUpdate(int dt) override;
 };

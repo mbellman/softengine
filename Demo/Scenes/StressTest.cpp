@@ -57,4 +57,3 @@ void StressTest::load() {
 	settings.backgroundColor = { 0, 100, 200 };
 	settings.hasStaticAmbientLight = true;
 }
-

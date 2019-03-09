@@ -106,13 +106,7 @@ void Default::onKeyDown(const SDL_Keycode& code) {
 
 void Default::onKeyUp(const SDL_Keycode& code) {
 	if (code == SDLK_p) {
-		isPaused = !isPaused;
-
-		if (isPaused) {
-			settings.controlMode = 0;
-		} else {
-			settings.controlMode = ControlMode::MOUSE | ControlMode::WASD;
-		}
+		togglePause();
 	} else if (code == SDLK_f) {
 		controller->toggleFlag(PIXEL_FILTER);
 	} else if (code == SDLK_m) {
@@ -120,7 +114,7 @@ void Default::onKeyUp(const SDL_Keycode& code) {
 	}
 }
 
-void Default::onUpdate(int dt, int runningTime) {
+void Default::onUpdate(int dt) {
 	if (controller->isMouseFocused()) {
 		Coordinate mousePosition = controller->getMousePosition();
 
@@ -128,10 +122,7 @@ void Default::onUpdate(int dt, int runningTime) {
 		ui->get("icon")->position.y = mousePosition.y;
 	}
 
-	if (isPaused) {
-		return;
-	}
-
+	int runningTime = getRunningTime();
 	int hudXClip = (int)(191.0f * (1.0f + sinf(runningTime / 500.0f)) / 2.0f);
 	int blueRectXClip = (int)(200.0f * (1.0f + cosf(runningTime / 500.0f)) / 2.0f);
 

@@ -267,7 +267,7 @@ void Object::setMorphTarget(int targetIndex) {
 
 void Object::setTexture(TextureBuffer* textureBuffer) {
 	if (textureBuffer != NULL) {
-		this->texture = textureBuffer;
+		texture = textureBuffer;
 	}
 
 	setColor(0, 0, 0);
@@ -292,13 +292,23 @@ void Object::stopMorph() {
 	morph.isActive = false;
 }
 
+/**
+ * Ensures that an Object's LODs all bear the same characteristics
+ * of the Object, emphasizing those modified without accessors.
+ * LODs are synced when an Object is added to a Scene, and prior
+ * to screen projection on each frame.
+ */
 void Object::syncLODs() {
 	for (auto* lod : lods) {
 		lod->position = position;
 		lod->isStatic = isStatic;
 		lod->isFlatShaded = isFlatShaded;
 		lod->hasLighting = hasLighting;
+		lod->canOccludeSurfaces = canOccludeSurfaces;
 		lod->fresnelFactor = fresnelFactor;
+		lod->sectorId = sectorId;
+		lod->transformOrigin = transformOrigin;
+		lod->nearClippingDistance = nearClippingDistance;
 	}
 }
 
@@ -307,6 +317,10 @@ void Object::update(int dt) {
 
 	if (morph.isActive) {
 		updateMorph(dt);
+	}
+
+	if (onUpdate != nullptr) {
+		onUpdate(dt);
 	}
 
 	for (auto* lod : lods) {

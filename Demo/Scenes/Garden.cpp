@@ -137,7 +137,7 @@ void Garden::load() {
 		snowPosition = cameraPosition;
 	});
 
-	addParticleSystem("snow", snow);
+	add("snow", snow);
 
 	for (int i = 0; i < 6; i++) {
 		Sound* crickets = new Sound("./DemoAssets/crickets.wav");
@@ -170,7 +170,8 @@ void Garden::load() {
 	settings.hasStaticAmbientLight = true;
 }
 
-void Garden::onUpdate(int dt, int runningTime) {
+void Garden::onUpdate(int dt) {
+	int runningTime = getRunningTime();
 	Light* movingLight = (Light*)getObject("movingLight");
 
 	movingLight->position.x = 1500.0f * sinf(runningTime / 900.0f);

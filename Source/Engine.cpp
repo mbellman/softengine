@@ -519,19 +519,7 @@ void Engine::update(int dt) {
 
 	// Advance game logic
 	debugStats.trackUpdateTime();
-
-	int runningTime = (int)SDL_GetTicks();
-
 	activeScene->update(dt);
-
-	for (auto* object : activeScene->getObjects()) {
-		if (object->onUpdate != nullptr) {
-			object->onUpdate(dt, runningTime);
-		}
-	}
-
-	activeScene->onUpdate(dt, runningTime);
-
 	debugStats.logUpdateTime();
 
 	// Frame lock checks, debug stat updates, render to screen
@@ -703,7 +691,9 @@ void Engine::updateScreenProjection() {
 	Vec3 u_vecs[3];
 	Vec3 w_vecs[3];
 
-	for (const auto* object : activeScene->getObjects()) {
+	for (auto* object : activeScene->getObjects()) {
+		object->syncLODs();
+
 		Vec3 relativeObjectPosition = object->position - camera.position;
 		const Object* lodObject = object->hasLODs() ? object->getLOD(relativeObjectPosition.magnitude()) : object;
 

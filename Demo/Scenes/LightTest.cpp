@@ -129,8 +129,8 @@ void LightTest::load() {
 	settings.hasStaticAmbientLight = true;
 }
 
-void LightTest::onUpdate(int dt, int runningTime) {
+void LightTest::onUpdate(int dt) {
 	Light* light = (Light*)getObject("yellowLight");
 
-	light->power = 1.0f + cosf(runningTime / 500.0f);
+	light->power = 1.0f + cosf(getRunningTime() / 500.0f);
 }

@@ -104,7 +104,7 @@ void Scene::add(const char* key, Sound* sound) {
 	add(sound);
 }
 
-void Scene::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
+void Scene::add(const char* key, ParticleSystem* particleSystem) {
 	particleSystemMap.emplace(key, particleSystem);
 
 	for (auto* particle : particleSystem->getParticles()) {
@@ -112,26 +112,12 @@ void Scene::addParticleSystem(const char* key, ParticleSystem* particleSystem) {
 	}
 }
 
-Object* Scene::getObject(const char* key) {
-	auto it = objectMap.find(key);
-
-	if (it != objectMap.end()) {
-		return objects.at(it->second);
-	}
-
-	return NULL;
+const Camera& Scene::getCamera() const {
+	return *camera;
 }
 
-Sound* Scene::getSound(const char* key) {
-	return getMapItem(soundMap, key);
-}
-
-ObjLoader* Scene::getObjLoader(const char* key) {
-	return getMapItem(objLoaderMap, key);
-}
-
-TextureBuffer* Scene::getTexture(const char* key) {
-	return getMapItem(textureBufferMap, key);
+const std::vector<Light*>& Scene::getLights() {
+	return lights;
 }
 
 template<class T>
@@ -145,20 +131,42 @@ T* Scene::getMapItem(std::map<const char*, T*> map, const char* key) {
 	return NULL;
 }
 
-const Camera& Scene::getCamera() const {
-	return *camera;
+Object* Scene::getObject(const char* key) {
+	auto it = objectMap.find(key);
+
+	if (it != objectMap.end()) {
+		return objects.at(it->second);
+	}
+
+	return NULL;
 }
 
 const std::vector<Object*>& Scene::getObjects() {
 	return objects;
 }
 
-const std::vector<Light*>& Scene::getLights() {
-	return lights;
+ObjLoader* Scene::getObjLoader(const char* key) {
+	return getMapItem(objLoaderMap, key);
+}
+
+ParticleSystem* Scene::getParticleSystem(const char* key) {
+	return getMapItem(particleSystemMap, key);
+}
+
+int Scene::getRunningTime() {
+	return runningTime;
+}
+
+Sound* Scene::getSound(const char* key) {
+	return getMapItem(soundMap, key);
 }
 
 const std::vector<Sound*>& Scene::getSounds() {
 	return sounds;
+}
+
+TextureBuffer* Scene::getTexture(const char* key) {
+	return getMapItem(textureBufferMap, key);
 }
 
 void Scene::handleControl(int dt) {
@@ -168,7 +176,7 @@ void Scene::handleControl(int dt) {
 }
 
 void Scene::handleMouseMotion(int dx, int dy) {
-	if (~settings.controlMode & ControlMode::MOUSE) {
+	if (isPaused || ~settings.controlMode & ControlMode::MOUSE) {
 		return;
 	}
 
@@ -224,7 +232,11 @@ bool Scene::isInCurrentOccupiedSector(int sectorId) {
 }
 
 void Scene::onStart() {}
-void Scene::onUpdate(int dt, int runningTime) {}
+void Scene::onUpdate(int dt) {}
+
+void Scene::provideController(Controller* controller) {
+	this->controller = controller;
+}
 
 void Scene::provideUI(UI* ui) {
 	this->ui = ui;
@@ -274,7 +286,7 @@ void Scene::resume() {
  * Removes a mapped Object if the provided key matches an entry.
  * The Object must be deleted in the following fashion:
  *
- *  A) From the map
+ *  A) From the Object map
  *  B) From the Object pointer list
  *  C) If it is a Light, from the Lights pointer list
  */
@@ -318,6 +330,8 @@ void Scene::safelyRemoveKeyedParticleSystem(const char* key) {
 		while (idx < objects.size()) {
 			if (objects.at(idx) == firstParticle) {
 				for (int n = 0; n < particles.size(); n++) {
+					// Since the ParticleSystem's deletion will free its
+					// Particle objects, we need not delete them here
 					objects.erase(objects.begin() + idx);
 				}
 
@@ -333,10 +347,6 @@ void Scene::safelyRemoveKeyedParticleSystem(const char* key) {
 	}
 }
 
-void Scene::setController(Controller* controller) {
-	this->controller = controller;
-}
-
 void Scene::suspend() {
 	inputManager->resetKeyState();
 
@@ -345,7 +355,17 @@ void Scene::suspend() {
 	}
 }
 
+void Scene::togglePause() {
+	isPaused = !isPaused;
+}
+
 void Scene::update(int dt) {
+	if (isPaused) {
+		return;
+	}
+
+	runningTime += dt;
+
 	for (auto* object : objects) {
 		object->update(dt);
 	}
@@ -357,6 +377,7 @@ void Scene::update(int dt) {
 	updateCurrentOccupiedSectors();
 	handleControl(dt);
 	camera->update(dt);
+	onUpdate(dt);
 }
 
 void Scene::updateCurrentOccupiedSectors() {

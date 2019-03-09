@@ -5,7 +5,8 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Controller::getRunningTime()
+* Deferred scene switching
+* Support for multiple InputManager mouse motion handlers
 
 ## Development
 

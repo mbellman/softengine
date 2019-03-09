@@ -11,7 +11,11 @@
 #include <Graphics/TextureBuffer.h>
 #include <Constants.h>
 
-typedef std::function<void(int, int)> UpdateHandler;
+/**
+ * UpdateHandler
+ * -------------
+ */
+typedef std::function<void(int)> UpdateHandler;
 
 /**
  * Object

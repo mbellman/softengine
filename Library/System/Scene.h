@@ -60,11 +60,12 @@ public:
 	bool isInCurrentOccupiedSector(int sectorId);
 	virtual void load() = 0;
 	virtual void onStart();
-	virtual void onUpdate(int dt, int runningTime);
+	virtual void onUpdate(int dt);
+	void provideController(Controller* controller);
 	void provideUI(UI* ui);
 	void resume();
-	void setController(Controller* controller);
 	void suspend();
+	void togglePause();
 	void update(int dt);
 
 protected:
@@ -78,11 +79,13 @@ protected:
 	void add(const char* key, ObjLoader* objLoader);
 	void add(const char* key, TextureBuffer* textureBuffer);
 	void add(const char* key, Sound* sound);
-	void addParticleSystem(const char* key, ParticleSystem* particleSystem);
+	void add(const char* key, ParticleSystem* particleSystem);
 	Object* getObject(const char* key);
 	ObjLoader* getObjLoader(const char* key);
-	TextureBuffer* getTexture(const char* key);
+	ParticleSystem* getParticleSystem(const char* key);
+	int getRunningTime();
 	Sound* getSound(const char* key);
+	TextureBuffer* getTexture(const char* key);
 	void remove(const char* key);
 
 private:
@@ -96,6 +99,8 @@ private:
 	std::map<const char*, ParticleSystem*> particleSystemMap;
 	std::map<const char*, Sound*> soundMap;
 	std::vector<int> currentOccupiedSectors;
+	int runningTime = 0;
+	bool isPaused = false;
 
 	template<class T>
 	T* getMapItem(std::map<const char*, T*> map, const char* key);
