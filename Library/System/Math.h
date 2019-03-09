@@ -18,6 +18,15 @@ namespace Ease {
 };
 
 /**
+ * Area
+ * ----
+ */
+struct Area {
+	int width = 0;
+	int height = 0;
+};
+
+/**
  * Coordinate
  * ----------
  */

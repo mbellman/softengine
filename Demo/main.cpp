@@ -14,6 +14,8 @@ int main(int argc, char* argv[]) {
 		DEBUG_STATS | DEBUG_COMMAND_LINE
 	);
 
+	engine->lockRasterArea(100, 0, 1000, 600);
+
 	Controller* demo = new Controller(engine);
 
 	demo->enterScene(new Default());

@@ -75,9 +75,13 @@ Engine::Engine(int width, int height, const char* title, const char* iconPath, c
 	audioEngine = new AudioEngine();
 	ui = new UI(renderer);
 	commandLine = new CommandLine();
+
+	windowArea.width = width;
+	windowArea.height = height;
+
 	this->flags = flags;
 
-	resize(width, height);
+	resizeRasterArea(width, height);
 
 	if (~flags & DISABLE_MULTITHREADING) {
 		createRenderThreads();
@@ -161,11 +165,11 @@ int Engine::getFlags() {
 }
 
 int Engine::getWindowHeight() {
-	return height;
+	return windowArea.height;
 }
 
 int Engine::getWindowWidth() {
-	return width;
+	return windowArea.width;
 }
 
 /**
@@ -288,6 +292,15 @@ int Engine::handleRenderThread(void* data) {
 	return 0;
 }
 
+void Engine::lockRasterArea(int x, int y, int w, int h) {
+	rasterOffset.x = x;
+	rasterOffset.y = y;
+
+	resizeRasterArea(w, h);
+
+	isRasterAreaLocked = true;
+}
+
 /**
  * Precomputes and caches static ambient or static light source
  * color intensities on Polygons belonging to static Objects,
@@ -345,8 +358,8 @@ void Engine::projectAndQueueTriangle(
 
 		Vertex2d* vertex = &triangle->vertices[i];
 
-		vertex->coordinate.x = (int)(scale * unit.x / unit.z + HALF_W);
-		vertex->coordinate.y = (int)(scale * -unit.y / unit.z + HALF_H);
+		vertex->coordinate.x = (int)(scale * unit.x / unit.z + halfRasterArea.width);
+		vertex->coordinate.y = (int)(scale * -unit.y / unit.z + halfRasterArea.height);
 		vertex->z = vector.z;
 		vertex->inverseDepth = inverseDepth;
 		vertex->perspectiveUV = vertex3d.uv * inverseDepth;
@@ -358,16 +371,18 @@ void Engine::projectAndQueueTriangle(
 	rasterFilter->addTriangle(triangle);
 }
 
-void Engine::resize(int width, int height) {
+void Engine::resizeRasterArea(int w, int h) {
+	if (!isRasterAreaLocked) {
+		rasterArea.width = w;
+		rasterArea.height = h;
+	}
+
 	bool hasPixelFilter = flags & PIXEL_FILTER;
-	int rasterWidth = hasPixelFilter ? width / 2 : width;
-	int rasterHeight = hasPixelFilter ? height / 2 : height;
+	int rasterWidth = hasPixelFilter ? rasterArea.width / 2 : rasterArea.width;
+	int rasterHeight = hasPixelFilter ? rasterArea.height / 2 : rasterArea.height;
 
-	this->width = width;
-	this->height = height;
-
-	HALF_W = (int)(rasterWidth / 2);
-	HALF_H = (int)(rasterHeight / 2);
+	halfRasterArea.width = (int)(rasterWidth / 2);
+	halfRasterArea.height = (int)(rasterHeight / 2);
 
 	if (rasterizer != NULL) {
 		delete rasterizer;
@@ -379,6 +394,8 @@ void Engine::resize(int width, int height) {
 
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight);
 	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
+
+	rasterizer->setOffset({ rasterOffset.x, rasterOffset.y });
 }
 
 void Engine::run() {
@@ -457,6 +474,8 @@ void Engine::update(int dt) {
 	debugStats.trackFrameTime();
 
 	// Update view
+	SDL_RenderClear(renderer);
+
 	rasterizer->setBackgroundColor(settings.backgroundColor);
 	rasterizer->setVisibility(settings.visibility);
 	rasterizer->clear();
@@ -483,7 +502,10 @@ void Engine::update(int dt) {
 
 			return;
 		} else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-			resize(event.window.data1, event.window.data2);
+			resizeRasterArea(event.window.data1, event.window.data2);
+
+			windowArea.width = event.window.data1;
+			windowArea.height = event.window.data2;
 		} else if ((flags & DEBUG_COMMAND_LINE) && event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_c) {
 			showCommandLine();
 		} else if (commandLine->isOpen()) {
@@ -544,7 +566,7 @@ void Engine::toggleFlag(Flags flag) {
 
 	switch (flag) {
 		case PIXEL_FILTER:
-			resize(width, height);
+			resizeRasterArea(rasterArea.width, rasterArea.height);
 			break;
 		case DISABLE_WINDOW_RESIZE:
 			SDL_SetWindowResizable(window, (flags & DISABLE_WINDOW_RESIZE) ? SDL_FALSE : SDL_TRUE);
@@ -669,7 +691,7 @@ void Engine::updateScene_Wireframe() {
 
 void Engine::updateScreenProjection() {
 	const Camera& camera = activeScene->getCamera();
-	float projectionScale = (float)max(HALF_W, HALF_H) * (180.0f / camera.fov);
+	float projectionScale = (float)max(halfRasterArea.width, halfRasterArea.height) * (180.0f / camera.fov);
 	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 
@@ -880,7 +902,7 @@ void Engine::addCommandLineText() {
 
 	text->setValue("> ");
 	text->setFont(debugFont);
-	text->position = { 10, height + 30 };
+	text->position = { 10, windowArea.height + 30 };
 
 	ui->add("commandLineText", text);
 }
@@ -923,11 +945,11 @@ void Engine::updateDebugStat(const char* key, const char* label, int value) {
 
 void Engine::showCommandLine() {
 	commandLine->open();
-	ui->get("commandLineText")->tweenTo({ 10, height - 30 }, 500, Ease::quadOut);
+	ui->get("commandLineText")->tweenTo({ 10, windowArea.height - 30 }, 500, Ease::quadOut);
 }
 
 void Engine::hideCommandLine() {
-	ui->get("commandLineText")->tweenTo({ 10, height + 30 }, 500, Ease::quadOut);
+	ui->get("commandLineText")->tweenTo({ 10, windowArea.height + 30 }, 500, Ease::quadOut);
 	commandLine->close();
 }
 

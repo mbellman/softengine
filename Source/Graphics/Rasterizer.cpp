@@ -265,7 +265,7 @@ void Rasterizer::line(int x1, int y1, int x2, int y2) {
 }
 
 void Rasterizer::render(SDL_Renderer* renderer, int sizeFactor = 1) {
-	SDL_Rect destinationRect = { 0, 0, sizeFactor * width, sizeFactor * height };
+	SDL_Rect destinationRect = { offset.x, offset.y, sizeFactor * width, sizeFactor * height };
 
 	SDL_UpdateTexture(screenTexture, NULL, pixelBuffer, width * sizeof(Uint32));
 	SDL_RenderCopy(renderer, screenTexture, NULL, &destinationRect);
@@ -287,6 +287,11 @@ void Rasterizer::setDrawColor(int R, int G, int B) {
 
 void Rasterizer::setDrawColor(const Color& color) {
 	setDrawColor(color.R, color.G, color.B);
+}
+
+void Rasterizer::setOffset(const Coordinate& offset) {
+	this->offset.x = offset.x;
+	this->offset.y = offset.y;
 }
 
 void Rasterizer::setPixel(int x, int y) {

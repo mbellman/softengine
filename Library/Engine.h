@@ -65,6 +65,7 @@ public:
 	int getFlags();
 	int getWindowHeight();
 	int getWindowWidth();
+	void lockRasterArea(int x, int y, int w, int h);
 	void run();
 	void setActiveScene(Scene* scene);
 	void stop();
@@ -83,10 +84,11 @@ private:
 	Scene* activeScene = NULL;
 	int flags = 0;
 	bool isRunning = false;
-	int width;
-	int HALF_W;
-	int height;
-	int HALF_H;
+	bool isRasterAreaLocked = false;
+	Coordinate rasterOffset;
+	Area windowArea;
+	Area rasterArea;
+	Area halfRasterArea;
 
 	enum RenderStep {
 		ILLUMINATION,
@@ -123,7 +125,7 @@ private:
 		bool isSynthetic
 	);
 
-	void resize(int width, int height);
+	void resizeRasterArea(int w, int h);
 	void setWindowIcon(const char* icon);
 	void update(int dt);
 	void updateScene_MultiThreaded();

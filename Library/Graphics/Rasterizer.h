@@ -43,6 +43,7 @@ public:
 	void setDrawColor(int R, int G, int B);
 	void setDrawColor(const Color& color);
 	void setDrawColor(Uint32 color);
+	void setOffset(const Coordinate& offset);
 	void setVisibility(int visibility);
 	void triangle(int x1, int y1, int x2, int y2, int x3, int y3);
 	void triangleScanline(const Scanline* scanline);
@@ -57,6 +58,7 @@ private:
 	Uint32* pixelBuffer;
 	float* depthBuffer;
 	int bufferSize;
+	Coordinate offset;
 	int width;
 	int height;
 
