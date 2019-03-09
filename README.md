@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Window-proportional raster area locking
 * Controller::getRunningTime()
 
 ## Development

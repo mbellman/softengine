@@ -81,7 +81,7 @@ Engine::Engine(int width, int height, const char* title, const char* iconPath, c
 
 	this->flags = flags;
 
-	resizeRasterArea(width, height);
+	resizeRasterRegion();
 
 	if (~flags & DISABLE_MULTITHREADING) {
 		createRenderThreads();
@@ -186,9 +186,10 @@ int Engine::handleRenderWorkerThread(void* data) {
 	Engine* engine = manager->engine;
 	TriangleBuffer* triangleBuffer = engine->triangleBuffer;
 	Illuminator* illuminator = engine->illuminator;
-	Rasterizer* rasterizer = engine->rasterizer;
 
 	while (1) {
+		Rasterizer* currentRasterizer = engine->rasterizer;
+
 		if (engine->isDone) {
 			break;
 		} else if (manager->isWorking) {
@@ -211,13 +212,13 @@ int Engine::handleRenderWorkerThread(void* data) {
 					break;
 				}
 				case RenderStep::SCANLINE_RASTERIZATION: {
-					for (int i = 0; i < rasterizer->getTotalBufferedScanlines(); i++) {
-						const Scanline* scanline = rasterizer->getScanline(i);
+					for (int i = 0; i < currentRasterizer->getTotalBufferedScanlines(); i++) {
+						const Scanline* scanline = currentRasterizer->getScanline(i);
 
 						// Each render worker gets to rasterize scanlines on every
 						// Nth screen row, where N is the number of available workers.
 						if (scanline->y % totalRenderWorkerThreads == manager->sectionId) {
-							rasterizer->triangleScanline(scanline);
+							currentRasterizer->triangleScanline(scanline);
 						}
 					}
 
@@ -249,12 +250,13 @@ int Engine::handleRenderThread(void* data) {
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
 
 	Engine* engine = (Engine*)data;
-	Rasterizer* rasterizer = engine->rasterizer;
 	TriangleBuffer* triangleBuffer = engine->triangleBuffer;
 	Illuminator* illuminator = engine->illuminator;
 	DebugStats& debugStats = engine->debugStats;
 
 	while (1) {
+		Rasterizer* currentRasterizer = engine->rasterizer;
+
 		if (engine->isDone) {
 			break;
 		} else if (engine->isRendering) {
@@ -275,7 +277,7 @@ int Engine::handleRenderThread(void* data) {
 			// since triangles are buffered in approximate order from closest
 			// to furthest, helping to mitigate overdraw.
 			for (auto* triangle : triangleBuffer->getBufferedTriangles()) {
-				rasterizer->dispatchTriangle(*triangle);
+				currentRasterizer->dispatchTriangle(*triangle);
 			}
 
 			// Once all triangles are dispatched to the rasterizer and their
@@ -292,13 +294,13 @@ int Engine::handleRenderThread(void* data) {
 	return 0;
 }
 
-void Engine::lockRasterArea(int x, int y, int w, int h) {
-	rasterOffset.x = x;
-	rasterOffset.y = y;
+void Engine::lockProportionalRasterRegion(int xp, int yp, int wp, int hp) {
+	rasterLockRegion.x = xp;
+	rasterLockRegion.y = yp;
+	rasterLockRegion.width = wp;
+	rasterLockRegion.height = hp;
 
-	resizeRasterArea(w, h);
-
-	isRasterAreaLocked = true;
+	resizeRasterRegion();
 }
 
 /**
@@ -371,15 +373,15 @@ void Engine::projectAndQueueTriangle(
 	rasterFilter->addTriangle(triangle);
 }
 
-void Engine::resizeRasterArea(int w, int h) {
-	if (!isRasterAreaLocked) {
-		rasterArea.width = w;
-		rasterArea.height = h;
-	}
+void Engine::resizeRasterRegion() {
+	rasterRegion.x = windowArea.width * (rasterLockRegion.x / 100.0f);
+	rasterRegion.y = windowArea.height * (rasterLockRegion.y / 100.0f);
+	rasterRegion.width = windowArea.width * (rasterLockRegion.width / 100.0f);
+	rasterRegion.height = windowArea.height * (rasterLockRegion.height / 100.0f);
 
 	bool hasPixelFilter = flags & PIXEL_FILTER;
-	int rasterWidth = hasPixelFilter ? rasterArea.width / 2 : rasterArea.width;
-	int rasterHeight = hasPixelFilter ? rasterArea.height / 2 : rasterArea.height;
+	int rasterWidth = hasPixelFilter ? rasterRegion.width / 2 : rasterRegion.width;
+	int rasterHeight = hasPixelFilter ? rasterRegion.height / 2 : rasterRegion.height;
 
 	halfRasterArea.width = (int)(rasterWidth / 2);
 	halfRasterArea.height = (int)(rasterHeight / 2);
@@ -395,7 +397,7 @@ void Engine::resizeRasterArea(int w, int h) {
 	rasterizer = new Rasterizer(renderer, rasterWidth, rasterHeight);
 	rasterFilter = new RasterFilter(rasterWidth, rasterHeight);
 
-	rasterizer->setOffset({ rasterOffset.x, rasterOffset.y });
+	rasterizer->setOffset({ rasterRegion.x, rasterRegion.y });
 }
 
 void Engine::run() {
@@ -502,10 +504,10 @@ void Engine::update(int dt) {
 
 			return;
 		} else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-			resizeRasterArea(event.window.data1, event.window.data2);
-
 			windowArea.width = event.window.data1;
 			windowArea.height = event.window.data2;
+
+			resizeRasterRegion();
 		} else if ((flags & DEBUG_COMMAND_LINE) && event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_c) {
 			showCommandLine();
 		} else if (commandLine->isOpen()) {
@@ -566,7 +568,7 @@ void Engine::toggleFlag(Flags flag) {
 
 	switch (flag) {
 		case PIXEL_FILTER:
-			resizeRasterArea(rasterArea.width, rasterArea.height);
+			resizeRasterRegion();
 			break;
 		case DISABLE_WINDOW_RESIZE:
 			SDL_SetWindowResizable(window, (flags & DISABLE_WINDOW_RESIZE) ? SDL_FALSE : SDL_TRUE);

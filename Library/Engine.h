@@ -65,7 +65,7 @@ public:
 	int getFlags();
 	int getWindowHeight();
 	int getWindowWidth();
-	void lockRasterArea(int x, int y, int w, int h);
+	void lockProportionalRasterRegion(int xp, int yp, int wp, int hp);
 	void run();
 	void setActiveScene(Scene* scene);
 	void stop();
@@ -84,10 +84,9 @@ private:
 	Scene* activeScene = NULL;
 	int flags = 0;
 	bool isRunning = false;
-	bool isRasterAreaLocked = false;
-	Coordinate rasterOffset;
 	Area windowArea;
-	Area rasterArea;
+	Region rasterLockRegion = { 0, 0, 100, 100 };
+	Region rasterRegion;
 	Area halfRasterArea;
 
 	enum RenderStep {
@@ -125,7 +124,7 @@ private:
 		bool isSynthetic
 	);
 
-	void resizeRasterArea(int w, int h);
+	void resizeRasterRegion();
 	void setWindowIcon(const char* icon);
 	void update(int dt);
 	void updateScene_MultiThreaded();

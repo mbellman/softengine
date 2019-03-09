@@ -38,6 +38,12 @@ struct Coordinate {
 };
 
 /**
+ * Region
+ * ------
+ */
+struct Region : Coordinate, Area {};
+
+/**
  * Vec2
  * ----
  */
