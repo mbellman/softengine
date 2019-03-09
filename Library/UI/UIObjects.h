@@ -15,6 +15,7 @@ public:
 	~UIObject();
 
 	void clip(int w, int h);
+	int getId() const;
 	void setAlpha(float alpha);
 	void setPosition(int x, int y);
 	void setRenderer(SDL_Renderer* renderer);
@@ -34,6 +35,7 @@ protected:
 	void setTextureFromSurface(SDL_Surface* surface);
 
 private:
+	int id;
 	float alpha = 1.0f;
 
 	Uint8 getAlphaMod();

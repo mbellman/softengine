@@ -19,7 +19,7 @@ public:
 	Coordinate getMousePosition();
 	int getWindowHeight();
 	int getWindowWidth();
-	bool isMouseFocused();
+	bool isMouseCaptured();
 	void start(Scene* scene);
 	void switchScene(Scene* scene);
 	void toggleFlag(Flags flag);

@@ -110,7 +110,7 @@ void Controller::handleSwitchScene() {
 	engine->setActiveScene(pendingScene);
 }
 
-bool Controller::isMouseFocused() {
+bool Controller::isMouseCaptured() {
 	return SDL_GetRelativeMouseMode();
 }
 

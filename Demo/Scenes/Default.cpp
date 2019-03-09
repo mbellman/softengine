@@ -130,7 +130,7 @@ void Default::onUpdate(int dt) {
 		reset();
 	}
 
-	if (controller->isMouseFocused()) {
+	if (controller->isMouseCaptured()) {
 		Coordinate mousePosition = controller->getMousePosition();
 
 		ui->get("icon")->position.x = mousePosition.x;

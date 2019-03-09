@@ -28,6 +28,10 @@ Uint8 UIObject::getAlphaMod() {
 	return alpha * 255;
 }
 
+int UIObject::getId() const {
+	return id;
+}
+
 void UIObject::setAlpha(float alpha) {
 	this->alpha = alpha;
 

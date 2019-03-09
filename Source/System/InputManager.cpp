@@ -77,7 +77,7 @@ void InputManager::handleKeyUp(const SDL_Keycode& code) {
 }
 
 void InputManager::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
-	if (mouseMotionHandler && SDL_GetRelativeMouseMode()) {
+	if (mouseMotionHandler != nullptr && SDL_GetRelativeMouseMode()) {
 		mouseMotionHandler(event.xrel, event.yrel);
 	}
 }
