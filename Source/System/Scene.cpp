@@ -378,6 +378,10 @@ void Scene::update(int dt) {
 	handleControl(dt);
 	camera->update(dt);
 	onUpdate(dt);
+
+	for (auto* object : objects) {
+		object->syncLODs();
+	}
 }
 
 void Scene::updateCurrentOccupiedSectors() {

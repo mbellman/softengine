@@ -294,6 +294,25 @@ int Engine::handleRenderThread(void* data) {
 	return 0;
 }
 
+bool Engine::hasStopped() {
+	return isStopped;
+}
+
+void Engine::initialize() {
+	isStopped = false;
+
+	if (debugFont != NULL && (flags & DEBUG_STATS)) {
+		addDebugStats();
+	}
+
+	if (debugFont != NULL && (flags & DEBUG_COMMAND_LINE)) {
+		addCommandLineText();
+		hideCommandLine();
+	}
+
+	SDL_SetRelativeMouseMode(SDL_TRUE);
+}
+
 void Engine::lockProportionalRasterRegion(int xp, int yp, int wp, int hp) {
 	rasterLockRegion.x = xp;
 	rasterLockRegion.y = yp;
@@ -400,34 +419,6 @@ void Engine::resizeRasterRegion() {
 	rasterizer->setOffset({ rasterRegion.x, rasterRegion.y });
 }
 
-void Engine::run() {
-	if (activeScene == NULL || isRunning) {
-		return;
-	}
-
-	isRunning = true;
-
-	if (debugFont != NULL && (flags & DEBUG_STATS)) {
-		addDebugStats();
-	}
-
-	if (debugFont != NULL && (flags & DEBUG_COMMAND_LINE)) {
-		addCommandLineText();
-		hideCommandLine();
-	}
-
-	SDL_SetRelativeMouseMode(SDL_TRUE);
-
-	int dt, lastStartTime = (int)SDL_GetTicks();
-
-	while (isRunning) {
-		dt = (int)SDL_GetTicks() - lastStartTime;
-		lastStartTime = (int)SDL_GetTicks();
-
-		update(dt);
-	}
-}
-
 void Engine::setActiveScene(Scene* scene) {
 	activeScene = scene;
 
@@ -466,10 +457,14 @@ void Engine::setWindowIcon(const char* icon) {
 }
 
 void Engine::stop() {
-	isRunning = false;
+	isStopped = true;
 }
 
 void Engine::update(int dt) {
+	if (hasStopped()) {
+		return;
+	}
+
 	int startTime = SDL_GetTicks();
 	const Settings& settings = activeScene->settings;
 
@@ -500,7 +495,7 @@ void Engine::update(int dt) {
 
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
-			isRunning = false;
+			stop();
 
 			return;
 		} else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
@@ -691,9 +686,7 @@ void Engine::updateScreenProjection() {
 	Vec3 u_vecs[3];
 	Vec3 w_vecs[3];
 
-	for (auto* object : activeScene->getObjects()) {
-		object->syncLODs();
-
+	for (const auto* object : activeScene->getObjects()) {
 		Vec3 relativeObjectPosition = object->position - camera.position;
 		const Object* lodObject = object->hasLODs() ? object->getLOD(relativeObjectPosition.magnitude()) : object;
 

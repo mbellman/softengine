@@ -25,34 +25,12 @@ Controller::~Controller() {
 }
 
 void Controller::enterScene(Scene* scene) {
-	if (sceneStack.size() > 0) {
-		sceneStack.back()->suspend();
-
-		if (sceneStack.size() > 10) {
-			Alert::error(ALERT_ERROR, "Scene stack size limit exceeded");
-			exit(0);
-		}
-	}
-
-	sceneStack.push_back(scene);
-
-	scene->provideController(this);
-	engine->setActiveScene(scene);
+	pendingScene = scene;
+	pendingSceneChange = SceneChange::ENTER_SCENE;
 }
 
 void Controller::exitScene() {
-	delete sceneStack.back();
-
-	sceneStack.pop_back();
-
-	if (sceneStack.empty()) {
-		engine->stop();
-	} else {
-		Scene* scene = sceneStack.back();
-
-		scene->resume();
-		engine->setActiveScene(scene);
-	}
+	pendingSceneChange = SceneChange::EXIT_SCENE;
 }
 
 int Controller::getFlags() {
@@ -75,22 +53,88 @@ int Controller::getWindowWidth() {
 	return engine->getWindowWidth();
 }
 
+void Controller::handleEnterScene() {
+	if (sceneStack.size() > 0) {
+		sceneStack.back()->suspend();
+
+		if (sceneStack.size() > 10) {
+			Alert::error(ALERT_ERROR, "Scene stack size limit exceeded");
+			exit(0);
+		}
+	}
+
+	sceneStack.push_back(pendingScene);
+	pendingScene->provideController(this);
+	engine->setActiveScene(pendingScene);
+}
+
+void Controller::handleExitScene() {
+	delete sceneStack.back();
+
+	sceneStack.pop_back();
+
+	if (sceneStack.empty()) {
+		engine->stop();
+	} else {
+		Scene* scene = sceneStack.back();
+
+		scene->resume();
+		engine->setActiveScene(scene);
+	}
+}
+
+void Controller::handlePendingSceneChange() {
+	switch (pendingSceneChange) {
+		case SceneChange::ENTER_SCENE:
+			handleEnterScene();
+			break;
+		case SceneChange::EXIT_SCENE:
+			handleExitScene();
+			break;
+		case SceneChange::SWITCH_SCENE:
+			handleSwitchScene();
+			break;
+	}
+
+	pendingScene = nullptr;
+	pendingSceneChange = SceneChange::NONE;
+}
+
+void Controller::handleSwitchScene() {
+	delete sceneStack.back();
+
+	sceneStack.pop_back();
+	sceneStack.push_back(pendingScene);
+
+	pendingScene->provideController(this);
+	engine->setActiveScene(pendingScene);
+}
+
 bool Controller::isMouseFocused() {
 	return SDL_GetRelativeMouseMode();
 }
 
-void Controller::run() {
-	engine->run();
+void Controller::start() {
+	engine->initialize();
+
+	int dt, lastStartTime = (int)SDL_GetTicks();
+
+	while (!engine->hasStopped()) {
+		dt = (int)SDL_GetTicks() - lastStartTime;
+
+		if (pendingSceneChange != SceneChange::NONE) {
+			handlePendingSceneChange();
+		}
+
+		lastStartTime = (int)SDL_GetTicks();
+
+		engine->update(dt);
+	}
 }
 
 void Controller::switchScene(Scene* scene) {
-	delete sceneStack.back();
-
-	sceneStack.pop_back();
-	sceneStack.push_back(scene);
-
-	scene->provideController(this);
-	engine->setActiveScene(scene);
+	pendingScene = scene;
+	pendingSceneChange = SceneChange::SWITCH_SCENE;
 }
 
 void Controller::toggleFlag(Flags flag) {
