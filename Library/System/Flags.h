@@ -10,5 +10,6 @@ enum Flags {
 	SHOW_WIREFRAME = 1 << 2,
 	PIXEL_FILTER = 1 << 3,
 	DISABLE_MULTITHREADING = 1 << 4,
-	FPS_30 = 1 << 5
+	DISABLE_WINDOW_RESIZE = 1 << 5,
+	FPS_30 = 1 << 6
 };

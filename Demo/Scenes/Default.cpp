@@ -113,10 +113,10 @@ void Default::onKeyUp(const SDL_Keycode& code) {
 		} else {
 			settings.controlMode = ControlMode::MOUSE | ControlMode::WASD;
 		}
-	}
-
-	if (code == SDLK_f) {
+	} else if (code == SDLK_f) {
 		controller->toggleFlag(PIXEL_FILTER);
+	} else if (code == SDLK_m) {
+		controller->toggleFlag(DISABLE_WINDOW_RESIZE);
 	}
 }
 

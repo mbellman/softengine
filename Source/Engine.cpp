@@ -39,12 +39,18 @@ Engine::Engine(int width, int height, const char* title, const char* iconPath, c
 	TTF_Init();
 	IMG_Init(IMG_INIT_PNG);
 
+	Uint32 windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+
+	if (flags & DISABLE_WINDOW_RESIZE) {
+		windowFlags &= ~SDL_WINDOW_RESIZABLE;
+	}
+
 	window = SDL_CreateWindow(
 		title,
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		width, height,
-		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+		windowFlags
 	);
 
 	if (iconPath != NULL) {
@@ -536,8 +542,13 @@ void Engine::toggleFlag(Flags flag) {
 		flags |= flag;
 	}
 
-	if (flag == PIXEL_FILTER) {
-		resize(width, height);
+	switch (flag) {
+		case PIXEL_FILTER:
+			resize(width, height);
+			break;
+		case DISABLE_WINDOW_RESIZE:
+			SDL_SetWindowResizable(window, (flags & DISABLE_WINDOW_RESIZE) ? SDL_FALSE : SDL_TRUE);
+			break;
 	}
 }
 
