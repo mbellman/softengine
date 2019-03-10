@@ -2,9 +2,8 @@
 #include <System/Math.h>
 #include <System/Geometry.h>
 #include <Helpers.h>
+#include <Constants.h>
 #include <SDL.h>
-
-constexpr static float PI_HALF = M_PI / 2.0f;
 
 /**
  * Illuminator

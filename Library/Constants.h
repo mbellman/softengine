@@ -1,8 +1,12 @@
 #pragma once
 
 #include <limits.h>
-#include <Helpers.h>
 #include <Graphics/Color.h>
+#include <SDL.h>
+
+constexpr static float PI_HALF = M_PI / 2.0f;
+constexpr static float DEG_TO_RAD = M_PI / 180.0f;
+constexpr static float RAD_TO_DEG = 180.0f / M_PI;
 
 constexpr static int LOG2_TABLE[12][2] = {
 	{ 0, 0 },
@@ -29,7 +33,7 @@ constexpr static int MIN_COLOR_LERP_INTERVAL = 2;
 constexpr static int MIN_COVER_TRIANGLE_SIZE = 150;
 constexpr static int MAX_TEXTURE_SAMPLE_INTERVAL = 4;
 constexpr static int MAX_VISIBILITY = INT_MAX;
-constexpr static float MAX_CAMERA_PITCH = DEG_TO_RAD(89.0f);
+constexpr static float MAX_CAMERA_PITCH = 89.0f * DEG_TO_RAD;
 constexpr static int MAX_RASTER_FILTER_ZONES = 50;
 
 constexpr static int RASTER_FILTER_ZONE_RANGE = 250;

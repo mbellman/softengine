@@ -2,6 +2,7 @@
 #include <Graphics/TextureBuffer.h>
 #include <UI/Alert.h>
 #include <Constants.h>
+#include <Helpers.h>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <algorithm>

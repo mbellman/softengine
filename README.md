@@ -5,7 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Camera::setDirection()
 * Object::rotateAxis(float, Vec3)
 * Billboard Object subclass
 * Skybox gradient

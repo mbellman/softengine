@@ -677,7 +677,7 @@ void Engine::updateScene_Wireframe() {
 void Engine::updateScreenProjection() {
 	const Camera& camera = activeScene->getCamera();
 	float projectionScale = (float)max(halfRasterArea.width, halfRasterArea.height) * (180.0f / camera.fov);
-	float fovAngleRange = sinf(((float)camera.fov / 2) * M_PI / 180);
+	float fovAngleRange = sinf(DEG_TO_RAD * camera.fov / 2.0f);
 	RotationMatrix cameraRotationMatrix = camera.getRotationMatrix();
 
 	// Allocate reusable vertex/vector objects up front to

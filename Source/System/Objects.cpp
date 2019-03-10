@@ -209,9 +209,9 @@ void Object::rotate(const Vec3& rotation) {
 
 void Object::rotateDeg(const Vec3& rotation) {
 	rotate({
-		(float)(DEG_TO_RAD(rotation.x)),
-		(float)(DEG_TO_RAD(rotation.y)),
-		(float)(DEG_TO_RAD(rotation.z))
+		rotation.x * DEG_TO_RAD,
+		rotation.y * DEG_TO_RAD,
+		rotation.z * DEG_TO_RAD
 	});
 }
 

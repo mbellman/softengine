@@ -17,5 +17,7 @@ struct Camera : public Positionable3d {
 
 	Vec3 getDirection() const;
 	RotationMatrix getRotationMatrix() const;
+	void lookAt(const Positionable3d* positionable);
+	void setDirection(const Vec3& direction);
 	void update(int dt);
 };

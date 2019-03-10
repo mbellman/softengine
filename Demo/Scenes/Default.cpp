@@ -192,6 +192,8 @@ void Default::onUpdate(int dt) {
 		light->position.x = 500.0f * sinf(runningTime / 400.0f);
 		light->position.z = 2000 + 500.0f * cosf(runningTime / 400.0f);
 
+		camera->lookAt(light);
+
 		settings.ambientLightVector.x = sinf(runningTime / 300.f);
 
 		blueRect->clip(blueRectXClip, 50);
