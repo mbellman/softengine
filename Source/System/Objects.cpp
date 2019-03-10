@@ -1,4 +1,5 @@
 #include <System/Objects.h>
+#include <System/Quaternion.h>
 #include <Loaders/ObjLoader.h>
 #include <Graphics/TextureBuffer.h>
 #include <Helpers.h>
@@ -101,6 +102,30 @@ void Object::addVertex(const Vec3& vector, const Vec2& uv) {
 	vertices.push_back(vertex);
 }
 
+void Object::applyRotationMatrix(const RotationMatrix& matrix) {
+	for (auto& vertex : vertices) {
+		vertex.vector += transformOrigin;
+
+		for (auto& morphTarget : vertex.morphTargets) {
+			morphTarget += transformOrigin;
+		}
+
+		vertex.rotate(matrix);
+
+		vertex.vector -= transformOrigin;
+
+		for (auto& morphTarget : vertex.morphTargets) {
+			morphTarget -= transformOrigin;
+		}
+	}
+
+	recomputeSurfaceNormals();
+
+	for (auto* lod : lods) {
+		lod->applyRotationMatrix(matrix);
+	}
+}
+
 Vec3 Object::computePolygonNormal(const Polygon& polygon) {
 	const Vec3* v0 = &polygon.vertices[0]->vector;
 	const Vec3* v1 = &polygon.vertices[1]->vector;
@@ -184,27 +209,7 @@ bool Object::isMorphing() const {
 void Object::rotate(const Vec3& rotation) {
 	RotationMatrix rotationMatrix = RotationMatrix::fromVec3(rotation);
 
-	for (auto& vertex : vertices) {
-		vertex.vector += transformOrigin;
-
-		for (auto& morphTarget : vertex.morphTargets) {
-			morphTarget += transformOrigin;
-		}
-
-		vertex.rotate(rotationMatrix);
-
-		vertex.vector -= transformOrigin;
-
-		for (auto& morphTarget : vertex.morphTargets) {
-			morphTarget -= transformOrigin;
-		}
-	}
-
-	recomputeSurfaceNormals();
-
-	for (auto* lod : lods) {
-		lod->rotate(rotation);
-	}
+	applyRotationMatrix(rotationMatrix);
 }
 
 void Object::rotateDeg(const Vec3& rotation) {
@@ -213,6 +218,13 @@ void Object::rotateDeg(const Vec3& rotation) {
 		rotation.y * DEG_TO_RAD,
 		rotation.z * DEG_TO_RAD
 	});
+}
+
+void Object::rotateOnAxis(float angle, const Vec3& axis) {
+	Vec3 normalizedAxis = axis.unit();
+	RotationMatrix rotationMatrix = Quaternion::fromAxisAngle(angle * DEG_TO_RAD, normalizedAxis.x, normalizedAxis.y, normalizedAxis.z).toRotationMatrix();
+
+	applyRotationMatrix(rotationMatrix);
 }
 
 void Object::scale(float scalar) {

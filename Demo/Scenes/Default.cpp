@@ -46,6 +46,10 @@ void Default::load() {
 	icosahedron->scale(200);
 	icosahedron->isStatic = true;
 
+	icosahedron->onUpdate = [=](int dt) {
+		icosahedron->rotateOnAxis(0.5f, { -1, 0, 1 });
+	};
+
 	add(mesh);
 	add(cube);
 	add(cube2);
@@ -192,7 +196,7 @@ void Default::onUpdate(int dt) {
 		light->position.x = 500.0f * sinf(runningTime / 400.0f);
 		light->position.z = 2000 + 500.0f * cosf(runningTime / 400.0f);
 
-		camera->lookAt(light);
+		// camera->lookAt(light);
 
 		settings.ambientLightVector.x = sinf(runningTime / 300.f);
 

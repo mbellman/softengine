@@ -71,6 +71,7 @@ struct Object : public Positionable3d {
 	void recomputeSurfaceNormals();
 	void rotate(const Vec3& rotation);
 	void rotateDeg(const Vec3& rotation);
+	void rotateOnAxis(float angle, const Vec3& axis);
 	void scale(float scalar);
 	void scale(const Vec3& vector);
 	void setColor(int R, int G, int B);
@@ -108,6 +109,7 @@ private:
 
 	static Vec3 computePolygonNormal(const Polygon& polygon);
 	static Vec3 computeVertexNormal(const Vertex3d& vertex);
+	void applyRotationMatrix(const RotationMatrix& matrix);
 };
 
 /**
