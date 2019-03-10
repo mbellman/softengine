@@ -8,13 +8,12 @@
  * ------
  */
 Vec3 Camera::getDirection() const {
+	Vec3 direction;
 	float pitchFactor = std::fabs(cosf(pitch));
 
-	float y = sinf(pitch);
-	float x = -sinf(yaw) * pitchFactor;
-	float z = cosf(yaw) * pitchFactor;
-
-	Vec3 direction = { x, y, z };
+	direction.x = -sinf(yaw) * pitchFactor;
+	direction.y = sinf(pitch);
+	direction.z = cosf(yaw) * pitchFactor;
 
 	return direction.unit();
 }
