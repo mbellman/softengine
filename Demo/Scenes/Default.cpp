@@ -89,6 +89,28 @@ void Default::load() {
 		onKeyUp(code);
 	});
 
+	inputManager->onMouseClick([=]() {
+		Vec3 cameraDirection = camera->getDirection();
+
+		Cube* spawnedCube = new Cube(30);
+
+		spawnedCube->setColor({ 255, 0, 255 });
+
+		spawnedCube->position = {
+			camera->position.x + cameraDirection.x * 750.0f,
+			camera->position.y + cameraDirection.y * 750.0f,
+			camera->position.z + cameraDirection.z * 750.0f
+		};
+
+		spawnedCube->rotateDeg({
+			RNG::random(0.0f, 90.0f),
+			RNG::random(0.0f, 90.0f),
+			RNG::random(0.0f, 90.0f)
+		});
+
+		add(spawnedCube);
+	});
+
 	settings.backgroundColor = { 75, 0, 50 };
 	settings.brightness = 0.2;
 	settings.ambientLightColor = { 255, 0, 200 };
@@ -127,7 +149,6 @@ void Default::onUpdate(int dt) {
 		};
 
 		controller->enterScene(new Garden());
-		reset();
 	}
 
 	if (controller->isMouseCaptured()) {

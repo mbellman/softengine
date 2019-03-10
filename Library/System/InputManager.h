@@ -4,6 +4,7 @@
 #include <functional>
 
 typedef std::function<void(int, int)> MouseMotionHandler;
+typedef std::function<void()> MouseClickHandler;
 typedef std::function<void(const SDL_Keycode&)> KeyHandler;
 
 /**
@@ -29,6 +30,7 @@ public:
 	void onKeyDown(KeyHandler handler);
 	void onKeyUp(KeyHandler handler);
 	void onMouseMotion(MouseMotionHandler handler);
+	void onMouseClick(MouseClickHandler handler);
 	void resetKeyState();
 
 private:
@@ -36,6 +38,7 @@ private:
 	KeyHandler keyDownHandler = nullptr;
 	KeyHandler keyUpHandler = nullptr;
 	MouseMotionHandler mouseMotionHandler = nullptr;
+	MouseClickHandler mouseClickHandler = nullptr;
 
 	void handleKeyDown(const SDL_Keycode& code);
 	void handleKeyUp(const SDL_Keycode& code);

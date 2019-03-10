@@ -1,11 +1,24 @@
 #include <System/Camera.h>
 #include <System/Math.h>
 #include <System/Quaternion.h>
+#include <cmath>
 
 /**
  * Camera
  * ------
  */
+Vec3 Camera::getDirection() const {
+	float pitchFactor = std::fabs(cosf(pitch));
+
+	float y = sinf(pitch);
+	float x = -sinf(yaw) * pitchFactor;
+	float z = cosf(yaw) * pitchFactor;
+
+	Vec3 direction = { x, y, z };
+
+	return direction.unit();
+}
+
 RotationMatrix Camera::getRotationMatrix() const {
 	Quaternion q1 = Quaternion::fromAxisAngle(pitch, 1, 0, 0);
 	Quaternion q2 = Quaternion::fromAxisAngle(yaw, 0, 1, 0);

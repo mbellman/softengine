@@ -5,9 +5,6 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
-* Support for multiple InputManager mouse motion handlers
-* Mouse click handling
-
 ## Development
 
 ### Windows

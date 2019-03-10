@@ -145,6 +145,10 @@ void Scene::handleMouseMotion(int dx, int dy) {
 }
 
 void Scene::boot() {
+	runningTime = 0;
+	isPaused = false;
+	hasInitialized = false;
+
 	inputManager = new InputManager();
 	camera = new Camera();
 
@@ -378,7 +382,6 @@ void Scene::update(int dt) {
 		boot();
 
 		shouldReset = false;
-		hasInitialized = false;
 	}
 }
 

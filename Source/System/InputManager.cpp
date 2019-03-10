@@ -19,6 +19,10 @@ void InputManager::handleEvent(const SDL_Event& event) {
 		case SDL_MOUSEBUTTONDOWN:
 			if (event.button.button == SDL_BUTTON_LEFT) {
 				SDL_SetRelativeMouseMode(SDL_TRUE);
+
+				if (mouseClickHandler != nullptr) {
+					mouseClickHandler();
+				}
 			}
 			break;
 	}
@@ -92,6 +96,10 @@ void InputManager::onKeyDown(KeyHandler handler) {
 
 void InputManager::onKeyUp(KeyHandler handler) {
 	keyUpHandler = handler;
+}
+
+void InputManager::onMouseClick(MouseClickHandler handler) {
+	mouseClickHandler = handler;
 }
 
 void InputManager::onMouseMotion(MouseMotionHandler handler) {
