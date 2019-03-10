@@ -50,10 +50,18 @@ void Default::load() {
 		icosahedron->rotateOnAxis(0.5f, { -1, 0, 1 });
 	};
 
+	add("billboard-tex", new TextureBuffer("./DemoAssets/billboard.png"));
+
+	Billboard* billboard = new Billboard(1000.0f, 500.0f);
+
+	billboard->setTexture(getTexture("billboard-tex"));
+	billboard->position = { 0, 350.0f, 3500.0f };
+
 	add(mesh);
 	add(cube);
 	add(cube2);
 	add(cube3);
+	add(billboard);
 	add("icosahedron", icosahedron);
 	add("oscillatingCube", oscillatingCube);
 
@@ -98,7 +106,7 @@ void Default::load() {
 
 		Cube* spawnedCube = new Cube(30);
 
-		spawnedCube->setColor({ 255, 0, 255 });
+		spawnedCube->setColor({ 255, 50, 255 });
 
 		spawnedCube->position = {
 			camera->position.x + cameraDirection.x * 750.0f,

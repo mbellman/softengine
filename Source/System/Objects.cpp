@@ -678,16 +678,67 @@ Particle::Particle() {
 	addVertex({ -1, -1, 0 });
 	addVertex({ 1, -1, 0 });
 
-	// 'Front' face
+	// Front side
 	addPolygon(0, 2, 1);
 	addPolygon(1, 2, 3);
 
-	// 'Back' face
+	// Back side
 	addPolygon(0, 1, 2);
 	addPolygon(1, 3, 2);
 
 	isFlatShaded = true;
 }
+
+/**
+ * Billboard
+ * ---------
+ *
+ * Creates a flat surface with separate front and back-side
+ * vertices, unlike Particle, which omits them for efficiency.
+ */
+Billboard::Billboard(float width, float height) {
+	for (int i = 0; i < 8; i++) {
+		addVertex(Billboard::vertexPositions[i], Billboard::uvs[i]);
+	}
+
+	// Front side
+	addPolygon(0, 1, 2);
+	addPolygon(1, 3, 2);
+
+	// Back side
+	addPolygon(4, 5, 6);
+	addPolygon(5, 7, 6);
+
+	scale({ width / 2.0f, height / 2.0f, 1.0f });
+}
+
+Vec3 Billboard::vertexPositions[8] = {
+	// Front side
+	{ -1.0f, 1.0f, 0.0f },
+	{ 1.0f, 1.0f, 0.0f },
+	{ -1.0f, -1.0f, 0.0f },
+	{ 1.0f, -1.0f, 0.0f },
+
+	// Back side
+	{ 1.0f, 1.0f, 3.0f },
+	{ -1.0f, 1.0f, 3.0f },
+	{ 1.0f, -1.0f, 3.0f },
+	{ -1.0f, -1.0f, 3.0f }
+};
+
+Vec2 Billboard::uvs[8] = {
+	// Front side
+	{ 0.0f, 0.0f },
+	{ 1.0f, 0.0f },
+	{ 0.0f, 1.0f },
+	{ 1.0f, 1.0f },
+
+	// Back side
+	{ 0.0f, 0.0f },
+	{ 1.0f, 0.0f },
+	{ 0.0f, 1.0f },
+	{ 1.0f, 1.0f }
+};
 
 /**
  * Skybox

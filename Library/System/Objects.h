@@ -160,6 +160,18 @@ struct Particle : Object {
 };
 
 /**
+ * Billboard
+ * ---------
+ */
+struct Billboard : Object {
+	Billboard(float width, float height);
+
+private:
+	static Vec3 vertexPositions[8];
+	static Vec2 uvs[8];
+};
+
+/**
  * Skybox
  * ------
  */
