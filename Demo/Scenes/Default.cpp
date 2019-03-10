@@ -142,27 +142,30 @@ void Default::onUpdate(int dt) {
 	int blueRectXClip = (int)(200.0f * (1.0f + cosf(runningTime / 500.0f)) / 2.0f);
 
 	UIGraphic* hud = (UIGraphic*)ui->get("hud");
-	UIRect* blueRect = (UIRect*)ui->get("blueRect");
 
 	hud->clip(hudXClip, 59);
-	blueRect->clip(blueRectXClip, 50);
-
 	hud->position.x = controller->getWindowWidth() - 200;
-	blueRect->position.x = controller->getWindowWidth() - 220;
 
 	Object* oscillatingCube = getObject("oscillatingCube");
+	Light* light = (Light*)getObject("light");
+	UIRect* blueRect = (UIRect*)ui->get("blueRect");
 
 	if (runningTime > 5000) {
 		if (oscillatingCube != NULL) {
 			remove("oscillatingCube");
+			remove("light");
+
+			ui->remove("blueRect");
 		}
 	} else {
 		oscillatingCube->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
+
+		light->position.x = 500.0f * sinf(runningTime / 400.0f);
+		light->position.z = 2000 + 500.0f * cosf(runningTime / 400.0f);
+
+		settings.ambientLightVector.x = sinf(runningTime / 300.f);
+
+		blueRect->clip(blueRectXClip, 50);
+		blueRect->position.x = controller->getWindowWidth() - 220;
 	}
-
-	Light* light = (Light*)getObject("light");
-	light->position.x = 500.0f * sinf(runningTime / 400.0f);
-	light->position.z = 2000 + 500.0f * cosf(runningTime / 400.0f);
-
-	settings.ambientLightVector.x = sinf(runningTime / 300.f);
 }

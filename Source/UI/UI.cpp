@@ -1,4 +1,5 @@
 #include <UI/UI.h>
+#include <algorithm>
 #include <SDL.h>
 
 /**
@@ -10,15 +11,18 @@ UI::UI(SDL_Renderer* renderer) {
 }
 
 UI::~UI() {
-	for (auto& [key, uiObject] : uiObjectMap) {
+	for (auto* uiObject : uiObjects) {
 		delete uiObject;
 	}
 
 	uiObjectMap.clear();
+	uiObjects.clear();
 }
 
 void UI::add(const char* key, UIObject* uiObject) {
 	uiObject->setRenderer(renderer);
+
+	uiObjects.push_back(uiObject);
 	uiObjectMap.emplace(key, uiObject);
 }
 
@@ -32,8 +36,21 @@ UIObject* UI::get(const char* key) {
 	return nullptr;
 }
 
+void UI::remove(const char* key) {
+	const auto& entry = uiObjectMap.find(key);
+
+	if (entry != uiObjectMap.end()) {
+		UIObject* uiObject = entry->second;
+
+		uiObjectMap.erase(key);
+		uiObjects.erase(std::remove(uiObjects.begin(), uiObjects.end(), uiObject), uiObjects.end());
+
+		delete uiObject;
+	}
+}
+
 void UI::update(int dt) {
-	for(auto& [key, uiObject] : uiObjectMap) {
+	for(auto* uiObject : uiObjects) {
 		uiObject->update(dt);
 	}
 }

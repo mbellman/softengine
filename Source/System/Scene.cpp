@@ -244,25 +244,23 @@ void Scene::resume() {
 
 template<class T>
 T* Scene::retrieveMappedEntity(std::map<const char*, T*> map, const char* key) {
-	auto entry = map.find(key);
+	const auto& entry = map.find(key);
 
 	if (entry != map.end()) {
 		return entry->second;
 	}
-
-	printf("Scene: Could not retrieve entity '%s'\n", key);
 
 	return NULL;
 }
 
 template<class T>
 void Scene::safelyFreeMappedEntity(std::map<const char*, T*> map, const char* key) {
-	auto entry = map.find(key);
+	const auto& entry = map.find(key);
 
 	if (entry != map.end()) {
-		delete entry->second;
-
 		map.erase(key);
+
+		delete entry->second;
 
 		return;
 	}
@@ -278,7 +276,7 @@ void Scene::safelyFreeMappedEntity(std::map<const char*, T*> map, const char* ke
  *  D) Added to the disposal queue for deferred deletion
  */
 void Scene::safelyFreeMappedObject(const char* key) {
-	auto entry = objectMap.find(key);
+	const auto& entry = objectMap.find(key);
 
 	if (entry != objectMap.end()) {
 		Object* object = entry->second;
@@ -304,7 +302,7 @@ void Scene::safelyFreeMappedObject(const char* key) {
  * elements from [N = first particle index, N + particle system size).
  */
 void Scene::safelyFreeMappedParticleSystem(const char* key) {
-	auto entry = particleSystemMap.find(key);
+	const auto& entry = particleSystemMap.find(key);
 
 	if (entry != particleSystemMap.end()) {
 		ParticleSystem* particleSystem = particleSystemMap.at(key);
@@ -326,7 +324,7 @@ void Scene::safelyFreeMappedParticleSystem(const char* key) {
 }
 
 void Scene::safelyFreeMappedSound(const char* key) {
-	auto entry = soundMap.find(key);
+	const auto& entry = soundMap.find(key);
 
 	if (entry != soundMap.end()) {
 		Sound* sound = entry->second;
