@@ -1,4 +1,5 @@
 #include <System/InputManager.h>
+#include <Constants.h>
 #include <SDL.h>
 
 /**
@@ -6,6 +7,10 @@
  * ------------
  */
 void InputManager::handleEvent(const SDL_Event& event) {
+	if (eventHandler != nullptr) {
+		eventHandler(event);
+	}
+
 	switch (event.type) {
 		case SDL_KEYDOWN:
 			handleKeyDown(event.key.keysym.sym);
@@ -14,16 +19,13 @@ void InputManager::handleEvent(const SDL_Event& event) {
 			handleKeyUp(event.key.keysym.sym);
 			break;
 		case SDL_MOUSEMOTION:
-			handleMouseMotionEvent(event.motion);
+			handleMouseMotion(event.motion);
 			break;
 		case SDL_MOUSEBUTTONDOWN:
-			if (event.button.button == SDL_BUTTON_LEFT) {
-				SDL_SetRelativeMouseMode(SDL_TRUE);
-
-				if (mouseClickHandler != nullptr) {
-					mouseClickHandler();
-				}
-			}
+			handleMouseDown(event.button);
+			break;
+		case SDL_MOUSEBUTTONUP:
+			handleMouseUp(event.button);
 			break;
 	}
 }
@@ -80,14 +82,52 @@ void InputManager::handleKeyUp(const SDL_Keycode& code) {
 	}
 }
 
-void InputManager::handleMouseMotionEvent(const SDL_MouseMotionEvent& event) {
+void InputManager::handleMouseDown(const SDL_MouseButtonEvent& event) {
+	switch (event.button) {
+		case SDL_BUTTON_LEFT: {
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+
+			lastMouseDownTime = (int)SDL_GetTicks();
+
+			if (mouseDownHandler != nullptr) {
+				mouseDownHandler();
+			}
+
+			break;
+		}
+	}
+}
+
+void InputManager::handleMouseMotion(const SDL_MouseMotionEvent& event) {
 	if (mouseMotionHandler != nullptr && SDL_GetRelativeMouseMode()) {
 		mouseMotionHandler(event.xrel, event.yrel);
 	}
 }
 
+void InputManager::handleMouseUp(const SDL_MouseButtonEvent& event) {
+	switch (event.button) {
+		case SDL_BUTTON_LEFT: {
+			if (mouseUpHandler != nullptr) {
+				mouseUpHandler();
+			}
+
+			int clickTime = (int)SDL_GetTicks() - lastMouseDownTime;
+
+			if (mouseClickHandler != nullptr && clickTime < CLICK_TIME_LIMIT) {
+				mouseClickHandler();
+			}
+
+			break;
+		}
+	}
+}
+
 bool InputManager::isKeyPressed(Keys key) {
 	return keyState & key;
+}
+
+void InputManager::onEvent(EventHandler handler) {
+	eventHandler = handler;
 }
 
 void InputManager::onKeyDown(KeyHandler handler) {
@@ -98,12 +138,20 @@ void InputManager::onKeyUp(KeyHandler handler) {
 	keyUpHandler = handler;
 }
 
-void InputManager::onMouseClick(MouseClickHandler handler) {
+void InputManager::onMouseClick(MouseButtonHandler handler) {
 	mouseClickHandler = handler;
+}
+
+void InputManager::onMouseDown(MouseButtonHandler handler) {
+	mouseDownHandler = handler;
 }
 
 void InputManager::onMouseMotion(MouseMotionHandler handler) {
 	mouseMotionHandler = handler;
+}
+
+void InputManager::onMouseUp(MouseButtonHandler handler) {
+	mouseUpHandler = handler;
 }
 
 void InputManager::resetKeyState() {

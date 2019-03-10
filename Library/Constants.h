@@ -38,3 +38,5 @@ constexpr static int GLOBAL_SECTOR_ID = -1;
 
 constexpr static Color COLOR_BLACK = { 0, 0, 0 };
 constexpr static Color COLOR_TRANSPARENT = { 255, 0, 255 };
+
+constexpr static int CLICK_TIME_LIMIT = 150;
