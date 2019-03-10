@@ -94,31 +94,35 @@ private:
 	std::vector<Light*> lights;
 	std::vector<Sound*> sounds;
 	std::vector<Sector> sectors;
-	std::map<const char*, int> objectMap;
+	std::map<const char*, Object*> objectMap;
 	std::map<const char*, ObjLoader*> objLoaderMap;
 	std::map<const char*, TextureBuffer*> textureBufferMap;
 	std::map<const char*, ParticleSystem*> particleSystemMap;
 	std::map<const char*, Sound*> soundMap;
+
+	std::vector<Object*> objectDisposalQueue;
+	std::vector<ParticleSystem*> particleSystemDisposalQueue;
+
 	std::vector<int> currentOccupiedSectors;
 	int runningTime = 0;
 	bool isPaused = false;
 	bool shouldReset = false;
 
 	void boot();
-
-	template<class T>
-	T* getMapItem(std::map<const char*, T*> map, const char* key);
-
+	void emptyDisposalQueues();
 	void handleControl(int dt);
 	void handleMouseMotion(int dx, int dy);
 	void handleWASDControl(int dt);
-	void removeLight(Light* light);
 
 	template<class T>
-	void removeMapItem(std::map<const char*, T*> map, const char* key);
+	T* retrieveMappedEntity(std::map<const char*, T*> map, const char* key);
 
-	void safelyRemoveKeyedObject(const char* key);
-	void safelyRemoveKeyedParticleSystem(const char* key);
+	template<class T>
+	void safelyFreeMappedEntity(std::map<const char*, T*> map, const char* key);
+
+	void safelyFreeMappedObject(const char* key);
+	void safelyFreeMappedParticleSystem(const char* key);
+	void safelyFreeMappedSound(const char* key);
 	void unload();
 	void updateCurrentOccupiedSectors();
 };

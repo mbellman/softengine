@@ -60,6 +60,31 @@ void Garden::load() {
 		add(cube);
 	}
 
+	ParticleSystem* snow = new ParticleSystem(4000);
+
+	snow->setSpawnRange(
+		{ -2500.0f, 2500.0f },
+		{ 0.0f, 1200.0f },
+		{ -2500.0f, 2500.0f }
+	);
+
+	snow->setParticleColor({ 255, 255, 255 });
+	snow->setParticleSize(5, 5);
+
+	snow->setParticleBehavior([=](Particle* particle, int dt) {
+		particle->position.y -= (float)dt / 5.0f;
+
+		if (particle->position.y < -100) {
+			particle->shouldReset = true;
+		}
+	});
+
+	snow->follow(camera, [=](const Vec3& cameraPosition, Vec3& snowPosition) {
+		snowPosition = cameraPosition;
+	});
+
+	add("snow", snow);
+
 	Light* movingLight = new Light();
 	movingLight->setColor({ 255, 50, 255 });
 	movingLight->range = 750;
@@ -114,31 +139,6 @@ void Garden::load() {
 
 	add(mesh);
 
-	ParticleSystem* snow = new ParticleSystem(4000);
-
-	snow->setSpawnRange(
-		{ -2500.0f, 2500.0f },
-		{ 0.0f, 1200.0f },
-		{ -2500.0f, 2500.0f }
-	);
-
-	snow->setParticleColor({ 255, 255, 255 });
-	snow->setParticleSize(5, 5);
-
-	snow->setParticleBehavior([=](Particle* particle, int dt) {
-		particle->position.y -= (float)dt / 5.0f;
-
-		if (particle->position.y < -100) {
-			particle->shouldReset = true;
-		}
-	});
-
-	snow->follow(camera, [=](const Vec3& cameraPosition, Vec3& snowPosition) {
-		snowPosition = cameraPosition;
-	});
-
-	add("snow", snow);
-
 	for (int i = 0; i < 6; i++) {
 		Sound* crickets = new Sound("./DemoAssets/crickets.wav");
 
@@ -186,5 +186,14 @@ void Garden::onUpdate(int dt) {
 
 	if (Vec3::distance(camera->position, getObject("icosahedron")->position) < 200) {
 		controller->exitScene();
+	}
+
+	if (runningTime > 5000) {
+		ParticleSystem* snow = getParticleSystem("snow");
+
+		if (snow != NULL) {
+			remove("snow");
+			remove("bells");
+		}
 	}
 }

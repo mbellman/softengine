@@ -26,9 +26,9 @@ Scene::~Scene() {
 }
 
 void Scene::add(const char* key, Object* object) {
-	add(object);
+	objectMap.emplace(key, object);
 
-	objectMap.emplace(key, objects.size() - 1);
+	add(object);
 }
 
 void Scene::add(Object* object) {
@@ -72,6 +72,19 @@ void Scene::add(const char* key, ParticleSystem* particleSystem) {
 	}
 }
 
+void Scene::emptyDisposalQueues() {
+	for (auto* object : objectDisposalQueue) {
+		delete object;
+	}
+
+	for (auto* particleSystem : particleSystemDisposalQueue) {
+		delete particleSystem;
+	}
+
+	objectDisposalQueue.clear();
+	particleSystemDisposalQueue.clear();
+}
+
 const Camera& Scene::getCamera() const {
 	return *camera;
 }
@@ -80,25 +93,8 @@ const std::vector<Light*>& Scene::getLights() {
 	return lights;
 }
 
-template<class T>
-T* Scene::getMapItem(std::map<const char*, T*> map, const char* key) {
-	try {
-		return map.at(key);
-	} catch (const std::out_of_range& error) {
-		printf("Scene: Could not find item '%s'\n", key);
-	}
-
-	return NULL;
-}
-
 Object* Scene::getObject(const char* key) {
-	auto it = objectMap.find(key);
-
-	if (it != objectMap.end()) {
-		return objects.at(it->second);
-	}
-
-	return NULL;
+	return retrieveMappedEntity(objectMap, key);
 }
 
 const std::vector<Object*>& Scene::getObjects() {
@@ -106,11 +102,11 @@ const std::vector<Object*>& Scene::getObjects() {
 }
 
 ObjLoader* Scene::getObjLoader(const char* key) {
-	return getMapItem(objLoaderMap, key);
+	return retrieveMappedEntity(objLoaderMap, key);
 }
 
 ParticleSystem* Scene::getParticleSystem(const char* key) {
-	return getMapItem(particleSystemMap, key);
+	return retrieveMappedEntity(particleSystemMap, key);
 }
 
 int Scene::getRunningTime() {
@@ -118,7 +114,7 @@ int Scene::getRunningTime() {
 }
 
 Sound* Scene::getSound(const char* key) {
-	return getMapItem(soundMap, key);
+	return retrieveMappedEntity(soundMap, key);
 }
 
 const std::vector<Sound*>& Scene::getSounds() {
@@ -126,7 +122,7 @@ const std::vector<Sound*>& Scene::getSounds() {
 }
 
 TextureBuffer* Scene::getTexture(const char* key) {
-	return getMapItem(textureBufferMap, key);
+	return retrieveMappedEntity(textureBufferMap, key);
 }
 
 void Scene::handleControl(int dt) {
@@ -211,38 +207,20 @@ void Scene::provideUI(UI* ui) {
 	this->ui = ui;
 }
 
+/**
+ * Removes an entity by key, agnostic as to the entity type.
+ * We invoke all routines for safely freeing mapped entities,
+ * deferring to their mechanisms for verifying the existence
+ * of and freeing resources.
+ */
 void Scene::remove(const char* key) {
-	safelyRemoveKeyedObject(key);
-	safelyRemoveKeyedParticleSystem(key);
+	safelyFreeMappedObject(key);
+	safelyFreeMappedSound(key);
+	safelyFreeMappedParticleSystem(key);
 
-	removeMapItem(objLoaderMap, key);
-	removeMapItem(textureBufferMap, key);
-	removeMapItem(particleSystemMap, key);
-}
-
-void Scene::removeLight(Light* light) {
-	int index = 0;
-
-	while (index < lights.size()) {
-		if(lights.at(index) == light) {
-			lights.erase(lights.begin() + index);
-		} else {
-			index++;
-		}
-	}
-}
-
-template<class T>
-void Scene::removeMapItem(std::map<const char*, T*> map, const char* key) {
-	auto entry = map.find(key);
-
-	if (entry != map.end()) {
-		delete map.at(key);
-
-		map.erase(key);
-
-		return;
-	}
+	safelyFreeMappedEntity(objLoaderMap, key);
+	safelyFreeMappedEntity(textureBufferMap, key);
+	safelyFreeMappedEntity(particleSystemMap, key);
 }
 
 /**
@@ -264,30 +242,55 @@ void Scene::resume() {
 	}
 }
 
+template<class T>
+T* Scene::retrieveMappedEntity(std::map<const char*, T*> map, const char* key) {
+	auto entry = map.find(key);
+
+	if (entry != map.end()) {
+		return entry->second;
+	}
+
+	printf("Scene: Could not retrieve entity '%s'\n", key);
+
+	return NULL;
+}
+
+template<class T>
+void Scene::safelyFreeMappedEntity(std::map<const char*, T*> map, const char* key) {
+	auto entry = map.find(key);
+
+	if (entry != map.end()) {
+		delete entry->second;
+
+		map.erase(key);
+
+		return;
+	}
+}
+
 /**
- * Removes a mapped Object if the provided key matches an entry.
- * The Object must be deleted in the following fashion:
+ * Removes and destroys a mapped Object if the provided key matches
+ * an entry. The Object must be deleted in the following fashion:
  *
  *  A) From the Object map
  *  B) From the Object pointer list
  *  C) If it is a Light, from the Lights pointer list
+ *  D) Added to the disposal queue for deferred deletion
  */
-void Scene::safelyRemoveKeyedObject(const char* key) {
+void Scene::safelyFreeMappedObject(const char* key) {
 	auto entry = objectMap.find(key);
 
 	if (entry != objectMap.end()) {
-		int idx = entry->second;
+		Object* object = entry->second;
 
-		Object* object = objects.at(idx);
+		objectMap.erase(key);
+		objects.erase(std::remove(objects.begin(), objects.end(), object), objects.end());
 
 		if (object->isOfType<Light>()) {
-			removeLight((Light*)object);
+			lights.erase(std::remove(lights.begin(), lights.end(), object), lights.end());
 		}
 
-		delete object;
-
-		objects.erase(objects.begin() + idx);
-		objectMap.erase(key);
+		objectDisposalQueue.push_back(object);
 	}
 }
 
@@ -300,32 +303,38 @@ void Scene::safelyRemoveKeyedObject(const char* key) {
  * contiguously in the Object pointer list, we can erase all list
  * elements from [N = first particle index, N + particle system size).
  */
-void Scene::safelyRemoveKeyedParticleSystem(const char* key) {
+void Scene::safelyFreeMappedParticleSystem(const char* key) {
 	auto entry = particleSystemMap.find(key);
 
 	if (entry != particleSystemMap.end()) {
 		ParticleSystem* particleSystem = particleSystemMap.at(key);
 		const std::vector<Particle*>& particles = particleSystem->getParticles();
 		Particle* firstParticle = particles.at(0);
-		int idx = 0;
+		int idx = -1;
 
-		while (idx < objects.size()) {
+		while (++idx < objects.size()) {
 			if (objects.at(idx) == firstParticle) {
-				for (int n = 0; n < particles.size(); n++) {
-					// Since the ParticleSystem's deletion will free its
-					// Particle objects, we need not delete them here
-					objects.erase(objects.begin() + idx);
-				}
+				objects.erase(objects.begin() + idx, objects.begin() + idx + particles.size());
 
 				break;
 			}
-
-			idx++;
 		}
 
-		delete particleSystem;
-
 		particleSystemMap.erase(key);
+		particleSystemDisposalQueue.push_back(particleSystem);
+	}
+}
+
+void Scene::safelyFreeMappedSound(const char* key) {
+	auto entry = soundMap.find(key);
+
+	if (entry != soundMap.end()) {
+		Sound* sound = entry->second;
+
+		soundMap.erase(key);
+		sounds.erase(std::remove(sounds.begin(), sounds.end(), sound), sounds.end());
+
+		delete sound;
 	}
 }
 
@@ -356,6 +365,7 @@ void Scene::update(int dt) {
 		particleSystem->update(dt);
 	}
 
+	emptyDisposalQueues();
 	updateCurrentOccupiedSectors();
 	handleControl(dt);
 	camera->update(dt);
@@ -403,7 +413,7 @@ void Scene::unload() {
 	delete camera;
 
 	if (ui != NULL) {
-		// If a reset but not reloaded/restarted Scene is further back
+		// If a reset (but not reloaded/restarted) Scene is further back
 		// in the Scene stack, its 'ui' field will be deleted already.
 		// Quitting the application in this state would cause a double
 		// free if we didn't guard the deletion with a NULL check.
@@ -420,6 +430,8 @@ void Scene::unload() {
 	objLoaderMap.clear();
 	textureBufferMap.clear();
 	particleSystemMap.clear();
+
+	emptyDisposalQueues();
 }
 
 void Scene::updateCurrentOccupiedSectors() {

@@ -150,7 +150,15 @@ void Default::onUpdate(int dt) {
 	hud->position.x = controller->getWindowWidth() - 200;
 	blueRect->position.x = controller->getWindowWidth() - 220;
 
-	getObject("oscillatingCube")->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
+	Object* oscillatingCube = getObject("oscillatingCube");
+
+	if (runningTime > 5000) {
+		if (oscillatingCube != NULL) {
+			remove("oscillatingCube");
+		}
+	} else {
+		oscillatingCube->position.y = 200.0f + 100.0f * sinf(runningTime / 500.0f);
+	}
 
 	Light* light = (Light*)getObject("light");
 	light->position.x = 500.0f * sinf(runningTime / 400.0f);
