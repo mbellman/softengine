@@ -679,12 +679,12 @@ Particle::Particle() {
 	addVertex({ 1, -1, 0 });
 
 	// Front side
-	addPolygon(0, 2, 1);
-	addPolygon(1, 2, 3);
-
-	// Back side
 	addPolygon(0, 1, 2);
 	addPolygon(1, 3, 2);
+
+	// Back side
+	addPolygon(0, 2, 1);
+	addPolygon(1, 2, 3);
 
 	isFlatShaded = true;
 }
