@@ -9,6 +9,7 @@
 #include <functional>
 #include <cmath>
 #include <UI/UI.h>
+#include <UI/Alert.h>
 #include <Graphics/TextureBuffer.h>
 #include <Sound/Sound.h>
 #include <Constants.h>
@@ -26,6 +27,14 @@ Scene::~Scene() {
 }
 
 void Scene::add(const char* key, Object* object) {
+	if (object->lifetime > 0) {
+		char errorMessage[100];
+
+		sprintf(errorMessage, "Key-mapped Objects cannot have definite lifetimes (key: '%s')", key);
+		Alert::error(ALERT_ERROR, errorMessage);
+		exit(0);
+	}
+
 	objectMap.emplace(key, object);
 
 	add(object);
@@ -227,6 +236,35 @@ void Scene::remove(const char* key) {
 	safelyFreeMappedEntity(particleSystemMap, key);
 }
 
+void Scene::removeExpiredObjects() {
+	int idx = 0;
+
+	while (idx < objects.size()) {
+		Object* object = objects.at(idx);
+
+		if (object->lifetime == 0) {
+			removeObject(object);
+		} else {
+			idx++;
+		}
+	}
+}
+
+/**
+ * Removes an Object by reference from the Object pointer
+ * list, and Light pointer list if applicable, before placing
+ * it in the disposal queue for deferred deletion.
+ */
+void Scene::removeObject(Object* object) {
+	objects.erase(std::remove(objects.begin(), objects.end(), object), objects.end());
+
+	if (object->isOfType<Light>()) {
+		lights.erase(std::remove(lights.begin(), lights.end(), object), lights.end());
+	}
+
+	objectDisposalQueue.push_back(object);
+}
+
 /**
  * Flags the Scene to reset at the end of its update cycle.
  * A reset returns the Scene to its instantiation-time state,
@@ -286,13 +324,7 @@ void Scene::safelyFreeMappedObject(const char* key) {
 		Object* object = entry->second;
 
 		objectMap.erase(key);
-		objects.erase(std::remove(objects.begin(), objects.end(), object), objects.end());
-
-		if (object->isOfType<Light>()) {
-			lights.erase(std::remove(lights.begin(), lights.end(), object), lights.end());
-		}
-
-		objectDisposalQueue.push_back(object);
+		removeObject(object);
 	}
 }
 
@@ -372,6 +404,7 @@ void Scene::update(int dt) {
 	handleControl(dt);
 	camera->update(dt);
 	onUpdate(dt);
+	removeExpiredObjects();
 
 	for (auto* object : objects) {
 		object->syncLODs();

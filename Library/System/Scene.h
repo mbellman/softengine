@@ -113,6 +113,8 @@ private:
 	void handleControl(int dt);
 	void handleMouseMotion(int dx, int dy);
 	void handleWASDControl(int dt);
+	void removeExpiredObjects();
+	void removeObject(Object* object);
 
 	template<class T>
 	T* retrieveMappedEntity(std::map<const char*, T*> map, const char* key);

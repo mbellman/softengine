@@ -33,6 +33,14 @@ struct Object : public Positionable3d {
 	Vec3 transformOrigin;
 
 	/**
+	 * Controls the running lifetime of the Object in milliseconds.
+	 * Objects with lifetimes > 0 are automatically removed from the
+	 * Scene when they expire. The default value allows Objects to
+	 * persist indefinitely.
+	 */
+	int lifetime = -1;
+
+	/**
 	 * Allows the default near plane clipping distance to be
 	 * overridden on a per-object basis, remedying problems
 	 * with depth range over the near -> far span of extremely

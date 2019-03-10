@@ -108,7 +108,15 @@ void Default::load() {
 			RNG::random(0.0f, 90.0f)
 		});
 
+		spawnedCube->lifetime = 2000;
+
+		Light* cubeLight = new Light();
+		cubeLight->setColor({ 0, 255, 0 });
+		cubeLight->lifetime = 2000;
+		cubeLight->position = spawnedCube->position;
+
 		add(spawnedCube);
+		add(cubeLight);
 	});
 
 	settings.backgroundColor = { 75, 0, 50 };

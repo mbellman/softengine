@@ -323,6 +323,10 @@ void Object::update(int dt) {
 		onUpdate(dt);
 	}
 
+	if (lifetime > 0) {
+		lifetime = FAST_MAX(lifetime - dt, 0);
+	}
+
 	for (auto* lod : lods) {
 		lod->update(dt);
 	}
