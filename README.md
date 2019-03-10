@@ -5,6 +5,11 @@ A software 3D rendering engine, written as an educational exercise.
 
 ### Features
 
+* InputManager::onMouseDown()/onMouseUp()
+* Camera::setDirection()
+* Billboard Object subclass
+* Skybox gradient
+
 ## Development
 
 ### Windows
