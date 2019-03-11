@@ -395,8 +395,8 @@ void Engine::projectAndQueueTriangle(
 void Engine::resizeRasterRegion() {
 	rasterRegion.x = windowArea.width * (rasterLockRegion.x / 100.0f);
 	rasterRegion.y = windowArea.height * (rasterLockRegion.y / 100.0f);
-	rasterRegion.width = windowArea.width * (rasterLockRegion.width / 100.0f);
-	rasterRegion.height = windowArea.height * (rasterLockRegion.height / 100.0f);
+	rasterRegion.width = (int)std::round(windowArea.width * (rasterLockRegion.width / 100.0f));
+	rasterRegion.height = (int)std::round(windowArea.height * (rasterLockRegion.height / 100.0f));
 
 	bool hasPixelFilter = flags & PIXEL_FILTER;
 	int rasterWidth = hasPixelFilter ? rasterRegion.width / 2 : rasterRegion.width;
