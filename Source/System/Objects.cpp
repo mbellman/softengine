@@ -774,6 +774,12 @@ Skybox::Skybox(float size) {
 	nearClippingDistance = size / 10.0f;
 }
 
+void Skybox::setTexture(TextureBuffer* texture) {
+	texture->shouldUseMipmaps = false;
+
+	Object::setTexture(texture);
+}
+
 Vec3 Skybox::vertexPositions[14] = {
 	{ -1.0f, -1.0f, -1.0f },
 	{ -1.0f, 1.0f, 1.0f },

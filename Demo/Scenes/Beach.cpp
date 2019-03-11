@@ -10,10 +10,8 @@
  */
 void Beach::load() {
 	TextureBuffer* sky = new TextureBuffer("./DemoAssets/sky.png");
-	sky->shouldUseMipmaps = false;
 
 	Skybox* skybox = new Skybox(20000.0f);
-
 	skybox->setTexture(sky);
 	skybox->lockTo(camera);
 

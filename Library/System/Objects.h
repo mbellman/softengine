@@ -179,6 +179,8 @@ private:
 struct Skybox : Object {
 	Skybox(float size);
 
+	void setTexture(TextureBuffer* texture);
+
 private:
 	static Vec3 vertexPositions[14];
 	static Vec2 uvs[14];

@@ -129,8 +129,12 @@ void Garden::load() {
 
 	add("bells", bells);
 
+	add("groundTexture", new TextureBuffer("./DemoAssets/snowy-ground-texture.png"));
+
 	Mesh* mesh = new Mesh(100, 50, 100);
 	mesh->setColor(255, 255, 255);
+	mesh->setTexture(getTexture("groundTexture"));
+	mesh->setTextureInterval(5, 5);
 	mesh->position = { -2500, -40, 0 };
 	mesh->isStatic = true;
 
@@ -139,6 +143,14 @@ void Garden::load() {
 	});
 
 	add(mesh);
+
+	add("skyboxTexture", new TextureBuffer("./DemoAssets/sky.png"));
+
+	Skybox* skybox = new Skybox(30000);
+	skybox->setTexture(getTexture("skyboxTexture"));
+	skybox->lockTo(camera);
+
+	add(skybox);
 
 	for (int i = 0; i < 6; i++) {
 		Sound* crickets = new Sound("./DemoAssets/crickets.wav");
@@ -163,7 +175,6 @@ void Garden::load() {
 	});
 
 	settings.backgroundColor = { 0, 10, 20 };
-	settings.visibility = 5000;
 	settings.brightness = 0.1;
 	settings.ambientLightColor = { 0, 0, 100 };
 	settings.ambientLightVector = { 0, -0.8f, 0.5f };
