@@ -744,7 +744,7 @@ Vec2 Billboard::uvs[8] = {
  * Skybox
  * ------
  */
-Skybox::Skybox() {
+Skybox::Skybox(float size) {
 	for (int i = 0; i < 14; i++) {
 		addVertex(Skybox::vertexPositions[i], Skybox::uvs[i]);
 	}
@@ -761,6 +761,11 @@ Skybox::Skybox() {
 	addPolygon(7, 12, 8);
 	addPolygon(9, 5, 3);
 	addPolygon(8, 13, 11);
+
+	scale(size);
+
+	hasLighting = false;
+	nearClippingDistance = size / 10.0f;
 }
 
 Vec3 Skybox::vertexPositions[14] = {

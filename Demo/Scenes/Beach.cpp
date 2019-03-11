@@ -12,11 +12,9 @@ void Beach::load() {
 	TextureBuffer* sky = new TextureBuffer("./DemoAssets/sky.png");
 	sky->shouldUseMipmaps = false;
 
-	Skybox* skybox = new Skybox();
-	skybox->scale(20000);
+	Skybox* skybox = new Skybox(20000.0f);
+
 	skybox->setTexture(sky);
-	skybox->hasLighting = false;
-	skybox->nearClippingDistance = 2000.0f;
 
 	skybox->follow(camera, [=](const Vec3& cameraPosition, Vec3& skyboxPosition) {
 		skyboxPosition = cameraPosition;

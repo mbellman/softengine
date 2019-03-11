@@ -176,7 +176,7 @@ private:
  * ------
  */
 struct Skybox : Object {
-	Skybox();
+	Skybox(float size);
 
 private:
 	static Vec3 vertexPositions[14];
