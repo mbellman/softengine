@@ -84,9 +84,7 @@ void Garden::load() {
 		}
 	});
 
-	snow->follow(camera, [=](const Vec3& cameraPosition, Vec3& snowPosition) {
-		snowPosition = cameraPosition;
-	});
+	snow->lockTo(camera);
 
 	add("snow", snow);
 
@@ -111,9 +109,7 @@ void Garden::load() {
 	cameraLight->range = 1000;
 	cameraLight->power = 0.75f;
 
-	cameraLight->follow(camera, [=](const Vec3& cameraPosition, Vec3& lightPosition) {
-		lightPosition = cameraPosition;
-	});
+	cameraLight->lockTo(camera);
 
 	add("cameraLight", cameraLight);
 

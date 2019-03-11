@@ -15,10 +15,7 @@ void Beach::load() {
 	Skybox* skybox = new Skybox(20000.0f);
 
 	skybox->setTexture(sky);
-
-	skybox->follow(camera, [=](const Vec3& cameraPosition, Vec3& skyboxPosition) {
-		skyboxPosition = cameraPosition;
-	});
+	skybox->lockTo(camera);
 
 	add(skybox);
 	add("skytex", sky);

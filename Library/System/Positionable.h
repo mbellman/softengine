@@ -35,6 +35,7 @@ struct Positionable3d {
 	Positionable3d(const Vec3& position);
 
 	void follow(const Positionable3d* target, FollowHandler handler);
+	void lockTo(const Positionable3d* target);
 	void tweenTo(const Vec3& target, int duration, Ease::EaseFunction easeFunction);
 
 protected:

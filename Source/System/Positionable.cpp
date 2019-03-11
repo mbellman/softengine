@@ -50,6 +50,12 @@ void Positionable3d::follow(const Positionable3d* target, FollowHandler handler)
 	followHandler = handler;
 }
 
+void Positionable3d::lockTo(const Positionable3d* target) {
+	follow(target, [=](const Vec3& targetPosition, Vec3& position) {
+		position = targetPosition;
+	});
+}
+
 void Positionable3d::tweenTo(const Vec3& target, int duration, Ease::EaseFunction easing) {
 	tween.value.start = position;
 	tween.value.end = target;
