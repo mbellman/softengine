@@ -131,8 +131,7 @@ void Engine::awaitRenderStep(RenderStep renderStep) {
 void Engine::createRenderThreads() {
 	// Adhering to a 1-active-thread-per-core limit, we can allot
 	// as many render worker threads as cores are available after
-	// the 1) main thread and 2) primary rendering threads are
-	// discounted.
+	// the 1) main thread and 2) primary rendering thread.
 	int totalRenderWorkerThreads = SDL_GetCPUCount() - 2;
 
 	if (totalRenderWorkerThreads < 1) {
@@ -197,14 +196,12 @@ int Engine::handleRenderWorkerThread(void* data) {
 				case RenderStep::ILLUMINATION: {
 					const auto& bufferedTriangles = triangleBuffer->getBufferedTriangles();
 
-					for (int i = 0; i < bufferedTriangles.size(); i++) {
+					for (int i = manager->sectionId; i < bufferedTriangles.size(); i += totalRenderWorkerThreads) {
 						// Each render worker gets to illuminate every Nth triangle,
 						// where N is the number of available workers.
-						if (i % totalRenderWorkerThreads == manager->sectionId) {
-							Triangle* triangle = bufferedTriangles.at(i);
+						Triangle* triangle = bufferedTriangles.at(i);
 
-							illuminator->illuminateTriangle(triangle);
-						}
+						illuminator->illuminateTriangle(triangle);
 					}
 
 					break;
@@ -213,8 +210,8 @@ int Engine::handleRenderWorkerThread(void* data) {
 					for (int i = 0; i < currentRasterizer->getTotalBufferedScanlines(); i++) {
 						const Scanline* scanline = currentRasterizer->getScanline(i);
 
-						// Each render worker gets to rasterize scanlines on every
-						// Nth screen row, where N is the number of available workers.
+						// Each render worker rasterizes scanlines on every Nth screen row,
+						// where N is the number of available workers.
 						if (scanline->y % totalRenderWorkerThreads == manager->sectionId) {
 							currentRasterizer->triangleScanline(scanline);
 						}
