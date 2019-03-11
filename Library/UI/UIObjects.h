@@ -15,7 +15,6 @@ public:
 	~UIObject();
 
 	void clip(int w, int h);
-	int getId() const;
 	void setAlpha(float alpha);
 	void setPosition(int x, int y);
 	void setRenderer(SDL_Renderer* renderer);

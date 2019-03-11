@@ -14,10 +14,6 @@
  * A base class used for 3D objects. Subclasses offer more
  * specialized types of Objects with custom geometry.
  */
-Object::Object() {
-	id = rand() % 30000;
-}
-
 Object::~Object() {
 	for (auto* lod : lods) {
 		delete lod;
@@ -156,10 +152,6 @@ Vec3 Object::computeVertexNormal(const Vertex3d& vertex) {
 	}
 
 	return averageNormal.unit();
-}
-
-int Object::getId() const {
-	return id;
 }
 
 const Object* Object::getLOD(float distance) const {
@@ -446,7 +438,7 @@ Model::Model(const ObjLoader& obj) {
 		for (int v = 0; v < obj.vertices.size(); v++) {
 			Vec3 vector = obj.vertices.at(v);
 
-			addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
+			addVertex(vector);
 		}
 
 		for (int f = 0; f < obj.faces.size(); f++) {
@@ -497,7 +489,7 @@ Mesh::Mesh(int rows, int columns, float tileSize) {
 
 	for (int z = 0; z < verticesPerColumn; z++) {
 		for (int x = 0; x < verticesPerRow; x++) {
-			addVertex({ x * tileSize, 0.0f, z * tileSize }, { rand() % 255, rand() % 255, rand() % 255 });
+			addVertex({ x * tileSize, 0.0f, z * tileSize });
 		}
 	}
 
@@ -570,7 +562,7 @@ Cube::Cube(float radius) {
 		vector.y = -position.y * radius;
 		vector.z = position.z * radius;
 
-		addVertex(vector, { rand() % 255, rand() % 255, rand() % 255 });
+		addVertex(vector);
 	}
 
 	for (int p = 0; p < 12; p++) {

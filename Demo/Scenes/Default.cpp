@@ -17,6 +17,7 @@ void Default::load() {
 	mesh->position = { -1000, 0, -1000 };
 	mesh->isStatic = true;
 	mesh->isFlatShaded = true;
+	mesh->setColor({ 100, 50, 175 });
 
 	mesh->setVertexOffsets([=](int row, int column, Vec3& offset) {
 		offset.y = rand() % 50;
@@ -45,6 +46,7 @@ void Default::load() {
 	icosahedron->position = { 0, 220, 2000 };
 	icosahedron->scale(200);
 	icosahedron->isStatic = true;
+	icosahedron->setColor({ 200, 50, 255 });
 
 	icosahedron->onUpdate = [=](int dt) {
 		icosahedron->rotateOnAxis(0.5f, { -1, 0, 1 });

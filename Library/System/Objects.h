@@ -48,12 +48,10 @@ struct Object : public Positionable3d {
 	 */
 	float nearClippingDistance = NEAR_PLANE_DISTANCE;
 
-	Object();
 	virtual ~Object();
 
 	void addLOD(Object* lod);
 	void addMorphTarget(Object* morphTarget);
-	int getId() const;
 	const Object* getLOD(float distance) const;
 	const std::vector<Object*>& getLODs() const;
 	int getPolygonCount() const;
@@ -101,7 +99,6 @@ private:
 		bool isReversed = false;
 	};
 
-	int id;
 	std::vector<Polygon*> polygons;
 	std::vector<Object*> lods;
 	Morph morph;

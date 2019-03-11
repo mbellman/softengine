@@ -1,9 +1,12 @@
 #include <System/Controller.h>
 #include <Scenes/Default.h>
-#include <Scenes/Garden.h>
+#include <Scenes/StressTest.h>
 #include <Scenes/LightTest.h>
-#include <Scenes/AnimationTest.h>
+#include <Scenes/TextureTest.h>
+#include <Scenes/Garden.h>
 #include <Scenes/Beach.h>
+#include <Scenes/SectorTest.h>
+#include <Scenes/AnimationTest.h>
 #include <Engine.h>
 
 int main(int argc, char* argv[]) {
