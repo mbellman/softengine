@@ -81,6 +81,19 @@ void Scene::add(const char* key, ParticleSystem* particleSystem) {
 	}
 }
 
+void Scene::boot() {
+	runningTime = 0;
+	isPaused = false;
+	hasInitialized = false;
+
+	inputManager = new InputManager();
+	camera = new Camera();
+
+	inputManager->onMouseMotion([=](int dx, int dy) {
+		handleMouseMotion(dx, dy);
+	});
+}
+
 void Scene::emptyDisposalQueues() {
 	for (auto* object : objectDisposalQueue) {
 		delete object;
@@ -145,25 +158,12 @@ void Scene::handleMouseMotion(int dx, int dy) {
 		return;
 	}
 
-	float deltaFactor = 1.0f / 500.0f;
+	float deltaFactor = (1.0f / 500.0f) * camera->mouseSensitivity;
 	float yawDelta = (float)-dx * deltaFactor;
 	float pitchDelta = (float)-dy * deltaFactor;
 
 	camera->yaw += yawDelta;
 	camera->pitch = std::clamp(camera->pitch + pitchDelta, -MAX_CAMERA_PITCH, MAX_CAMERA_PITCH);
-}
-
-void Scene::boot() {
-	runningTime = 0;
-	isPaused = false;
-	hasInitialized = false;
-
-	inputManager = new InputManager();
-	camera = new Camera();
-
-	inputManager->onMouseMotion([=](int dx, int dy) {
-		handleMouseMotion(dx, dy);
-	});
 }
 
 void Scene::handleWASDControl(int dt) {
@@ -182,7 +182,7 @@ void Scene::handleWASDControl(int dt) {
 	}
 
 	velocity.normalize();
-	velocity *= MOVEMENT_SPEED * (dt / 16.0f);
+	velocity *= camera->movementSpeed * (dt / 16.0f);
 
 	if (inputManager->isKeyPressed(Keys::SHIFT)) {
 		velocity *= 4.0f;

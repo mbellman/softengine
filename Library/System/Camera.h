@@ -12,6 +12,8 @@ struct Camera : public Positionable3d {
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	int fov = 90;
+	float movementSpeed = 5.0f;
+	float mouseSensitivity = 1.0f;
 
 	Camera(): Positionable3d({ 0, 100, 0 }) {}
 

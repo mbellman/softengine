@@ -25,7 +25,6 @@ constexpr static int LOG2_TABLE[12][2] = {
 
 constexpr static float NEAR_PLANE_DISTANCE = 30.0f;
 constexpr static float MIPMAP_DISTANCE_INTERVAL = 800.0f;
-constexpr static float MOVEMENT_SPEED = 5.0f;
 constexpr static float LOD_DISTANCE_THRESHOLD = 2500.0f;
 constexpr static int SERIAL_ILLUMINATION_NONSTATIC_TRIANGLE_LIMIT = 2500;
 

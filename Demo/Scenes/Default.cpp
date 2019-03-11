@@ -131,6 +131,9 @@ void Default::load() {
 		add(cubeLight);
 	});
 
+	camera->movementSpeed = 8.0f;
+	camera->mouseSensitivity = 1.5f;
+
 	settings.backgroundColor = { 75, 0, 50 };
 	settings.brightness = 0.2;
 	settings.ambientLightColor = { 255, 0, 200 };
