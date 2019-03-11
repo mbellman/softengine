@@ -188,13 +188,4 @@ void Garden::onUpdate(int dt) {
 	if (Vec3::distance(camera->position, getObject("icosahedron")->position) < 200) {
 		controller->exitScene();
 	}
-
-	// if (runningTime > 5000) {
-	// 	ParticleSystem* snow = getParticleSystem("snow");
-
-	// 	if (snow != NULL) {
-	// 		remove("snow");
-	// 		remove("bells");
-	// 	}
-	// }
 }

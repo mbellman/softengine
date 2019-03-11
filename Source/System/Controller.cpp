@@ -116,6 +116,7 @@ bool Controller::isMouseCaptured() {
 
 void Controller::start(Scene* scene) {
 	enterScene(scene);
+
 	engine->initialize();
 
 	int dt, lastStartTime = (int)SDL_GetTicks();

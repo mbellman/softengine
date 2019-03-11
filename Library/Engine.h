@@ -85,7 +85,7 @@ private:
 	CommandLine* commandLine;
 	Scene* activeScene = NULL;
 	int flags = 0;
-	bool isStopped = true;
+	bool isStopped = false;
 	Area windowArea;
 	Region rasterLockRegion = { 0, 0, 100, 100 };
 	Region rasterRegion;
@@ -107,7 +107,6 @@ private:
 	std::vector<SDL_Thread*> renderWorkerThreads;
 	SDL_Thread* renderThread = NULL;
 	bool isRendering = false;
-	bool isDone = false;
 	int frame = 0;
 
 	static int handleRenderWorkerThread(void* data);

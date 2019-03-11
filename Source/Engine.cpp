@@ -89,8 +89,6 @@ Engine::Engine(int width, int height, const char* title, const char* iconPath, c
 }
 
 Engine::~Engine() {
-	isDone = true;
-
 	for (int i = 0; i < renderWorkerThreads.size(); i++) {
 		SDL_WaitThread(renderWorkerThreads.at(i), NULL);
 	}
@@ -190,7 +188,7 @@ int Engine::handleRenderWorkerThread(void* data) {
 	while (1) {
 		Rasterizer* currentRasterizer = engine->rasterizer;
 
-		if (engine->isDone) {
+		if (engine->hasStopped()) {
 			break;
 		} else if (manager->isWorking) {
 			int totalRenderWorkerThreads = engine->renderWorkerThreads.size();
@@ -257,7 +255,7 @@ int Engine::handleRenderThread(void* data) {
 	while (1) {
 		Rasterizer* currentRasterizer = engine->rasterizer;
 
-		if (engine->isDone) {
+		if (engine->hasStopped()) {
 			break;
 		} else if (engine->isRendering) {
 			debugStats.trackIlluminationTime();
@@ -299,8 +297,6 @@ bool Engine::hasStopped() {
 }
 
 void Engine::initialize() {
-	isStopped = false;
-
 	if (debugFont != NULL && (flags & DEBUG_STATS)) {
 		addDebugStats();
 	}
