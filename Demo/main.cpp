@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 
 	Controller* demo = new Controller(engine);
 
-	demo->start(new Beach());
+	demo->start(new Default());
 
 	delete demo;
 	return 0;

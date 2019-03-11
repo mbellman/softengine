@@ -673,10 +673,9 @@ void Cube::setFaceUVCoordinates(float x1, float y1, float x2, float y2) {
  * Creates a simple flat surface used for particle effects.
  */
 Particle::Particle() {
-	addVertex({ -1, 1, 0 });
-	addVertex({ 1, 1, 0 });
-	addVertex({ -1, -1, 0 });
-	addVertex({ 1, -1, 0 });
+	for (int i = 0; i < 4; i++) {
+		addVertex(Particle::vertexPositions[i], Particle::uvs[i]);
+	}
 
 	// Front side
 	addPolygon(0, 1, 2);
@@ -687,7 +686,22 @@ Particle::Particle() {
 	addPolygon(1, 2, 3);
 
 	isFlatShaded = true;
+	canOccludeSurfaces = false;
 }
+
+Vec3 Particle::vertexPositions[4] = {
+	{ -1.0f, 1.0f, 0.0f },
+	{ 1.0f, 1.0f, 0.0f },
+	{ -1.0f, -1.0f, 0.0f },
+	{ 1.0f, -1.0f, 0.0f }
+};
+
+Vec2 Particle::uvs[4] = {
+	{ 0.0f, 0.0f },
+	{ 1.0f, 0.0f },
+	{ 0.0f, 1.0f },
+	{ 1.0f, 1.0f }
+};
 
 /**
  * Billboard

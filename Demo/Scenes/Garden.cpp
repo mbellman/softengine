@@ -60,6 +60,11 @@ void Garden::load() {
 		add(cube);
 	}
 
+	TextureBuffer* snowflakeTexture = new TextureBuffer("./DemoAssets/snowflake.png");
+	snowflakeTexture->shouldUseMipmaps = false;
+
+	add("snowflakeTexture", snowflakeTexture);
+
 	ParticleSystem* snow = new ParticleSystem(4000);
 
 	snow->setSpawnRange(
@@ -68,7 +73,7 @@ void Garden::load() {
 		{ -2500.0f, 2500.0f }
 	);
 
-	snow->setParticleColor({ 255, 255, 255 });
+	snow->setParticleTexture(getTexture("snowflakeTexture"));
 	snow->setParticleSize(5, 5);
 
 	snow->setParticleBehavior([=](Particle* particle, int dt) {
@@ -188,12 +193,12 @@ void Garden::onUpdate(int dt) {
 		controller->exitScene();
 	}
 
-	if (runningTime > 5000) {
-		ParticleSystem* snow = getParticleSystem("snow");
+	// if (runningTime > 5000) {
+	// 	ParticleSystem* snow = getParticleSystem("snow");
 
-		if (snow != NULL) {
-			remove("snow");
-			remove("bells");
-		}
-	}
+	// 	if (snow != NULL) {
+	// 		remove("snow");
+	// 		remove("bells");
+	// 	}
+	// }
 }

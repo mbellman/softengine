@@ -157,6 +157,10 @@ struct Particle : Object {
 	bool shouldReset = true;
 
 	Particle();
+
+private:
+	static Vec3 vertexPositions[4];
+	static Vec2 uvs[4];
 };
 
 /**
